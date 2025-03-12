@@ -14,7 +14,7 @@ const RotatingArrow: React.FC<Props> = ({ onClick, rotated = false }) => {
         <ArrowRight
           size={18}
           strokeWidth={1.5}
-          className={`transition-transform duration-300 ease-in-out ${rotated ? "-rotate-180" : "rotate-0"}`}
+          className={`transition-transform duration-200 ease-in-out ${rotated ? "-rotate-180" : "rotate-0"}`}
         />
       </SideMenuButton>
     </button>
