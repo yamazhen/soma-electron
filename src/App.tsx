@@ -8,11 +8,18 @@ import TitleBar from "./components/TitleBar";
 
 function App() {
   const { activePage } = usePage();
+
   return (
     <main className="main">
       <TitleBar />
       <div className="container">
-        <SideMenu />
+        <SideMenu
+          toggleExplorer={toggleExplorer}
+          explorerExpanded={explorerExpanded}
+          className={
+            activePage === "notes" && explorerExpanded ? "bg-soma-dark" : ""
+          }
+        />
         {activePage === "home" && <Home />}
         {activePage === "notes" && <Notes />}
         {activePage === "quiz" && <Quiz />}

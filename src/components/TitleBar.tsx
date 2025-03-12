@@ -11,25 +11,25 @@ const TitleBar = () => {
         isActive={activePage === "home"}
         onClick={() => setActivePage("home")}
       >
-        <Home size={16} strokeWidth={1.5} />
+        <Home size={18} strokeWidth={1.5} />
       </TitleBarButton>
       <TitleBarButton
         isActive={activePage === "notes"}
         onClick={() => setActivePage("notes")}
       >
-        <NotebookPen size={16} strokeWidth={1.5} />
+        <NotebookPen size={18} strokeWidth={1.5} />
       </TitleBarButton>
       <TitleBarButton
         isActive={activePage === "quiz"}
         onClick={() => setActivePage("quiz")}
       >
-        <BookCheck size={16} strokeWidth={1.5} />
+        <BookCheck size={18} strokeWidth={1.5} />
       </TitleBarButton>
       <TitleBarButton
         isActive={activePage === "flashcard"}
         onClick={() => setActivePage("flashcard")}
       >
-        <SquareAsterisk size={16} strokeWidth={1.5} />
+        <SquareAsterisk size={18} strokeWidth={1.5} />
       </TitleBarButton>
     </section>
   );

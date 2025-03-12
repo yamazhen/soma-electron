@@ -4,11 +4,11 @@
 
 @theme {
   /* Soma Color Palette */
-  --color-soma-main-darkest: #1c1531;
-  --color-soma-main-dark: #211939;
-  --color-soma-main-medium: #261c41;
-  --color-soma-main-light: #3a2c5c;
-  --color-soma-main-lightest: #9085b3;
+  --color-soma-darkest: #1c1531;
+  --color-soma-dark: #1f1836;
+  --color-soma-medium: #261c41;
+  --color-soma-light: #3a2c5c;
+  --color-soma-lightest: #9085b3;
 
   /* Accent Colors */
   --color-soma-accent1: #46206a;
@@ -28,7 +28,7 @@
 }
 
 body {
-  @apply bg-soma-main-darkest text-soma-text-primary select-none;
+  @apply bg-soma-darkest text-soma-text-primary select-none;
 }
 
 .windowControls {
@@ -37,12 +37,12 @@ body {
 
 .titleBar {
   -webkit-app-region: drag;
-  @apply bg-soma-main-medium flex h-[2.5rem] items-center gap-1;
+  @apply bg-soma-medium flex h-[2.5rem] items-center gap-1;
 }
 
 .titleBarButton {
   -webkit-app-region: no-drag;
-  @apply hover:bg-soma-main-light duration-200 transition-colors ease-in-out w-[2rem] h-[1.5rem] flex justify-center items-center rounded-sm cursor-pointer text-soma-main-lightest;
+  @apply hover:bg-soma-light duration-100 transition-colors ease-in-out w-[2rem] h-[1.5rem] flex justify-center items-center rounded-sm cursor-pointer text-soma-lightest;
 }
 
 .main {
@@ -54,13 +54,58 @@ body {
 }
 
 .menu {
-  @apply flex flex-col border-soma-main-medium border-r-2 w-12 items-center gap-2;
+  @apply flex flex-col border-soma-medium border-r-1 min-w-[2.75rem] items-center justify-between;
+}
+
+.menuButtonHolder {
+  @apply flex flex-col items-center gap-1;
 }
 
 .menuButton {
-  @apply hover:bg-soma-main-light duration-300 transition-colors w-8 h-8 flex justify-center items-center rounded-md cursor-pointer active:bg-soma-main-lightest;
+  @apply hover:bg-soma-light duration-100 transition-colors w-[1.75rem] h-[1.75rem] flex justify-center items-center rounded-sm cursor-pointer active:text-soma-text-primary text-soma-lightest;
 }
 
 .content {
   @apply flex items-center w-full justify-center;
+}
+
+.home {
+  @apply flex-col;
+}
+
+.activityButton {
+  @apply p-4 bg-soma-light rounded-lg shadow cursor-pointer text-soma-lightest active:text-soma-text-primary;
+}
+
+@keyframes scale-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes scale-out {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.scaleIn {
+  display: block;
+  transform-origin: left;
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+.scaleOut {
+  transform-origin: left;
+  animation: scale-out 0.2s ease-out forwards;
+}
+
+.explorer {
+  @apply min-w-64 border-r-1 border-r-soma-medium bg-soma-dark p-2 text-soma-lightest;
 }

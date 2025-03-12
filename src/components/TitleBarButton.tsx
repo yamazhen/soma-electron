@@ -16,7 +16,7 @@ const TitleBarButton: React.FC<Props> = ({
   return (
     <div
       onMouseDown={onClick}
-      className={`titleBarButton ${className} ${isActive ? "!bg-soma-main-light" : ""}`}
+      className={`titleBarButton ${className} ${isActive ? "!bg-soma-light" : ""}`}
     >
       {children}
     </div>

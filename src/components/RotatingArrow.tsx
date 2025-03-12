@@ -1,0 +1,24 @@
+import { ArrowRight } from "lucide-react";
+import React from "react";
+import SideMenuButton from "./SideMenuButton";
+
+interface Props {
+  onClick?: () => void;
+  rotated?: boolean;
+}
+
+const RotatingArrow: React.FC<Props> = ({ onClick, rotated = false }) => {
+  return (
+    <button onClick={onClick}>
+      <SideMenuButton className="hover:!bg-transparent">
+        <ArrowRight
+          size={18}
+          strokeWidth={1.5}
+          className={`transition-transform duration-300 ease-in-out ${rotated ? "-rotate-180" : "rotate-0"}`}
+        />
+      </SideMenuButton>
+    </button>
+  );
+};
+
+export default RotatingArrow;
