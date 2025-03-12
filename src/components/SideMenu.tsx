@@ -48,7 +48,7 @@ const SideMenu: React.FC<Props> = ({ className }) => {
   return (
     <>
       <section
-        className={`menu ${className} ${isExplorerVisible ? "bg-soma-dark" : "bg-transparent"}`}
+        className={`menu ${className} ${isExplorerVisible && activePage === "notes" ? "bg-soma-dark" : "bg-transparent"}`}
       >
         {activePage === "home" && (
           <>

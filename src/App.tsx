@@ -13,13 +13,7 @@ function App() {
     <main className="main">
       <TitleBar />
       <div className="container">
-        <SideMenu
-          toggleExplorer={toggleExplorer}
-          explorerExpanded={explorerExpanded}
-          className={
-            activePage === "notes" && explorerExpanded ? "bg-soma-dark" : ""
-          }
-        />
+        <SideMenu />
         {activePage === "home" && <Home />}
         {activePage === "notes" && <Notes />}
         {activePage === "quiz" && <Quiz />}
