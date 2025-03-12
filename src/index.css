@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+@theme {
+  /* Soma Color Palette */
+  --color-soma-main-darkest: #1c1531;
+  --color-soma-main-dark: #211939;
+  --color-soma-main-medium: #261c41;
+  --color-soma-main-light: #3a2c5c;
+  --color-soma-main-lightest: #9085b3;
+
+  /* Accent Colors */
+  --color-soma-accent1: #46206a;
+  --color-soma-accent2: #a86e89;
+  --color-soma-accent3: #cdb97c;
+
+  /* Neutral Colors */
+  --color-soma-bg-light: #dcd9e5;
+  --color-soma-bg-dark: #251d40;
+  --color-soma-text-primary: #bdb5cc;
+  --color-soma-text-secondary: #9588a5;
+
+  /* Status Colors */
+  --color-soma-success: #7f947f;
+  --color-soma-warning: #b89c54;
+  --color-soma-error: #9a6b6b;
+}
+
+body {
+  @apply bg-soma-main-darkest text-soma-text-primary select-none;
+}
+
+.windowControls {
+  @apply w-[5rem];
+}
+
+.titleBar {
+  -webkit-app-region: drag;
+  @apply bg-soma-main-medium flex h-[2.5rem] items-center gap-1;
+}
+
+.titleBarButton {
+  -webkit-app-region: no-drag;
+  @apply hover:bg-soma-main-light duration-200 transition-colors ease-in-out w-[2rem] h-[1.5rem] flex justify-center items-center rounded-sm cursor-pointer text-soma-main-lightest;
+}
+
+.main {
+  @apply flex flex-col w-full min-h-screen;
+}
+
+.container {
+  @apply flex flex-1;
+}
+
+.menu {
+  @apply flex flex-col border-soma-main-medium border-r-2 w-12 items-center gap-2;
+}
+
+.menuButton {
+  @apply hover:bg-soma-main-light duration-300 transition-colors w-8 h-8 flex justify-center items-center rounded-md cursor-pointer active:bg-soma-main-lightest;
+}
+
+.content {
+  @apply flex items-center w-full justify-center;
+}
