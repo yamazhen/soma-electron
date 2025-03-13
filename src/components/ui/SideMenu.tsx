@@ -1,24 +1,17 @@
 import React, { useState } from "react";
+import { usePage } from "../context/PageContext";
+import SideMenuButton from "./SideMenuButton";
+import RotatingArrow from "./RotatingArrow";
+import Explorer from "./Explorer";
 import {
   Activity,
-  ArrowUpNarrowWideIcon,
   BrainCircuit,
-  ChevronsUpDown,
-  FilePenLine,
-  FolderPlus,
   LayoutGrid,
   Plus,
   Settings,
 } from "lucide-react";
-import { usePage } from "../context/PageContext";
-import SideMenuButton from "./SideMenuButton";
-import RotatingArrow from "./RotatingArrow";
 
-type Props = {
-  className?: string;
-};
-
-const SideMenu: React.FC<Props> = ({ className }) => {
+const SideMenu: React.FC = () => {
   const { activePage } = usePage();
   const [explorerExpanded, setExplorerExpanded] = useState(true);
 
@@ -84,34 +77,7 @@ const SideMenu: React.FC<Props> = ({ className }) => {
       </section>
 
       {activePage === "notes" && (
-        <section
-          className={`explorerContainer ${explorerExpanded ? "expanded" : "collapsed"}`}
-        >
-          <div className="explorer">
-            <div className="flex justify-center items-center gap-1 mb-2">
-              <SideMenuButton>
-                <FilePenLine size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-              <SideMenuButton>
-                <FolderPlus size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-              <SideMenuButton>
-                <ArrowUpNarrowWideIcon size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-              <SideMenuButton>
-                <ChevronsUpDown size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-            </div>
-            <ul className="flex flex-col gap-1" role="list">
-              <li className="bg-soma-light rounded-sm px-8 py-[0.1rem] text-sm text-soma-text-primary">
-                Welcome
-              </li>
-              <li className="rounded-sm px-8 py-[0.1rem] text-sm hover:bg-soma-light transition-colors duration-100 h-auto active:text-soma-text-primary">
-                18-03-2025
-              </li>
-            </ul>
-          </div>
-        </section>
+        <Explorer explorerExpanded={explorerExpanded} />
       )}
     </>
   );
