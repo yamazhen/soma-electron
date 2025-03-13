@@ -52,7 +52,7 @@ body {
 }
 
 .menu {
-  @apply flex flex-col border-soma-medium border-r-1 min-w-[2.75rem] items-center justify-between;
+  @apply flex flex-col border-soma-medium border-r-1 min-w-[2.75rem] items-center justify-between transition-colors duration-700;
 }
 
 .menuButtonHolder {
@@ -75,35 +75,20 @@ body {
   @apply p-4 bg-soma-light rounded-lg shadow cursor-pointer text-soma-lightest active:text-soma-text-primary;
 }
 
-@keyframes scale-in {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+.explorerContainer {
+  overflow: hidden;
+  transition: width 0.2s ease-out;
+  flex-shrink: 0;
 }
 
-@keyframes scale-out {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
+.explorerContainer.expanded {
+  width: 18rem;
 }
 
-.scaleIn {
-  display: block;
-  transform-origin: left;
-  animation: scale-in 0.2s ease-out forwards;
-}
-
-.scaleOut {
-  transform-origin: left;
-  animation: scale-out 0.2s ease-out forwards;
+.explorerContainer.collapsed {
+  width: 0;
 }
 
 .explorer {
-  @apply min-w-64 border-r-1 border-r-soma-medium bg-soma-dark p-2 text-soma-lightest;
+  @apply border-r-1 border-r-soma-medium bg-soma-dark text-soma-lightest p-2 h-full text-nowrap;
 }

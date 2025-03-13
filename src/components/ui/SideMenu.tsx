@@ -11,7 +11,6 @@ import {
   Settings,
 } from "lucide-react";
 import { usePage } from "../context/PageContext";
-import { useSideMenu } from "../context/SideMenuContext";
 import SideMenuButton from "./SideMenuButton";
 import RotatingArrow from "./RotatingArrow";
 
@@ -21,46 +20,10 @@ type Props = {
 
 const SideMenu: React.FC<Props> = ({ className }) => {
   const { activePage } = usePage();
-  const { explorerExpanded, toggleExplorer } = useSideMenu();
-  const prevActivePage = useRef(activePage);
+  const [explorerExpanded, setExplorerExpanded] = useState(true);
 
-  // states for animations and visibility
-  const [isExplorerVisible, setIsExplorerVisible] = useState(explorerExpanded);
-  const [shouldAnimate, setShouldAnimate] = useState(false);
-
-  // handle page transitions
-  useEffect(() => {
-    if (activePage === "notes" && prevActivePage.current !== "notes") {
-      setShouldAnimate(false);
-    }
-    prevActivePage.current = activePage;
-  }, [activePage]);
-
-  // handle visibility and animations with proper cleanup
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (explorerExpanded) {
-      setIsExplorerVisible(true);
-    } else {
-      timer = setTimeout(() => {
-        setIsExplorerVisible(false);
-      }, 200);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [explorerExpanded]);
-
-  // function to toggle the explorer panel with animation
-  const handleToggleExplorer = () => {
-    setShouldAnimate(true);
-    toggleExplorer();
-  };
-
-  // determine animation class based on state
-  const getAnimationClass = () => {
-    if (!shouldAnimate) return "";
-    return explorerExpanded ? "scaleIn" : "scaleOut";
+  const toggleExplorer = () => {
+    setExplorerExpanded((prev) => !prev);
   };
 
   // Render different menu buttons based on active page
@@ -100,7 +63,7 @@ const SideMenu: React.FC<Props> = ({ className }) => {
     <>
       <section
         className={`menu ${className} ${
-          isExplorerVisible && activePage === "notes"
+          explorerExpanded && activePage === "notes"
             ? "bg-soma-dark"
             : "bg-transparent"
         }`}
@@ -110,7 +73,7 @@ const SideMenu: React.FC<Props> = ({ className }) => {
         <div className="menuButtonHolder">
           {activePage === "notes" && (
             <RotatingArrow
-              onClick={handleToggleExplorer}
+              onClick={toggleExplorer}
               rotated={explorerExpanded}
               aria-expanded={explorerExpanded}
               aria-controls="explorer-panel"
@@ -125,36 +88,34 @@ const SideMenu: React.FC<Props> = ({ className }) => {
         </div>
       </section>
 
-      {activePage === "notes" && isExplorerVisible && (
+      {activePage === "notes" && (
         <section
-          className={`explorer ${getAnimationClass()}`}
-          style={{
-            transform:
-              !shouldAnimate && explorerExpanded ? "scaleX(1)" : undefined,
-          }}
+          className={`explorerContainer ${explorerExpanded ? "expanded" : "collapsed"}`}
         >
-          <div className="flex justify-center items-center gap-1 mb-2">
-            <SideMenuButton aria-label="New File">
-              <FilePenLine size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton aria-label="New Folder">
-              <FolderPlus size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton aria-label="Sort">
-              <ArrowUpNarrowWideIcon size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton aria-label="Collapse All">
-              <ChevronsUpDown size={18} strokeWidth={1.5} />
-            </SideMenuButton>
+          <div className="explorer">
+            <div className="flex justify-center items-center gap-1 mb-2">
+              <SideMenuButton>
+                <FilePenLine size={18} strokeWidth={1.5} />
+              </SideMenuButton>
+              <SideMenuButton>
+                <FolderPlus size={18} strokeWidth={1.5} />
+              </SideMenuButton>
+              <SideMenuButton>
+                <ArrowUpNarrowWideIcon size={18} strokeWidth={1.5} />
+              </SideMenuButton>
+              <SideMenuButton>
+                <ChevronsUpDown size={18} strokeWidth={1.5} />
+              </SideMenuButton>
+            </div>
+            <ul className="flex flex-col gap-1" role="list">
+              <li className="bg-soma-light rounded-sm px-8 py-[0.1rem] text-sm text-soma-text-primary">
+                Welcome
+              </li>
+              <li className="rounded-sm px-8 py-[0.1rem] text-sm hover:bg-soma-light transition-colors duration-100 h-auto active:text-soma-text-primary">
+                18-03-2025
+              </li>
+            </ul>
           </div>
-          <ul className="flex flex-col gap-1" role="list">
-            <li className="bg-soma-light rounded-sm px-8 py-[0.1rem] text-sm text-soma-text-primary">
-              Welcome
-            </li>
-            <li className="rounded-sm px-8 py-[0.1rem] text-sm hover:bg-soma-light transition-colors duration-200 h-auto">
-              18-03-2025
-            </li>
-          </ul>
         </section>
       )}
     </>
