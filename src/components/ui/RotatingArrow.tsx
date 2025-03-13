@@ -8,9 +8,18 @@ interface Props {
 }
 
 const RotatingArrow: React.FC<Props> = ({ onClick, rotated = false }) => {
+  let tippyMessage = "";
+  if (rotated) {
+    tippyMessage = "Collapse";
+  } else {
+    tippyMessage = "Expand";
+  }
   return (
     <button onClick={onClick}>
-      <SideMenuButton className="hover:!bg-transparent">
+      <SideMenuButton
+        className="hover:!bg-transparent"
+        tippyContent={tippyMessage}
+      >
         <ArrowRight
           size={18}
           strokeWidth={1.5}

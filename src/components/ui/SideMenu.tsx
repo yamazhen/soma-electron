@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Activity,
   ArrowUpNarrowWideIcon,
@@ -32,13 +32,13 @@ const SideMenu: React.FC<Props> = ({ className }) => {
       case "home":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton className="mt-2">
+            <SideMenuButton className="mt-2" tippyContent="Dashboard">
               <LayoutGrid size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton>
+            <SideMenuButton tippyContent="Analytics">
               <Activity size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton>
+            <SideMenuButton tippyContent="Quick Create">
               <Plus size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -46,10 +46,10 @@ const SideMenu: React.FC<Props> = ({ className }) => {
       case "notes":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton className="mt-2">
+            <SideMenuButton className="mt-2" tippyContent="Mind Map">
               <BrainCircuit size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton>
+            <SideMenuButton tippyContent="Create Note">
               <Plus size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -75,14 +75,9 @@ const SideMenu: React.FC<Props> = ({ className }) => {
             <RotatingArrow
               onClick={toggleExplorer}
               rotated={explorerExpanded}
-              aria-expanded={explorerExpanded}
-              aria-controls="explorer-panel"
-              aria-label={
-                explorerExpanded ? "Collapse explorer" : "Expand explorer"
-              }
             />
           )}
-          <SideMenuButton className="mb-2">
+          <SideMenuButton className="mb-2" tippyContent="Settings">
             <Settings size={18} strokeWidth={1.5} />
           </SideMenuButton>
         </div>

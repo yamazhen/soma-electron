@@ -8,24 +8,28 @@ const TitleBar = () => {
     <section className="titleBar">
       <div className="windowControls"></div>
       <TitleBarButton
+        tippyContent="Home"
         isActive={activePage === "home"}
         onClick={() => setActivePage("home")}
       >
         <Home size={18} strokeWidth={1.5} />
       </TitleBarButton>
       <TitleBarButton
+        tippyContent="Notes"
         isActive={activePage === "notes"}
         onClick={() => setActivePage("notes")}
       >
         <NotebookPen size={18} strokeWidth={1.5} />
       </TitleBarButton>
       <TitleBarButton
+        tippyContent="Quiz"
         isActive={activePage === "quiz"}
         onClick={() => setActivePage("quiz")}
       >
         <BookCheck size={18} strokeWidth={1.5} />
       </TitleBarButton>
       <TitleBarButton
+        tippyContent="Flashcard"
         isActive={activePage === "flashcard"}
         onClick={() => setActivePage("flashcard")}
       >

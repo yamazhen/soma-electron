@@ -1,3 +1,4 @@
+import Tippy from "@tippyjs/react";
 import React from "react";
 
 type Props = {
@@ -5,6 +6,7 @@ type Props = {
   className?: string;
   isActive: boolean;
   onClick: () => void;
+  tippyContent?: string;
 };
 
 const TitleBarButton: React.FC<Props> = ({
@@ -12,14 +14,23 @@ const TitleBarButton: React.FC<Props> = ({
   className,
   isActive,
   onClick,
+  tippyContent = "TippyMessage",
 }) => {
   return (
-    <div
-      onMouseDown={onClick}
-      className={`titleBarButton ${className} ${isActive ? "!bg-soma-light" : ""}`}
+    <Tippy
+      content={tippyContent}
+      theme="custom"
+      arrow={true}
+      placement="bottom"
+      delay={200}
     >
-      {children}
-    </div>
+      <div
+        onMouseDown={onClick}
+        className={`titleBarButton ${className} ${isActive ? "!bg-soma-light" : ""}`}
+      >
+        {children}
+      </div>
+    </Tippy>
   );
 };
 
