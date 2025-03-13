@@ -55,7 +55,7 @@ const SideMenu: React.FC = () => {
   return (
     <>
       <section
-        className={`menu ${className} ${
+        className={`menu ${
           explorerExpanded && activePage === "notes"
             ? "bg-soma-dark"
             : "bg-transparent transition-colors duration-700"
