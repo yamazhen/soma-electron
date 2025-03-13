@@ -1,11 +1,11 @@
 import Flashcard from "./components/Flashcard";
 import Home from "./components/Home";
 import Notes from "./components/Notes";
-import { usePage } from "./components/PageContext";
+import { usePage } from "./components/context/PageContext";
 import Quiz from "./components/Quiz";
-import SideMenu from "./components/SideMenu";
-import { SideMenuProvider } from "./components/SideMenuContext";
-import TitleBar from "./components/TitleBar";
+import SideMenu from "./components/ui/SideMenu";
+import { SideMenuProvider } from "./components/context/SideMenuContext";
+import TitleBar from "./components/ui/TitleBar";
 
 function App() {
   const { activePage } = usePage();

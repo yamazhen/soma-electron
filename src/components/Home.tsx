@@ -20,9 +20,9 @@ const Home: React.FC<Props> = () => {
     <section className="content home">
       {/* Welcome Message */}
       <div className="mb-8 flex flex-col items-center">
-        <h1 className="text-3xl font-bold mb-1">Welcome to Soma</h1>
-        <div className="flex flex-row text-center items-center gap-2">
-          <p className="text-soma-accent2">
+        <h1 className="text-3xl font-bold">Welcome to Soma</h1>
+        <div className="flex flex-row text-center items-center gap-2 text-soma-lightest">
+          <p>
             Today is{" "}
             {currentDate.toLocaleDateString("en-GB", {
               day: "numeric",
@@ -30,7 +30,7 @@ const Home: React.FC<Props> = () => {
               year: "numeric",
             })}
           </p>
-          <Calendar className="text-soma-accent2" size={18} />
+          <Calendar size={18} />
         </div>
       </div>
 

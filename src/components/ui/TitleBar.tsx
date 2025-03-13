@@ -1,6 +1,6 @@
 import { BookCheck, Home, NotebookPen, SquareAsterisk } from "lucide-react";
 import TitleBarButton from "./TitleBarButton";
-import { usePage } from "./PageContext";
+import { usePage } from "../context/PageContext";
 
 const TitleBar = () => {
   const { activePage, setActivePage } = usePage();

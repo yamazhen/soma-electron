@@ -10,10 +10,10 @@ import {
   Plus,
   Settings,
 } from "lucide-react";
+import { usePage } from "../context/PageContext";
+import { useSideMenu } from "../context/SideMenuContext";
 import SideMenuButton from "./SideMenuButton";
-import { usePage } from "./PageContext";
 import RotatingArrow from "./RotatingArrow";
-import { useSideMenu } from "./SideMenuContext";
 
 type Props = {
   className?: string;
@@ -127,7 +127,6 @@ const SideMenu: React.FC<Props> = ({ className }) => {
 
       {activePage === "notes" && isExplorerVisible && (
         <section
-          id="explorer-panel"
           className={`explorer ${getAnimationClass()}`}
           style={{
             transform:
