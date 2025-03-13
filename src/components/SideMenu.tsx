@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Activity,
   ArrowUpNarrowWideIcon,
@@ -13,6 +13,7 @@ import {
 import SideMenuButton from "./SideMenuButton";
 import { usePage } from "./PageContext";
 import RotatingArrow from "./RotatingArrow";
+import { useSideMenu } from "./SideMenuContext";
 
 type Props = {
   className?: string;
@@ -20,102 +21,134 @@ type Props = {
 
 const SideMenu: React.FC<Props> = ({ className }) => {
   const { activePage } = usePage();
+  const { explorerExpanded, toggleExplorer } = useSideMenu();
+  const prevActivePage = useRef(activePage);
 
-  // States for the explorer panel
-  const [explorerExpanded, setExplorerExpanded] = useState(true);
-  const [animationClass, setAnimationClass] = useState(
-    explorerExpanded ? "scaleIn" : "",
-  );
+  // states for animations and visibility
   const [isExplorerVisible, setIsExplorerVisible] = useState(explorerExpanded);
-  // useEffect to handle the animation of the explorer panel
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  // handle page transitions
   useEffect(() => {
+    if (activePage === "notes" && prevActivePage.current !== "notes") {
+      setShouldAnimate(false);
+    }
+    prevActivePage.current = activePage;
+  }, [activePage]);
+
+  // handle visibility and animations with proper cleanup
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (explorerExpanded) {
       setIsExplorerVisible(true);
-      setAnimationClass("scaleIn");
     } else {
-      setAnimationClass("scaleOut");
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setIsExplorerVisible(false);
       }, 200);
-      return () => clearTimeout(timer);
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [explorerExpanded]);
-  // Function to toggle the explorer panel
-  const toggleExplorer = () => {
-    setExplorerExpanded(!explorerExpanded);
+
+  // function to toggle the explorer panel with animation
+  const handleToggleExplorer = () => {
+    setShouldAnimate(true);
+    toggleExplorer();
+  };
+
+  // determine animation class based on state
+  const getAnimationClass = () => {
+    if (!shouldAnimate) return "";
+    return explorerExpanded ? "scaleIn" : "scaleOut";
+  };
+
+  // Render different menu buttons based on active page
+  const renderPageButtons = () => {
+    switch (activePage) {
+      case "home":
+        return (
+          <div className="menuButtonHolder">
+            <SideMenuButton className="mt-2" aria-label="Layout Grid">
+              <LayoutGrid size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton aria-label="Activity">
+              <Activity size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton aria-label="Add New">
+              <Plus size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+          </div>
+        );
+      case "notes":
+        return (
+          <div className="menuButtonHolder">
+            <SideMenuButton className="mt-2" aria-label="Brain Circuit">
+              <BrainCircuit size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton aria-label="Add New Note">
+              <Plus size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+          </div>
+        );
+      default:
+        return <div className="menuButtonHolder"></div>;
+    }
   };
 
   return (
     <>
       <section
-        className={`menu ${className} ${isExplorerVisible && activePage === "notes" ? "bg-soma-dark" : "bg-transparent"}`}
+        className={`menu ${className} ${
+          isExplorerVisible && activePage === "notes"
+            ? "bg-soma-dark"
+            : "bg-transparent"
+        }`}
       >
-        {activePage === "home" && (
-          <>
-            <div className="menuButtonHolder">
-              <SideMenuButton className="mt-2">
-                <LayoutGrid size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-              <SideMenuButton>
-                <Activity size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-              <SideMenuButton>
-                <Plus size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-            </div>
-          </>
-        )}
-        {activePage === "notes" && (
-          <>
-            <div className="menuButtonHolder">
-              <SideMenuButton className="mt-2">
-                <BrainCircuit size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-              <SideMenuButton>
-                <Plus size={18} strokeWidth={1.5} />
-              </SideMenuButton>
-            </div>
-          </>
-        )}
-        {activePage === "quiz" && (
-          <>
-            <div className="menuButtonHolder"></div>
-          </>
-        )}
-        {activePage === "flashcard" && (
-          <>
-            <div className="menuButtonHolder"></div>
-          </>
-        )}
+        {renderPageButtons()}
+
         <div className="menuButtonHolder">
           {activePage === "notes" && (
             <RotatingArrow
-              onClick={toggleExplorer}
+              onClick={handleToggleExplorer}
               rotated={explorerExpanded}
+              aria-expanded={explorerExpanded}
+              aria-controls="explorer-panel"
+              aria-label={
+                explorerExpanded ? "Collapse explorer" : "Expand explorer"
+              }
             />
           )}
-          <SideMenuButton className="mb-2">
+          <SideMenuButton className="mb-2" aria-label="Settings">
             <Settings size={18} strokeWidth={1.5} />
           </SideMenuButton>
         </div>
       </section>
+
       {activePage === "notes" && isExplorerVisible && (
-        <section className={`explorer ${animationClass}`}>
+        <section
+          id="explorer-panel"
+          className={`explorer ${getAnimationClass()}`}
+          style={{
+            transform:
+              !shouldAnimate && explorerExpanded ? "scaleX(1)" : undefined,
+          }}
+        >
           <div className="flex justify-center items-center gap-1 mb-2">
-            <SideMenuButton>
+            <SideMenuButton aria-label="New File">
               <FilePenLine size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton>
+            <SideMenuButton aria-label="New Folder">
               <FolderPlus size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton>
+            <SideMenuButton aria-label="Sort">
               <ArrowUpNarrowWideIcon size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton>
+            <SideMenuButton aria-label="Collapse All">
               <ChevronsUpDown size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-1" role="list">
             <li className="bg-soma-light rounded-sm px-8 py-[0.1rem] text-sm text-soma-text-primary">
               Welcome
             </li>

@@ -4,6 +4,7 @@ import Notes from "./components/Notes";
 import { usePage } from "./components/PageContext";
 import Quiz from "./components/Quiz";
 import SideMenu from "./components/SideMenu";
+import { SideMenuProvider } from "./components/SideMenuContext";
 import TitleBar from "./components/TitleBar";
 
 function App() {
@@ -13,7 +14,9 @@ function App() {
     <main className="main">
       <TitleBar />
       <div className="container">
-        <SideMenu />
+        <SideMenuProvider>
+          <SideMenu />
+        </SideMenuProvider>
         {activePage === "home" && <Home />}
         {activePage === "notes" && <Notes />}
         {activePage === "quiz" && <Quiz />}
