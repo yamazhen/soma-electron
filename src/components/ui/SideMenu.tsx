@@ -32,13 +32,13 @@ const SideMenu: React.FC<Props> = ({ className }) => {
       case "home":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton className="mt-2" aria-label="Layout Grid">
+            <SideMenuButton className="mt-2">
               <LayoutGrid size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton aria-label="Activity">
+            <SideMenuButton>
               <Activity size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton aria-label="Add New">
+            <SideMenuButton>
               <Plus size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -46,10 +46,10 @@ const SideMenu: React.FC<Props> = ({ className }) => {
       case "notes":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton className="mt-2" aria-label="Brain Circuit">
+            <SideMenuButton className="mt-2">
               <BrainCircuit size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton aria-label="Add New Note">
+            <SideMenuButton>
               <Plus size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -82,7 +82,7 @@ const SideMenu: React.FC<Props> = ({ className }) => {
               }
             />
           )}
-          <SideMenuButton className="mb-2" aria-label="Settings">
+          <SideMenuButton className="mb-2">
             <Settings size={18} strokeWidth={1.5} />
           </SideMenuButton>
         </div>
