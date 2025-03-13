@@ -52,7 +52,7 @@ body {
 }
 
 .menu {
-  @apply flex flex-col border-soma-medium border-r-1 min-w-[2.75rem] items-center justify-between transition-colors duration-700;
+  @apply flex flex-col border-soma-medium border-r-1 min-w-[2.75rem] items-center justify-between;
 }
 
 .menuButtonHolder {
