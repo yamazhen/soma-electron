@@ -66,7 +66,7 @@ const SideMenu: React.FC<Props> = ({ className }) => {
           explorerExpanded && activePage === "notes"
             ? "bg-soma-dark"
             : "bg-transparent transition-colors duration-700"
-        }`}
+        } ${activePage !== "notes" && "!duration-75"}`}
       >
         {renderPageButtons()}
 
