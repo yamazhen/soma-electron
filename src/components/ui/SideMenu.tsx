@@ -6,6 +6,8 @@ import Explorer from "./Explorer";
 import {
   Activity,
   BrainCircuit,
+  Calendar,
+  FileSearch,
   LayoutGrid,
   Plus,
   Settings,
@@ -39,11 +41,14 @@ const SideMenu: React.FC = () => {
       case "notes":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton className="mt-2" tippyContent="Mind Map">
+            <SideMenuButton tippyContent="Search Note" className="mt-2">
+              <FileSearch size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton tippyContent="Mind Map">
               <BrainCircuit size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Create Note">
-              <Plus size={18} strokeWidth={1.5} />
+            <SideMenuButton tippyContent="Today's Note">
+              <Calendar size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
         );

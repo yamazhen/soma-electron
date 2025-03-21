@@ -26,4 +26,19 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
 
   // You can expose other APTs you need here.
   // ...
+  createMarkdownFile: () => ipcRenderer.invoke("create-markdown-file"),
+  loadExistingNotes: () => ipcRenderer.invoke("load-existing-notes"),
+  createFolder: () => ipcRenderer.invoke("create-folder"),
+  onFileSystemChanged: (callback: () => void) => {
+    const subscription = (_event: any) => callback();
+    ipcRenderer.on("file-system-changed", subscription);
+
+    return () => {
+      ipcRenderer.removeListener("file-system-changed", subscription);
+    };
+  },
+  readMarkdownFile: (path: string) =>
+    ipcRenderer.invoke("read-markdown-file", path),
+  writeMarkdownFile: (path: string, content: string) =>
+    ipcRenderer.invoke("write-markdown-file", path, content),
 });

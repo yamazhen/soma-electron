@@ -119,3 +119,23 @@ body {
 .tippy-box[data-theme~="custom"] .tippy-arrow {
   color: black;
 }
+
+.activeNote {
+  @apply bg-soma-light rounded-sm px-8 py-[0.1rem] text-sm text-soma-text-primary;
+}
+
+.inactiveNote {
+  @apply rounded-sm px-8 py-[0.1rem] text-sm hover:bg-soma-light transition-colors duration-100 h-auto;
+}
+
+.textEditor {
+  @apply appearance-none border-none bg-transparent w-full h-full resize-none outline-none;
+}
+
+.noteEditor {
+  @apply w-full h-full p-16;
+}
+
+.markdown > * {
+  all: revert;
+}

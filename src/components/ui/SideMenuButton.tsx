@@ -7,6 +7,7 @@ type Props = {
   className?: string;
   tippyContent?: string;
   tippyPlacement?: Placement;
+  onClick?: () => void;
 };
 
 const SideMenuButton: React.FC<Props> = ({
@@ -14,6 +15,7 @@ const SideMenuButton: React.FC<Props> = ({
   className,
   tippyContent = "TippyMessage",
   tippyPlacement = "right",
+  onClick,
 }) => {
   return (
     <Tippy
@@ -23,7 +25,9 @@ const SideMenuButton: React.FC<Props> = ({
       placement={tippyPlacement}
       delay={200}
     >
-      <div className={`menuButton ${className}`}>{children}</div>
+      <div className={`menuButton ${className}`} onClick={onClick}>
+        {children}
+      </div>
     </Tippy>
   );
 };
