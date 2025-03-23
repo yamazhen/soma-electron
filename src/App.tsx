@@ -11,7 +11,7 @@ function App() {
   const { activePage } = usePage();
 
   return (
-    <main className="main">
+    <main>
       <TitleBar />
       <div className="container">
         <FileProvider>

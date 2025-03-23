@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useFileContext } from "../context/FileContext";
-import ReactMarkdown from "react-markdown";
+import MarkdownIt from "markdown-it";
 
 const NoteEditor: React.FC = () => {
   const { selectedFile } = useFileContext();
@@ -10,6 +10,15 @@ const NoteEditor: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const markdownRef = useRef<HTMLDivElement>(null);
+
+  const md = useRef(
+    new MarkdownIt({
+      html: true,
+      linkify: true,
+      typographer: true,
+    }),
+  );
 
   useEffect(() => {
     async function loadNoteContent() {
@@ -42,6 +51,16 @@ const NoteEditor: React.FC = () => {
     loadNoteContent();
     setIsEditing(false);
   }, [selectedFile]);
+
+  useEffect(() => {
+    if (markdownRef.current && !isEditing) {
+      setTimeout(() => {
+        if (markdownRef.current) {
+          markdownRef.current.innerHTML = md.current.render(noteContent);
+        }
+      }, 0);
+    }
+  }, [noteContent, isEditing]);
 
   useEffect(() => {
     if (!selectedFile || !noteContent || loading) return;
@@ -103,9 +122,9 @@ const NoteEditor: React.FC = () => {
     );
   }
 
-  // main editor
+  //main editor
   return (
-    <div className="noteEditor">
+    <div className="p-16 h-full w-full">
       <p>{saveStatus}</p>
       {isEditing ? (
         <textarea
@@ -116,11 +135,11 @@ const NoteEditor: React.FC = () => {
           className="textEditor"
         />
       ) : (
-        <>
-          <div onMouseEnter={handleMouseEnter} className="max-w-prose">
-            <ReactMarkdown>{noteContent}</ReactMarkdown>
-          </div>
-        </>
+        <div
+          ref={markdownRef}
+          onMouseEnter={handleMouseEnter}
+          className="textEditor"
+        ></div>
       )}
     </div>
   );

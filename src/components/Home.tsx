@@ -17,7 +17,7 @@ const Home: React.FC<Props> = () => {
   const currentDate = useCurrentDate();
 
   return (
-    <section className="content home">
+    <section className="content p-16 flex flex-col justify-center items-center">
       {/* Welcome Message */}
       <div className="mb-8 flex flex-col items-center">
         <h1 className="text-3xl font-bold">Welcome to Soma</h1>
