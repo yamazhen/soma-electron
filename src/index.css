@@ -38,7 +38,7 @@ main {
 }
 
 .content {
-  @apply overflow-auto flex-1;
+  @apply flex-1;
 }
 
 .windowControls {
@@ -125,9 +125,9 @@ main {
 }
 
 .noteEditor {
-  @apply p-16;
+  @apply h-full w-full;
 }
 
 .textEditor {
-  @apply appearance-none bg-transparent border-none outline-none w-full h-full;
+  @apply appearance-none bg-transparent border-none outline-none w-full h-full overflow-auto px-16;
 }

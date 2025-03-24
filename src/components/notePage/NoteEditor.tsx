@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useFileContext } from "../context/FileContext";
-import MarkdownIt from "markdown-it";
+import { EditorView } from "codemirror";
+import { EditorState } from "@codemirror/state";
+import { markdown } from "@codemirror/lang-markdown";
+import EditorTopBar from "./EditorTopBar";
+import { createEditorSetup } from "../../utils/editorConfig";
+import { useMarkdownRenderer } from "../../hooks/useMarkdownRenderer";
+import { useNoteAutosave } from "../../hooks/useNoteAutosave";
 
 const NoteEditor: React.FC = () => {
   const { selectedFile } = useFileContext();
@@ -9,16 +15,99 @@ const NoteEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const markdownRef = useRef<HTMLDivElement>(null);
 
-  const md = useRef(
-    new MarkdownIt({
-      html: true,
-      linkify: true,
-      typographer: true,
-    }),
-  );
+  const editorRef = useRef<HTMLDivElement>(null);
+  const editorViewRef = useRef<EditorView | null>(null);
+  const markdownRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<string>("");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { renderMarkdown } = useMarkdownRenderer();
+  const customSetup = createEditorSetup();
+
+  useNoteAutosave({
+    selectedFile,
+    noteContent,
+    loading,
+    setSaveStatus,
+  });
+
+  const toggleEditing = () => {
+    setIsEditing((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (isEditing && editorRef.current) {
+      if (!editorViewRef.current) {
+        const state = EditorState.create({
+          doc: noteContent,
+          extensions: [
+            customSetup,
+            markdown(),
+            EditorView.updateListener.of((update) => {
+              if (update.docChanged) {
+                contentRef.current = update.state.doc.toString();
+                if (saveTimeoutRef.current) {
+                  clearTimeout(saveTimeoutRef.current);
+                }
+                saveTimeoutRef.current = setTimeout(() => {
+                  setNoteContent(contentRef.current);
+                  setSaveStatus("Unsaved changes");
+                }, 1000);
+              }
+            }),
+          ],
+        });
+
+        editorViewRef.current = new EditorView({
+          state,
+          parent: editorRef.current,
+        });
+      }
+    } else if (!isEditing && editorViewRef.current) {
+      contentRef.current = editorViewRef.current.state.doc.toString();
+      setNoteContent(contentRef.current);
+
+      editorViewRef.current.destroy();
+      editorViewRef.current = null;
+    }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [isEditing]);
+
+  useEffect(() => {
+    if (editorViewRef.current && selectedFile) {
+      const currentDoc = editorViewRef.current.state.doc.toString();
+
+      if (noteContent !== currentDoc && noteContent !== contentRef.current) {
+        const state = EditorState.create({
+          doc: noteContent,
+          extensions: [
+            customSetup,
+            markdown(),
+            EditorView.updateListener.of((update) => {
+              if (update.docChanged) {
+                contentRef.current = update.state.doc.toString();
+                if (saveTimeoutRef.current) {
+                  clearTimeout(saveTimeoutRef.current);
+                }
+                saveTimeoutRef.current = setTimeout(() => {
+                  setNoteContent(contentRef.current);
+                  setSaveStatus("Unsaved changes");
+                }, 1000);
+              }
+            }),
+          ],
+        });
+
+        editorViewRef.current.setState(state);
+      }
+    }
+  }, [selectedFile, noteContent]);
 
   useEffect(() => {
     async function loadNoteContent() {
@@ -54,58 +143,10 @@ const NoteEditor: React.FC = () => {
 
   useEffect(() => {
     if (markdownRef.current && !isEditing) {
-      setTimeout(() => {
-        if (markdownRef.current) {
-          markdownRef.current.innerHTML = md.current.render(noteContent);
-        }
-      }, 0);
+      renderMarkdown(markdownRef, noteContent);
     }
-  }, [noteContent, isEditing]);
+  }, [noteContent, isEditing, renderMarkdown]);
 
-  useEffect(() => {
-    if (!selectedFile || !noteContent || loading) return;
-    const saveTimeout = setTimeout(async () => {
-      try {
-        setSaveStatus("Saving...");
-        const success = await window.ipcRenderer.writeMarkdownFile(
-          selectedFile,
-          noteContent,
-        );
-
-        if (success) {
-          setSaveStatus("Saved");
-          setTimeout(() => setSaveStatus(""), 2000);
-        } else {
-          setSaveStatus("Failed to save");
-        }
-      } catch (error) {
-        console.error("Error saving note:", error);
-        setSaveStatus("Failed to save");
-      }
-    }, 500);
-    return () => clearTimeout(saveTimeout);
-  }, [noteContent, selectedFile, loading]);
-
-  const handleMouseEnter = (e: React.MouseEvent) => {
-    setIsEditing(true);
-  };
-
-  const handleMouseLeave = (e: React.MouseEvent) => {
-    setIsEditing(false);
-  };
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNoteContent(e.target.value);
-    setSaveStatus("Unsaved changes");
-  };
-
-  useEffect(() => {
-    if (isEditing && textAreaRef.current) {
-      textAreaRef.current.focus();
-    }
-  }, [isEditing]);
-
-  // other statuses
   if (!selectedFile) return null;
   if (loading) {
     return (
@@ -122,25 +163,23 @@ const NoteEditor: React.FC = () => {
     );
   }
 
-  //main editor
   return (
-    <div className="p-16 h-full w-full">
-      <p>{saveStatus}</p>
-      {isEditing ? (
-        <textarea
-          ref={textAreaRef}
-          value={noteContent}
-          onChange={handleContentChange}
-          onMouseLeave={handleMouseLeave}
-          className="textEditor"
-        />
-      ) : (
-        <div
-          ref={markdownRef}
-          onMouseEnter={handleMouseEnter}
-          className="textEditor"
-        ></div>
-      )}
+    <div className="noteEditor">
+      <EditorTopBar
+        selectedFile={selectedFile}
+        saveStatus={saveStatus}
+        isEditing={isEditing}
+        toggleEditing={toggleEditing}
+      />
+      <div
+        ref={editorRef}
+        className={`textEditor ${isEditing ? "visible" : "hidden"}`}
+      />
+      <div
+        ref={markdownRef}
+        className={`textEditor ${isEditing ? "hidden" : "visible"}`}
+        onClick={toggleEditing}
+      ></div>
     </div>
   );
 };

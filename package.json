@@ -15,8 +15,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/lang-markdown": "^6.3.2",
     "@tailwindcss/vite": "^4.0.13",
     "@tippyjs/react": "^4.2.6",
+    "codemirror": "^6.0.1",
     "lucide-react": "^0.479.0",
     "markdown-it": "^14.1.0",
     "react": "^18.2.0",
