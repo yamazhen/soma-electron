@@ -2,7 +2,6 @@ import fs, { watch } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { BrowserWindow, ipcMain } from "electron";
-import { write } from "original-fs";
 
 let fileWatcher: fs.FSWatcher | null = null;
 
@@ -197,7 +196,6 @@ async function readDirectoryRecursively(
 
     const items = await Promise.all(itemsPromises);
 
-    // Use a type guard to ensure TypeScript understands what we're filtering
     function isFileItem(item: any): item is DirectoryItem | MarkdownItem {
       return item !== null;
     }
@@ -207,7 +205,7 @@ async function readDirectoryRecursively(
     return validItems.sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
-      return b.modifiedAt.getTime() - a.modifiedAt.getTime();
+      return a.name.localeCompare(b.name);
     });
   } catch (error) {
     console.error(`Error reading directory ${directoryPath}:`, error);
