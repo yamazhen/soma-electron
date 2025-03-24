@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useFileContext } from "../context/FileContext";
 import { EditorView } from "codemirror";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Prec } from "@codemirror/state";
 import { markdown } from "@codemirror/lang-markdown";
+import { keymap } from "@codemirror/view";
 import EditorTopBar from "./EditorTopBar";
 import { createEditorSetup } from "../../utils/editorConfig";
 import { useMarkdownRenderer } from "../../hooks/useMarkdownRenderer";
 import { useNoteAutosave } from "../../hooks/useNoteAutosave";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 const NoteEditor: React.FC = () => {
   const { selectedFile } = useFileContext();
@@ -39,11 +42,21 @@ const NoteEditor: React.FC = () => {
   useEffect(() => {
     if (isEditing && editorRef.current) {
       if (!editorViewRef.current) {
+        const escapeHandler = keymap.of([
+          {
+            key: "Escape",
+            run: () => {
+              toggleEditing();
+              return true;
+            },
+          },
+        ]);
         const state = EditorState.create({
           doc: noteContent,
           extensions: [
             customSetup,
             markdown(),
+            Prec.highest(escapeHandler),
             EditorView.updateListener.of((update) => {
               if (update.docChanged) {
                 contentRef.current = update.state.doc.toString();
@@ -63,6 +76,25 @@ const NoteEditor: React.FC = () => {
           state,
           parent: editorRef.current,
         });
+
+        const handleClickOutside = (e: MouseEvent) => {
+          if (
+            editorRef.current &&
+            !editorRef.current.contains(e.target as Node) &&
+            isEditing
+          ) {
+            toggleEditing();
+          }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+          document.removeEventListener("mousedown", handleClickOutside);
+          if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+          }
+        };
       }
     } else if (!isEditing && editorViewRef.current) {
       contentRef.current = editorViewRef.current.state.doc.toString();
@@ -171,15 +203,17 @@ const NoteEditor: React.FC = () => {
         isEditing={isEditing}
         toggleEditing={toggleEditing}
       />
-      <div
-        ref={editorRef}
-        className={`textEditor ${isEditing ? "visible" : "hidden"}`}
-      />
-      <div
-        ref={markdownRef}
-        className={`textEditor ${isEditing ? "hidden" : "visible"}`}
-        onClick={toggleEditing}
-      ></div>
+      <SimpleBar className="editorArea" autoHide={false} scrollbarMaxSize={200}>
+        <div
+          ref={editorRef}
+          className={`textEditor ${isEditing ? "visible" : "hidden"}`}
+        />
+        <div
+          ref={markdownRef}
+          className={`textEditor cursor-text ${isEditing ? "hidden" : "visible"}`}
+          onClick={toggleEditing}
+        ></div>
+      </SimpleBar>
     </div>
   );
 };

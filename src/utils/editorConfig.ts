@@ -3,7 +3,6 @@ import {
   drawSelection,
   dropCursor,
   highlightActiveLine,
-  highlightActiveLineGutter,
   highlightSpecialChars,
   keymap,
   rectangularSelection,
@@ -19,10 +18,24 @@ import {
   defaultHighlightStyle,
   bracketMatching,
   foldKeymap,
+  foldGutter,
 } from "@codemirror/language";
 
+const customTheme = EditorView.theme({
+  "&": {
+    backgroundColor: "var(--color-dark-soma)",
+    color: "var(--color-soma-text-primary)",
+  },
+  ".cm-gutters": {
+    backgroundColor: "var(--color-dark-soma)",
+    border: "none",
+  },
+  "&.cm-focused": {
+    outline: "none",
+  },
+});
+
 export const createEditorSetup = () => [
-  highlightActiveLineGutter(),
   highlightSpecialChars(),
   history(),
   drawSelection(),
@@ -31,6 +44,7 @@ export const createEditorSetup = () => [
   indentOnInput(),
   syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
   bracketMatching(),
+  foldGutter(),
   closeBrackets(),
   rectangularSelection(),
   crosshairCursor(),
@@ -43,9 +57,5 @@ export const createEditorSetup = () => [
     ...historyKeymap,
     ...foldKeymap,
   ]),
-  EditorView.theme({
-    "&.cm-focused": {
-      outline: "none",
-    },
-  }),
+  customTheme,
 ];

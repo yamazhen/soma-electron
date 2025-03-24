@@ -7,6 +7,7 @@ export const useMarkdownRenderer = () => {
       html: true,
       linkify: true,
       typographer: true,
+      breaks: true,
     }),
   );
 
