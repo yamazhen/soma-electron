@@ -19,9 +19,10 @@ export const useNoteAutosave = ({
     const saveTimeout = setTimeout(async () => {
       try {
         setSaveStatus("Saving...");
+        const cleanedContent = noteContent.replace(/ {2,}/g, " ");
         const success = await window.ipcRenderer.writeMarkdownFile(
           selectedFile,
-          noteContent,
+          cleanedContent,
         );
 
         if (success) {

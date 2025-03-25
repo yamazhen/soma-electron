@@ -37,19 +37,19 @@ const EditorTopBar: React.FC<Props> = ({
       <div id="editorPreview" className="flex items-center gap-1">
         {isEditing ? (
           <SideMenuButton
-            tippyContent="Preview"
-            onClick={toggleEditing}
-            tippyPlacement="bottom"
-          >
-            <NotebookPen size={16} strokeWidth={2} />
-          </SideMenuButton>
-        ) : (
-          <SideMenuButton
             tippyContent="Edit"
             onClick={toggleEditing}
             tippyPlacement="bottom"
           >
             <NotebookText size={16} strokeWidth={2} />
+          </SideMenuButton>
+        ) : (
+          <SideMenuButton
+            tippyContent="Preview"
+            onClick={toggleEditing}
+            tippyPlacement="bottom"
+          >
+            <NotebookPen size={16} strokeWidth={2} />
           </SideMenuButton>
         )}
         <SideMenuButton tippyContent="More" tippyPlacement="bottom">
