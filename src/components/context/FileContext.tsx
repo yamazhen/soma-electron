@@ -28,8 +28,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const loadedFiles = await window.ipcRenderer.loadExistingNotes();
       setFiles(loadedFiles);
+      return loadedFiles;
     } catch (error) {
-      console.error("Error loading notes:", error);
+      console.error("Error refreshing files:", error);
+      return [];
     }
   }, []);
 

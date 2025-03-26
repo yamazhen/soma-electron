@@ -56,7 +56,14 @@ interface Window {
     updateFileOrders: (
       orders: Array<{ path: string; parentPath: string; index: number }>,
     ) => Promise<void>;
-    moveFile: (oldPath: string, newPath: string) => Promise<boolean>;
+    moveFile: (
+      oldPath: string,
+      newPath: string,
+    ) => Promise<{ success: boolean; newPath?: string }>;
     getNotesDir: () => Promise<string>;
+    renameFileOrFolder: (
+      oldPath: string,
+      newName: string,
+    ) => Promise<{ success: boolean; newPath?: string }>;
   };
 }

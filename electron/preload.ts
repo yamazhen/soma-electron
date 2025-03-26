@@ -48,4 +48,6 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   moveFile: (oldPath: string, newPath: string) =>
     ipcRenderer.invoke("move-file", oldPath, newPath),
   getNotesDir: () => ipcRenderer.invoke("get-notes-dir"),
+  renameFileOrFolder: (oldPath: string, newName: string) =>
+    ipcRenderer.invoke("rename-file-or-folder", oldPath, newName),
 });

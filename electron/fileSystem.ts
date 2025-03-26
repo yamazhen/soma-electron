@@ -9,6 +9,203 @@ let fileWatcher: fs.FSWatcher | null = null;
 const homeDir = os.homedir();
 const notesDir = path.join(homeDir, "notes");
 
+export function getFileOrder(parentPath: string): Record<string, number> {
+  try {
+    const db = getDatabase();
+    const rows = db
+      .prepare(
+        "SELECT file_path, order_index FROM file_orders WHERE parent_path = ?",
+      )
+      .all(parentPath);
+
+    const orderMap: Record<string, number> = {};
+
+    rows.forEach((row: any) => {
+      orderMap[row.file_path] = row.order_index;
+    });
+
+    return orderMap;
+  } catch (error) {
+    return {};
+  }
+}
+
+export function updateFileOrder(
+  orders: Array<{ path: string; parentPath: string; index: number }>,
+): boolean {
+  try {
+    if (orders.length === 0) {
+      return true;
+    }
+
+    const db = getDatabase();
+
+    db.exec("BEGIN TRANSACTION;");
+
+    try {
+      db.prepare("SELECT * FROM file_orders").all();
+      const stmt = db.prepare(`
+        INSERT INTO file_orders (file_path, parent_path, order_index)
+        VALUES (?, ?, ?)
+        ON CONFLICT(file_path) DO UPDATE SET
+          parent_path = excluded.parent_path,
+          order_index = excluded.order_index
+      `);
+
+      const ordersByParent: Record<
+        string,
+        Array<{ path: string; index: number }>
+      > = {};
+
+      for (const item of orders) {
+        stmt.run(item.path, item.parentPath, item.index);
+
+        if (!ordersByParent[item.parentPath]) {
+          ordersByParent[item.parentPath] = [];
+        }
+        ordersByParent[item.parentPath].push({
+          path: item.path,
+          index: item.index,
+        });
+      }
+
+      db.exec("COMMIT;");
+      return true;
+    } catch (error) {
+      db.exec("ROLLBACK;");
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+async function renameFileOrFolder(
+  oldPath: string,
+  newName: string,
+): Promise<{ success: boolean; newPath?: string }> {
+  try {
+    const dir = path.dirname(oldPath);
+    const ext = path.extname(oldPath);
+    const isDirectory = ext === "";
+
+    const newFilename = isDirectory ? newName : `${newName}${ext}`;
+    const newPath = path.join(dir, newFilename);
+
+    try {
+      await fs.promises.stat(newPath);
+      return {
+        success: false,
+      };
+    } catch (error) {
+      // file does not exist, so we continue
+    }
+
+    await fs.promises.rename(oldPath, newPath);
+
+    const db = getDatabase();
+    const stmt = db.prepare(
+      "update file_orders set file_path = ? where file_path = ?",
+    );
+    stmt.run(newPath, oldPath);
+
+    if (isDirectory) {
+      const updateChildPaths = db.prepare(
+        "update file_orders set file_path = replace(file_path, ?, ?), parent_path = replace(parent_path, ?, ?) where file_path like ? or parent_path like ?",
+      );
+      updateChildPaths.run(
+        oldPath,
+        newPath,
+        oldPath,
+        newPath,
+        `${oldPath}/%`,
+        `${oldPath}/%`,
+      );
+    }
+    return {
+      success: true,
+      newPath: newPath,
+    };
+  } catch (error) {
+    return {
+      success: false,
+    };
+  }
+}
+
+async function readDirectoryRecursively(
+  directoryPath: string,
+): Promise<DirectoryContents> {
+  try {
+    const files = await fs.promises.readdir(directoryPath);
+
+    const itemsPromises = files.map(async (file) => {
+      const filePath = path.join(directoryPath, file);
+      const stats = await fs.promises.stat(filePath);
+      const isDirectory = stats.isDirectory();
+
+      if (isDirectory) {
+        const children = await readDirectoryRecursively(filePath);
+
+        const dirItem: DirectoryItem = {
+          path: filePath,
+          name: file,
+          isDirectory: true,
+          children,
+          createdAt: stats.birthtime,
+          modifiedAt: stats.mtime,
+        };
+        return dirItem;
+      } else if (file.endsWith(".md")) {
+        const mdItem: MarkdownItem = {
+          path: filePath,
+          name: path.basename(file, ".md"),
+          isDirectory: false,
+          createdAt: stats.birthtime,
+          modifiedAt: stats.mtime,
+        };
+        return mdItem;
+      }
+
+      return null;
+    });
+
+    const items = await Promise.all(itemsPromises);
+
+    function isFileItem(item: any): item is DirectoryItem | MarkdownItem {
+      return item !== null;
+    }
+    const validItems = items.filter(isFileItem);
+
+    const orderMap = getFileOrder(directoryPath);
+
+    return validItems.sort((a, b) => {
+      const aIndex =
+        orderMap[a.path] !== undefined
+          ? orderMap[a.path]
+          : Number.MAX_SAFE_INTEGER;
+      const bIndex =
+        orderMap[b.path] !== undefined
+          ? orderMap[b.path]
+          : Number.MAX_SAFE_INTEGER;
+
+      if (
+        aIndex !== Number.MAX_SAFE_INTEGER &&
+        bIndex !== Number.MAX_SAFE_INTEGER
+      ) {
+        return aIndex - bIndex;
+      }
+
+      if (aIndex !== Number.MAX_SAFE_INTEGER) return -1;
+      if (bIndex !== Number.MAX_SAFE_INTEGER) return 1;
+
+      return a.name.localeCompare(b.name);
+    });
+  } catch (error) {
+    return [];
+  }
+}
+
 export async function setupVault(): Promise<void> {
   await fs.promises.mkdir(notesDir, { recursive: true });
 }
@@ -28,27 +225,6 @@ export function getNotesDir(): string {
   return notesDir;
 }
 
-export function getFileOrder(parentPath: string): Record<string, number> {
-  try {
-    const db = getDatabase();
-    const rows = db
-      .prepare(
-        "select file_path, order_index from file_orders where parent_path = ?",
-      )
-      .all(parentPath);
-    const orderMap: Record<string, number> = {};
-
-    rows.forEach((row: any) => {
-      orderMap[row.file_path] = row.order_index;
-    });
-
-    return orderMap;
-  } catch (error) {
-    console.error("Error getting file order", error);
-    return {};
-  }
-}
-
 export function saveFileOrder(
   filePath: string,
   parentPath: string,
@@ -66,38 +242,12 @@ export function saveFileOrder(
   }
 }
 
-export function updateFileOrder(
-  orders: Array<{ path: string; parentPath: string; index: number }>,
-): boolean {
-  try {
-    const db = getDatabase();
-    const stmt =
-      db.prepare(`insert into file_orders (file_path, parent_path, order_index)
-values (?, ?, ?) on conflict(file_path) do update set order_index = ?`);
-
-    const transaction = db.transaction(
-      (items: Array<{ path: string; parentPath: string; index: number }>) => {
-        for (const item of items) {
-          stmt.run(item.path, item.parentPath, item.index, item.index);
-        }
-      },
-    );
-
-    transaction(orders);
-    return true;
-  } catch (error) {
-    console.error("Error updating file order", error);
-    return false;
-  }
-}
-
 export async function readMarkdownFile(
   filePath: string,
 ): Promise<MarkdownItem | null> {
   try {
     const stats = await fs.promises.stat(filePath);
     if (!stats.isFile()) {
-      console.error("Not a file:", filePath);
       return null;
     }
 
@@ -111,7 +261,6 @@ export async function readMarkdownFile(
       modifiedAt: stats.mtime,
     };
   } catch (error) {
-    console.error("Error reading markdown file", error);
     return null;
   }
 }
@@ -171,7 +320,6 @@ export async function createFolder(): Promise<DirectoryItem | null> {
       modifiedAt: new Date(),
     };
   } catch (error) {
-    console.error("Error creating folder", error);
     return null;
   }
 }
@@ -221,70 +369,7 @@ export async function createMarkdownFile(): Promise<MarkdownItem | null> {
       modifiedAt: new Date(),
     };
   } catch (error) {
-    console.error("Error creating markdown file", error);
     return null;
-  }
-}
-
-async function readDirectoryRecursively(
-  directoryPath: string,
-): Promise<DirectoryContents> {
-  try {
-    const files = await fs.promises.readdir(directoryPath);
-
-    const itemsPromises = files.map(async (file) => {
-      const filePath = path.join(directoryPath, file);
-      const stats = await fs.promises.stat(filePath);
-      const isDirectory = stats.isDirectory();
-
-      if (isDirectory) {
-        const children = await readDirectoryRecursively(filePath);
-        const dirItem: DirectoryItem = {
-          path: filePath,
-          name: file,
-          isDirectory: true,
-          children,
-          createdAt: stats.birthtime,
-          modifiedAt: stats.mtime,
-        };
-        return dirItem;
-      } else if (file.endsWith(".md")) {
-        const mdItem: MarkdownItem = {
-          path: filePath,
-          name: path.basename(file, ".md"),
-          isDirectory: false,
-          createdAt: stats.birthtime,
-          modifiedAt: stats.mtime,
-        };
-        return mdItem;
-      }
-
-      return null;
-    });
-
-    const items = await Promise.all(itemsPromises);
-
-    function isFileItem(item: any): item is DirectoryItem | MarkdownItem {
-      return item !== null;
-    }
-
-    const validItems = items.filter(isFileItem);
-
-    const orderMap = getFileOrder(directoryPath);
-
-    return validItems.sort((a, b) => {
-      const aHasIndex = orderMap[a.path] !== undefined;
-      const bHasIndex = orderMap[b.path] !== undefined;
-      if (aHasIndex && bHasIndex) {
-        return orderMap[a.path] - orderMap[b.path];
-      }
-      if (aHasIndex) return -1;
-      if (bHasIndex) return 1;
-      return a.name.localeCompare(b.name);
-    });
-  } catch (error) {
-    console.error(`Error reading directory ${directoryPath}:`, error);
-    return [];
   }
 }
 
@@ -292,7 +377,6 @@ export async function loadExistingNotes() {
   try {
     return await readDirectoryRecursively(notesDir);
   } catch (error) {
-    console.error("Error loading existing notes:", error);
     return [];
   }
 }
@@ -305,45 +389,88 @@ export async function writeMarkdownFile(
     await fs.promises.writeFile(filePath, content, "utf-8");
     return true;
   } catch (error) {
-    console.error("Error writing markdown file", error);
     return false;
   }
 }
 
 export async function moveFile(
   oldPath: string,
-  newPath: string,
-): Promise<boolean> {
+  targetDir: string,
+): Promise<{ success: boolean; newPath?: string }> {
   try {
-    await fs.promises.mkdir(path.dirname(newPath), { recursive: true });
+    const fileName = path.basename(oldPath);
+    const newPath = path.join(targetDir, fileName);
+
+    try {
+      await fs.promises.stat(newPath);
+      if (oldPath !== newPath) {
+        const ext = path.extname(fileName);
+        const nameWithoutExt = path.basename(fileName, ext);
+        const uniqueName = `${nameWithoutExt}-${Date.now()}${ext}`;
+        const uniquePath = path.join(targetDir, uniqueName);
+
+        await fs.promises.mkdir(path.dirname(uniquePath), { recursive: true });
+        await fs.promises.rename(oldPath, uniquePath);
+
+        const db = getDatabase();
+        const stmt = db.prepare(
+          "UPDATE file_orders SET file_path = ?, parent_path = ? WHERE file_path = ?",
+        );
+        stmt.run(uniquePath, targetDir, oldPath);
+        return {
+          success: true,
+          newPath: uniquePath,
+        };
+      }
+    } catch (error) {
+      // File does not exist, so we continue
+    }
+    await fs.promises.mkdir(targetDir, { recursive: true });
     await fs.promises.rename(oldPath, newPath);
-    return true;
+
+    const db = getDatabase();
+    const stmt = db.prepare(
+      "UPDATE file_orders SET file_path = ?, parent_path = ? WHERE file_path = ?",
+    );
+    stmt.run(newPath, targetDir, oldPath);
+
+    return {
+      success: true,
+      newPath: newPath,
+    };
   } catch (error) {
-    console.error("Error moving file", error);
-    return false;
+    return {
+      success: false,
+    };
   }
 }
 
 export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
   await setupVault();
+
   ipcMain.handle("create-markdown-file", async () => {
     return await createMarkdownFile();
   });
+
   ipcMain.handle("load-existing-notes", async () => {
     return await loadExistingNotes();
   });
+
   ipcMain.handle("create-folder", async () => {
     return await createFolder();
   });
+
   ipcMain.handle("read-markdown-file", async (_, filePath: string) => {
     return await readMarkdownFile(filePath);
   });
+
   ipcMain.handle(
     "write-markdown-file",
     async (_, filePath: string, content: string) => {
       return await writeMarkdownFile(filePath, content);
     },
   );
+
   ipcMain.handle(
     "update-file-orders",
     async (
@@ -353,14 +480,22 @@ export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
       return updateFileOrder(orders);
     },
   );
+
   ipcMain.handle("get-file-order", async (_, parentPath: string) => {
     return getFileOrder(parentPath);
   });
+
   ipcMain.handle("move-file", async (_, oldPath: string, newPath: string) => {
     return moveFile(oldPath, newPath);
   });
+
   ipcMain.handle("get-notes-dir", () => {
     return getNotesDir();
   });
+
+  ipcMain.handle("rename-file", async (_, oldPath: string, newName: string) => {
+    return renameFileOrFolder(oldPath, newName);
+  });
+
   startFileWatcher(mainWindow);
 }
