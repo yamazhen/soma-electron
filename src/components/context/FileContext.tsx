@@ -30,7 +30,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
       setFiles(loadedFiles);
       return loadedFiles;
     } catch (error) {
-      console.error("Error refreshing files:", error);
       return [];
     }
   }, []);

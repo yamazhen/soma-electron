@@ -31,7 +31,6 @@ export const useNoteAutosave = ({
           setSaveStatus("Failed to save");
         }
       } catch (error) {
-        console.error("Error saving note:", error);
         setSaveStatus("Failed to save");
       }
     }, 500);

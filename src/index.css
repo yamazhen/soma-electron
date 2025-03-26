@@ -26,7 +26,7 @@
 }
 
 body {
-  @apply bg-soma-darkest text-soma-text-primary select-none;
+  @apply bg-soma-darkest text-soma-text-primary;
 }
 
 main {
@@ -35,6 +35,10 @@ main {
 
 :focus {
   @apply outline-none ring-0;
+}
+
+input::selection {
+  @apply bg-soma-accent2 text-soma-darkest;
 }
 
 .container {
@@ -154,6 +158,9 @@ main {
   @apply appearance-none bg-transparent border-none outline-none w-full h-full;
 }
 
+.textEditor ::selection {
+  @apply bg-soma-accent2 text-soma-darkest;
+}
 .textEditor h1 {
   @apply text-3xl font-bold underline;
 }
@@ -238,4 +245,20 @@ main {
   width: 1px;
   background-color: var(--color-soma-light);
   height: 26px;
+}
+
+/* Target the react-arborist elements */
+.react-arborist .drop-indicator {
+  background-color: #5183f5 !important; /* Your preferred highlight color */
+  height: 2px !important;
+}
+
+.react-arborist .drop-target {
+  background-color: rgba(81, 131, 245, 0.1) !important;
+  border: 1px dashed #5183f5 !important;
+  border-radius: 4px !important;
+}
+
+.react-arborist .drag-source {
+  opacity: 0.5 !important;
 }

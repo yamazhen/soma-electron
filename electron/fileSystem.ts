@@ -493,9 +493,12 @@ export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
     return getNotesDir();
   });
 
-  ipcMain.handle("rename-file", async (_, oldPath: string, newName: string) => {
-    return renameFileOrFolder(oldPath, newName);
-  });
+  ipcMain.handle(
+    "rename-file-or-folder",
+    async (_, oldPath: string, newName: string) => {
+      return renameFileOrFolder(oldPath, newName);
+    },
+  );
 
   startFileWatcher(mainWindow);
 }

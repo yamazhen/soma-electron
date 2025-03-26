@@ -49,7 +49,6 @@ const NoteEditor: React.FC = () => {
         const result = await window.ipcRenderer.readMarkdownFile(selectedFile);
 
         if (result && result.content) {
-          console.log("Loaded note content:", result.content);
           setNoteContent(result.content);
         } else {
           setNoteContent("");
