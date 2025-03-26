@@ -1,16 +1,45 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import SideMenuButton from "./SideMenuButton";
 import {
   ArrowUpNarrowWideIcon,
+  ChevronRight,
   ChevronsUpDown,
   FilePenLine,
   FolderPlus,
 } from "lucide-react";
 import { useFileContext } from "../context/FileContext";
+import { NodeRendererProps, Tree } from "react-arborist";
 
 type Props = {
   explorerExpanded: boolean;
 };
+
+interface TreeNode {
+  id: string;
+  name: string;
+  isFolder: boolean;
+  children?: TreeNode[];
+  data: DirectoryItem | MarkdownItem;
+}
+
+function getParentPath(filePath: string) {
+  const lastSlashIndex = filePath.lastIndexOf("/");
+  if (lastSlashIndex <= 0) return filePath;
+  return filePath.substring(0, lastSlashIndex);
+}
+
+function getBaseName(filePath: string) {
+  const parts = filePath.replace(/\\/g, "/").split("/");
+  return parts.pop() || "";
+}
+
+function joinPaths(parentPath: string, childPath: string): string {
+  if (parentPath.endsWith("/") || parentPath.endsWith("\\")) {
+    return parentPath + childPath;
+  } else {
+    return parentPath + "/" + childPath;
+  }
+}
 
 const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
   const {
@@ -19,49 +48,110 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
     setSelectedFile,
     handleCreateNote,
     handleCreateFolder,
+    refreshFiles,
   } = useFileContext();
+  const [designatedRoot, setDesignatedRoot] = useState<string>("");
 
-  const findFileInNotes = (
-    notes: DirectoryContents,
-    filePath: string,
-  ): boolean => {
-    for (const item of notes) {
-      if (item.path === filePath) {
-        return true;
-      }
-      if (item.isDirectory) {
-        if (findFileInNotes(item.children, filePath)) {
-          return true;
+  useEffect(() => {
+    window.ipcRenderer.getNotesDir().then((root: string) => {
+      setDesignatedRoot(root);
+    });
+  });
+
+  const transformToTreeData = (items: DirectoryContents): TreeNode[] => {
+    return items.map((item) => ({
+      id: item.path,
+      name: item.name,
+      isFolder: item.isDirectory,
+      children: item.isDirectory
+        ? transformToTreeData(item.children)
+        : undefined,
+      data: item,
+    }));
+  };
+  const treeData = transformToTreeData(files);
+
+  const handleMove = useCallback(
+    async (args: {
+      dragIds: string[];
+      dragNodes: any[];
+      parentId: string | null;
+      parentNode: any | null;
+      index: number;
+    }) => {
+      const { dragIds, parentId, index } = args;
+      const newParentPath = parentId != null ? parentId : designatedRoot;
+
+      for (const dragId of dragIds) {
+        const item = files.find((f) => f.path === dragId);
+        if (!item) continue;
+        const currentParentPath = getParentPath(item.path);
+        if (currentParentPath !== newParentPath) {
+          const newPath = joinPaths(newParentPath, getBaseName(item.path));
+          await window.ipcRenderer.moveFile(item.path, newPath);
         }
       }
-    }
-    return false;
-  };
 
-  const renderItems = (items: DirectoryContents) => {
-    return items.map((item) => {
-      if (item.isDirectory) {
-        return (
-          <li key={item.path}>
-            📁 {item.name}
-            <ul className="ml-4">{renderItems(item.children)}</ul>
-          </li>
-        );
-      } else {
-        return (
-          <li
-            key={item.path}
-            className={
-              selectedFile === item.path ? "activeNote" : "inactiveNote"
-            }
-            onClick={() => setSelectedFile(item.path)}
-          >
-            {item.name}
-          </li>
-        );
-      }
-    });
-  };
+      const itemsInDirectory = files.filter(
+        (item) => getParentPath(item.path) === newParentPath,
+      );
+
+      let newOrder = itemsInDirectory.map((item) => item.path);
+      newOrder = newOrder.filter((path) => !dragIds.includes(path));
+      newOrder.splice(index, 0, ...dragIds);
+
+      const ordersToUpdate = newOrder.map((path, i) => ({
+        path,
+        parentPath: newParentPath,
+        index: i,
+      }));
+      console.log("New order:", ordersToUpdate);
+
+      window.ipcRenderer.updateFileOrders(ordersToUpdate).then(() => {
+        setTimeout(() => {
+          refreshFiles();
+        }, 100);
+      });
+    },
+    [refreshFiles, files],
+  );
+
+  const Node = useCallback(
+    ({ node, style, dragHandle }: NodeRendererProps<TreeNode>) => {
+      const folder = node.data.isFolder;
+      const isSelected = !folder && selectedFile === node.data.data.path;
+      const levelClass = `fileLevel-${node.level}`;
+      return (
+        <div
+          style={style}
+          ref={dragHandle}
+          className={`flex items-center gap-1 ${isSelected ? "activeNote" : "inactiveNote"} ${levelClass}`}
+          onClick={() => {
+            if (folder) {
+              node.toggle();
+            } else setSelectedFile(node.data.data.path);
+          }}
+        >
+          <div className="flex items-center h-4">
+            {Array.from({ length: node.level }).map((_, index) => (
+              <span key={index} className="w-4 fileIndentList"></span>
+            ))}
+            {folder ? (
+              <ChevronRight
+                strokeWidth={1.5}
+                className={`w-4 transition-transform duration-200 ${node.isOpen ? "rotate-90" : "rotate-0"}`}
+              />
+            ) : (
+              <span className="w-4"></span>
+            )}
+          </div>
+          <span>{node.data.name}</span>
+        </div>
+      );
+    },
+    [selectedFile, setSelectedFile],
+  );
+
   return (
     <section
       className={`explorerContainer ${explorerExpanded ? "expanded" : "collapsed"}`}
@@ -92,9 +182,20 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
             <ChevronsUpDown size={18} strokeWidth={1.5} />
           </SideMenuButton>
         </div>
-        <ul className="flex flex-col gap-1" role="list">
-          {files.length > 0 ? renderItems(files) : <li>No notes</li>}
-        </ul>
+        {files.length > 0 ? (
+          <Tree<TreeNode>
+            data={treeData}
+            indent={16}
+            openByDefault={false}
+            rowHeight={26}
+            width="100%"
+            onMove={handleMove}
+          >
+            {Node}
+          </Tree>
+        ) : (
+          <p>No notes</p>
+        )}
       </div>
     </section>
   );

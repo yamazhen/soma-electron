@@ -1,6 +1,5 @@
 import { ipcRenderer, contextBridge } from "electron";
 
-// --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args;
@@ -41,4 +40,12 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
     ipcRenderer.invoke("read-markdown-file", path),
   writeMarkdownFile: (path: string, content: string) =>
     ipcRenderer.invoke("write-markdown-file", path, content),
+  getFileOrder: (parentPath: string) =>
+    ipcRenderer.invoke("get-file-order", parentPath),
+  updateFileOrders: (
+    orders: Array<{ path: string; parentPath: string; index: number }>,
+  ) => ipcRenderer.invoke("update-file-orders", orders),
+  moveFile: (oldPath: string, newPath: string) =>
+    ipcRenderer.invoke("move-file", oldPath, newPath),
+  getNotesDir: () => ipcRenderer.invoke("get-notes-dir"),
 });

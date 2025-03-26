@@ -12,7 +12,8 @@
     "build:win": "tsc && vite build && electron-builder --win",
     "build:linux": "tsc && vite build && electron-builder --linux",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postInstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.13",
@@ -20,15 +21,19 @@
     "@tiptap/pm": "^2.11.5",
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
+    "better-sqlite3": "^11.9.1",
+    "chokidar": "^4.0.3",
     "lucide-react": "^0.479.0",
     "markdown-it": "^14.1.0",
     "react": "^18.2.0",
+    "react-arborist": "^3.4.3",
     "react-dom": "^18.2.0",
     "simplebar-react": "^3.3.0",
     "tailwindcss": "^4.0.13",
     "tiptap-markdown": "^0.8.10"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
     "@types/markdown-it": "^14.1.2",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",

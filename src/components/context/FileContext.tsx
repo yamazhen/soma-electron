@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 
 interface FileContextType {
   files: DirectoryContents;
@@ -7,6 +13,7 @@ interface FileContextType {
   setSelectedFile: (path: string | null) => void;
   handleCreateNote: () => Promise<void>;
   handleCreateFolder: () => Promise<void>;
+  refreshFiles: () => Promise<void>;
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined);
@@ -16,6 +23,23 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [files, setFiles] = useState<DirectoryContents>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  const refreshFiles = useCallback(async () => {
+    try {
+      const loadedFiles = await window.ipcRenderer.loadExistingNotes();
+      setFiles(loadedFiles);
+    } catch (error) {
+      console.error("Error loading notes:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshFiles();
+    const unsubscribe = window.ipcRenderer.onFileSystemChanged(refreshFiles);
+    return () => {
+      unsubscribe();
+    };
+  }, [refreshFiles]);
 
   const findFileInNotes = (
     notes: DirectoryContents,
@@ -96,6 +120,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     loadNotes,
     handleCreateNote,
     handleCreateFolder,
+    refreshFiles,
   };
 
   return <FileContext.Provider value={value}>{children}</FileContext.Provider>;

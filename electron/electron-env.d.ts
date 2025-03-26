@@ -28,6 +28,9 @@ interface MarkdownItem extends FileItem {
 type DirectoryContents = (DirectoryItem | MarkdownItem)[];
 
 interface Window {
+  appConfig: {
+    notesDir: string;
+  };
   ipcRenderer: {
     on: (
       channel: string,
@@ -46,8 +49,14 @@ interface Window {
     createMarkdownFile: () => Promise<MarkdownItem | null>;
     loadExistingNotes: () => Promise<DirectoryContents>;
     createFolder: () => Promise<DirectoryItem | null>;
-    onFileSystemChanged: (callback: () => void) => () => void;
     readMarkdownFile: (path: string) => Promise<MarkdownItem | null>;
     writeMarkdownFile: (path: string, content: string) => Promise<boolean>;
+    getFileOrder: (parentPath: string) => Promise<number[]>;
+    onFileSystemChanged: (callback: () => void) => () => void;
+    updateFileOrders: (
+      orders: Array<{ path: string; parentPath: string; index: number }>,
+    ) => Promise<void>;
+    moveFile: (oldPath: string, newPath: string) => Promise<boolean>;
+    getNotesDir: () => Promise<string>;
   };
 }

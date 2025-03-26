@@ -4,7 +4,7 @@ type Props = {};
 
 const Flashcard: React.FC<Props> = () => {
   return (
-    <section className="content">
+    <section className="content flex justify-center items-center">
       <h1>Soma Flashcards</h1>
     </section>
   );

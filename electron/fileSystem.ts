@@ -2,6 +2,7 @@ import fs, { watch } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { BrowserWindow, ipcMain } from "electron";
+import { getDatabase } from "./database";
 
 let fileWatcher: fs.FSWatcher | null = null;
 
@@ -21,6 +22,73 @@ export function startFileWatcher(mainWindow: BrowserWindow) {
       mainWindow.webContents.send("file-system-changed");
     }
   });
+}
+
+export function getNotesDir(): string {
+  return notesDir;
+}
+
+export function getFileOrder(parentPath: string): Record<string, number> {
+  try {
+    const db = getDatabase();
+    const rows = db
+      .prepare(
+        "select file_path, order_index from file_orders where parent_path = ?",
+      )
+      .all(parentPath);
+    const orderMap: Record<string, number> = {};
+
+    rows.forEach((row: any) => {
+      orderMap[row.file_path] = row.order_index;
+    });
+
+    return orderMap;
+  } catch (error) {
+    console.error("Error getting file order", error);
+    return {};
+  }
+}
+
+export function saveFileOrder(
+  filePath: string,
+  parentPath: string,
+  index: number,
+) {
+  try {
+    const db = getDatabase();
+    const stmt =
+      db.prepare(`insert into file_orders (file_path, parent_path, order_index)
+                            values (?, ?, ?) on conflict(file_path) do update set order_index = ?`);
+    stmt.run(filePath, parentPath, index, index);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export function updateFileOrder(
+  orders: Array<{ path: string; parentPath: string; index: number }>,
+): boolean {
+  try {
+    const db = getDatabase();
+    const stmt =
+      db.prepare(`insert into file_orders (file_path, parent_path, order_index)
+values (?, ?, ?) on conflict(file_path) do update set order_index = ?`);
+
+    const transaction = db.transaction(
+      (items: Array<{ path: string; parentPath: string; index: number }>) => {
+        for (const item of items) {
+          stmt.run(item.path, item.parentPath, item.index, item.index);
+        }
+      },
+    );
+
+    transaction(orders);
+    return true;
+  } catch (error) {
+    console.error("Error updating file order", error);
+    return false;
+  }
 }
 
 export async function readMarkdownFile(
@@ -202,9 +270,16 @@ async function readDirectoryRecursively(
 
     const validItems = items.filter(isFileItem);
 
+    const orderMap = getFileOrder(directoryPath);
+
     return validItems.sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
+      const aHasIndex = orderMap[a.path] !== undefined;
+      const bHasIndex = orderMap[b.path] !== undefined;
+      if (aHasIndex && bHasIndex) {
+        return orderMap[a.path] - orderMap[b.path];
+      }
+      if (aHasIndex) return -1;
+      if (bHasIndex) return 1;
       return a.name.localeCompare(b.name);
     });
   } catch (error) {
@@ -235,6 +310,20 @@ export async function writeMarkdownFile(
   }
 }
 
+export async function moveFile(
+  oldPath: string,
+  newPath: string,
+): Promise<boolean> {
+  try {
+    await fs.promises.mkdir(path.dirname(newPath), { recursive: true });
+    await fs.promises.rename(oldPath, newPath);
+    return true;
+  } catch (error) {
+    console.error("Error moving file", error);
+    return false;
+  }
+}
+
 export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
   await setupVault();
   ipcMain.handle("create-markdown-file", async () => {
@@ -255,5 +344,23 @@ export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
       return await writeMarkdownFile(filePath, content);
     },
   );
+  ipcMain.handle(
+    "update-file-orders",
+    async (
+      _,
+      orders: Array<{ path: string; parentPath: string; index: number }>,
+    ) => {
+      return updateFileOrder(orders);
+    },
+  );
+  ipcMain.handle("get-file-order", async (_, parentPath: string) => {
+    return getFileOrder(parentPath);
+  });
+  ipcMain.handle("move-file", async (_, oldPath: string, newPath: string) => {
+    return moveFile(oldPath, newPath);
+  });
+  ipcMain.handle("get-notes-dir", () => {
+    return getNotesDir();
+  });
   startFileWatcher(mainWindow);
 }
