@@ -6,6 +6,7 @@ import Notes from "./features/notes/Notes";
 import Quiz from "./features/quiz/Quiz";
 import Flashcard from "./features/flashcard/Flashcard";
 import Home from "./features/home/Home";
+import { NoteProvider } from "./context/NoteContext";
 
 function App() {
   const { activePage } = usePage();
@@ -15,11 +16,13 @@ function App() {
       <TitleBar />
       <div className="container">
         <FileProvider>
-          <SideMenu />
-          {activePage === "notes" && <Notes />}
-          {activePage === "home" && <Home />}
-          {activePage === "quiz" && <Quiz />}
-          {activePage === "flashcard" && <Flashcard />}
+          <NoteProvider>
+            <SideMenu />
+            {activePage === "notes" && <Notes />}
+            {activePage === "home" && <Home />}
+            {activePage === "quiz" && <Quiz />}
+            {activePage === "flashcard" && <Flashcard />}
+          </NoteProvider>
         </FileProvider>
       </div>
     </main>

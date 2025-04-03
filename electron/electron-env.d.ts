@@ -80,7 +80,9 @@ interface Window {
     close: () => void;
 
     // File operations
-    createMarkdownFile: () => Promise<MarkdownItem | null>;
+    createMarkdownFile: (
+      customFileName?: string,
+    ) => Promise<MarkdownItem | null>;
     loadExistingNotes: (
       sortMethod: SortMethod,
       folderCheck?: boolean,

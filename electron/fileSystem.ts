@@ -408,37 +408,44 @@ export async function createFolder(): Promise<DirectoryItem | null> {
   }
 }
 
-export async function createMarkdownFile(): Promise<MarkdownItem | null> {
+export async function createMarkdownFile(
+  customFileName?: string,
+): Promise<MarkdownItem | null> {
   try {
-    const files = await fs.promises.readdir(notesDir);
-    const untitledPattern = /^Untitled(?:\s(\d+))?\.md$/;
-    const existingNumbers = files
-      .filter((file) => untitledPattern.test(file))
-      .map((file) => {
-        const match = file.match(untitledPattern);
-        if (!match) return 0;
-        return match[1] ? parseInt(match[1], 10) : 0;
-      })
-      .sort((a, b) => a - b);
+    let fileName, displayName;
 
-    let nextNumber = 0;
-    let found = false;
+    if (customFileName && customFileName.trim() !== "") {
+      displayName = customFileName.trim();
+      fileName = `${displayName}.md`;
+    } else {
+      const files = await fs.promises.readdir(notesDir);
+      const untitledPattern = /^Untitled(?:\s(\d+))?\.md$/;
+      const existingNumbers = files
+        .filter((file) => untitledPattern.test(file))
+        .map((file) => {
+          const match = file.match(untitledPattern);
+          if (!match) return 0;
+          return match[1] ? parseInt(match[1], 10) : 0;
+        })
+        .sort((a, b) => a - b);
 
-    for (const num of existingNumbers) {
-      if (num !== nextNumber) {
-        found = true;
-        break;
+      let nextNumber = 0;
+      let found = false;
+      for (const num of existingNumbers) {
+        if (num !== nextNumber) {
+          found = true;
+          break;
+        }
+        nextNumber++;
       }
-      nextNumber++;
+      if (!found && existingNumbers.length > 0) {
+        nextNumber = existingNumbers[existingNumbers.length - 1] + 1;
+      }
+
+      displayName = nextNumber === 0 ? "Untitled" : `Untitled ${nextNumber}`;
+      fileName = `${displayName}.md`;
     }
 
-    if (!found && existingNumbers.length > 0) {
-      nextNumber = existingNumbers[existingNumbers.length - 1] + 1;
-    }
-
-    const displayName =
-      nextNumber === 0 ? "Untitled" : `Untitled ${nextNumber}`;
-    const fileName = `${displayName}.md`;
     const filePath = path.join(notesDir, fileName);
     const fileContent = `# ${displayName}\n\nThis is a new note created on ${new Date().toLocaleDateString()}.\n`;
 
@@ -535,8 +542,8 @@ export async function moveFile(
 export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
   await setupVault();
 
-  ipcMain.handle("create-markdown-file", async () => {
-    return await createMarkdownFile();
+  ipcMain.handle("create-markdown-file", async (_, customFileName?: string) => {
+    return await createMarkdownFile(customFileName);
   });
 
   ipcMain.handle(

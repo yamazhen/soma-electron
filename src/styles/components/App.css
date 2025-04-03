@@ -118,7 +118,7 @@
 }
 
 .textEditor {
-  @apply appearance-none bg-transparent border-none outline-none w-auto h-auto;
+  @apply appearance-none bg-transparent border-none outline-none w-auto h-auto cursor-text;
 }
 
 .textEditor ::selection {

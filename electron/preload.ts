@@ -25,7 +25,8 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
 
   // You can expose other APTs you need here.
   // ...
-  createMarkdownFile: () => ipcRenderer.invoke("create-markdown-file"),
+  createMarkdownFile: (customFileName?: string) =>
+    ipcRenderer.invoke("create-markdown-file", customFileName),
   loadExistingNotes: (sortMethod: SortMethod, folderCheck: boolean = true) =>
     ipcRenderer.invoke("load-existing-notes", sortMethod, folderCheck),
   createFolder: () => ipcRenderer.invoke("create-folder"),

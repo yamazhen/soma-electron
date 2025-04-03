@@ -33,14 +33,13 @@ const EditorTopBar: React.FC<Props> = ({
       </div>
       <div id="filename" className="flex gap-2 items-center">
         <p>{fileName}</p>
-        {isSaving && (
-          <Save
-            size={16}
-            strokeWidth={1}
-            className="animate-pulse text-soma-success"
-          />
-        )}
-        <p>{isSaving}</p>
+        <Save
+          size={16}
+          strokeWidth={1.5}
+          className={`text-soma-lightest transition-opacity duration-200 ${
+            isSaving ? "opacity-100 animate-pulse" : "opacity-0"
+          }`}
+        />
       </div>
       <div id="editorPreview" className="flex items-center gap-1">
         {isEditing ? (

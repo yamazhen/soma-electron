@@ -8,6 +8,7 @@ import {
   ChevronsUpDown,
   FilePenLine,
   FolderPlus,
+  NotepadTextDashed,
 } from "lucide-react";
 import FileTree from "./FileTree";
 import { useFileContext } from "../../../context/FileContext";
@@ -119,7 +120,13 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
         {files.length > 0 ? (
           <FileTree treeData={treeData} ref={fileTreeRef} />
         ) : (
-          <p>No notes</p>
+          <div className="flex flex-col items-center justify-center text-center text-muted p-8 opacity-70">
+            <NotepadTextDashed size={48} className="mb-2" />
+            <p className="text-lg">No notes yet</p>
+            <p className="text-sm text-muted-foreground">
+              Start by creating a new one
+            </p>
+          </div>
         )}
       </div>
     </section>

@@ -12,10 +12,14 @@ import {
   Settings,
 } from "lucide-react";
 import { usePage } from "../../context/PageContext";
+import { useNoteContext } from "../../context/NoteContext";
+import { useFileContext } from "../../context/FileContext";
 
 const SideMenu: React.FC = () => {
   const { activePage } = usePage();
   const [explorerExpanded, setExplorerExpanded] = useState(true);
+  const { toggleMindMap } = useNoteContext();
+  const { createOrOpenTodaysNote } = useFileContext();
 
   const toggleExplorer = () => {
     setExplorerExpanded((prev) => !prev);
@@ -44,11 +48,15 @@ const SideMenu: React.FC = () => {
             <SideMenuButton tippyContent="Search Note" className="mt-2">
               <FileSearch size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Mind Map">
+            <SideMenuButton tippyContent="Mind Map" onClick={toggleMindMap}>
               <BrainCircuit size={18} strokeWidth={1.5} />
             </SideMenuButton>
             <SideMenuButton tippyContent="Today's Note">
-              <Calendar size={18} strokeWidth={1.5} />
+              <Calendar
+                size={18}
+                strokeWidth={1.5}
+                onClick={createOrOpenTodaysNote}
+              />
             </SideMenuButton>
           </div>
         );

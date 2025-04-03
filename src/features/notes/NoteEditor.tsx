@@ -6,7 +6,7 @@ import { useMarkdownRenderer } from "../../hooks/ui/useMarkdownRenderer";
 import { useNoteAutosave } from "../../hooks/notes/useNoteAutosave";
 
 const NoteEditor: React.FC = () => {
-  const { selectedFile, fileName } = useFileContext();
+  const { selectedFile, fileName, files } = useFileContext();
   const [noteContent, setNoteContent] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +44,11 @@ const NoteEditor: React.FC = () => {
       setError(null);
 
       try {
-        const result = await window.ipcRenderer.readMarkdownFile(selectedFile);
+        if (files.length === 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
 
+        const result = await window.ipcRenderer.readMarkdownFile(selectedFile);
         if (result && result.content) {
           setNoteContent(result.content);
         } else {
@@ -62,7 +65,7 @@ const NoteEditor: React.FC = () => {
 
     loadNoteContent();
     setIsEditing(true);
-  }, [selectedFile]);
+  }, [selectedFile, files.length]);
 
   useEffect(() => {
     if (markdownRef.current && !isEditing) {
@@ -95,15 +98,15 @@ const NoteEditor: React.FC = () => {
         fileName={fileName}
       />
       <div className="editorArea">
-        <TiptapEditor
-          noteContent={noteContent}
-          onChange={handleContentChange}
-          className="textEditor"
-        />
-        <div
-          ref={markdownRef}
-          className={`textEditor cursor-text ${isEditing ? "hidden" : "visible"}`}
-        ></div>
+        {isEditing ? (
+          <TiptapEditor
+            noteContent={noteContent}
+            onChange={handleContentChange}
+            className="textEditor"
+          />
+        ) : (
+          <div ref={markdownRef} className="textEditor"></div>
+        )}
       </div>
     </div>
   );

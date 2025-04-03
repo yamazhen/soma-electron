@@ -16,6 +16,7 @@ interface FileContextType {
   fileName: string | null;
   sortMethod: string;
   changeSortMethod: (method: SortMethod) => void;
+  createOrOpenTodaysNote: () => Promise<void>;
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined);
@@ -75,10 +76,29 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [selectedFile, sortMethod]);
 
+  const createOrOpenTodaysNote = async () => {
+    const today = new Date();
+    const options = {
+      day: "numeric" as const,
+      month: "long" as const,
+      year: "numeric" as const,
+    };
+    const dateString = today.toLocaleDateString("en-US", options);
+    const existingFile = files.find(
+      (file) => !file.isDirectory && file.name === dateString,
+    );
+    if (existingFile) {
+      setSelectedFile(existingFile.path);
+    } else {
+      await handleCreateNote(dateString);
+    }
+  };
+
   // function to create a new note
-  const handleCreateNote = async () => {
+  const handleCreateNote = async (customFileName?: string) => {
     try {
-      const result = await window.ipcRenderer.createMarkdownFile();
+      const result =
+        await window.ipcRenderer.createMarkdownFile(customFileName);
       if (result) {
         await loadNotes();
         setSelectedFile(result.path);
@@ -121,6 +141,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     fileName,
     sortMethod,
     changeSortMethod,
+    createOrOpenTodaysNote,
   };
 
   return <FileContext.Provider value={value}>{children}</FileContext.Provider>;
