@@ -417,7 +417,7 @@ export async function createMarkdownFile(
     if (customFileName && customFileName.trim() !== "") {
       displayName = customFileName.trim();
       fileName = `${displayName}.md`;
-      fileContent = `# ${displayName}`;
+      fileContent = `# ${displayName}\n\nToday's note`;
     } else {
       const files = await fs.promises.readdir(notesDir);
       const untitledPattern = /^Untitled(?:\s(\d+))?\.md$/;
