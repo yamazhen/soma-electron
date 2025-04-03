@@ -9,11 +9,13 @@ import React, {
 interface FileContextType {
   files: DirectoryContents;
   selectedFile: string | null;
-  loadNotes: () => Promise<void>;
   setSelectedFile: (path: string | null) => void;
   handleCreateNote: () => Promise<void>;
   handleCreateFolder: () => Promise<void>;
-  refreshFiles: () => Promise<void>;
+  loadNotes: () => Promise<DirectoryContents>;
+  fileName: string | null;
+  sortMethod: string;
+  changeSortMethod: (method: SortMethod) => void;
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined);
@@ -23,35 +25,29 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [files, setFiles] = useState<DirectoryContents>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [sortMethod, setSortMethod] = useState<SortMethod>("custom");
 
-  const refreshFiles = useCallback(async () => {
-    try {
-      const loadedFiles = await window.ipcRenderer.loadExistingNotes();
-      setFiles(loadedFiles);
-      return loadedFiles;
-    } catch (error) {
-      return [];
-    }
-  }, []);
+  const fileName = selectedFile
+    ? selectedFile
+        .split("/")
+        .pop()
+        ?.replace(/\.[^/.]+$/, "") || null
+    : null;
 
-  useEffect(() => {
-    refreshFiles();
-    const unsubscribe = window.ipcRenderer.onFileSystemChanged(refreshFiles);
-    return () => {
-      unsubscribe();
-    };
-  }, [refreshFiles]);
+  // function to change file sorting method
+  const changeSortMethod = (method: SortMethod) => {
+    setSortMethod(method);
+    loadNotes();
+  };
 
-  const findFileInNotes = (
-    notes: DirectoryContents,
-    filePath: string,
-  ): boolean => {
+  // function to check if the file still exists
+  const fileExists = (notes: DirectoryContents, filePath: string): boolean => {
     for (const item of notes) {
       if (item.path === filePath) {
         return true;
       }
       if (item.isDirectory) {
-        if (findFileInNotes(item.children, filePath)) {
+        if (fileExists(item.children, filePath)) {
           return true;
         }
       }
@@ -59,21 +55,27 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     return false;
   };
 
-  const loadNotes = async () => {
+  // function to load notes
+  const loadNotes = useCallback(async () => {
     try {
-      const notes = await window.ipcRenderer.loadExistingNotes();
-      setFiles(notes);
+      const loadedFiles = await window.ipcRenderer.loadExistingNotes(
+        sortMethod,
+        true,
+      );
+      setFiles(loadedFiles);
       if (selectedFile) {
-        const stillExists = findFileInNotes(notes, selectedFile);
+        const stillExists = fileExists(loadedFiles, selectedFile);
         if (!stillExists) {
           setSelectedFile(null);
         }
       }
+      return loadedFiles;
     } catch (error) {
-      console.error("Error loading notes:", error);
+      return [];
     }
-  };
+  }, [selectedFile, sortMethod]);
 
+  // function to create a new note
   const handleCreateNote = async () => {
     try {
       const result = await window.ipcRenderer.createMarkdownFile();
@@ -86,6 +88,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // function to create a new folder
   const handleCreateFolder = async () => {
     try {
       const result = await window.ipcRenderer.createFolder();
@@ -97,37 +100,32 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Load notes on initial render
+  // initial note load and file system change listener
   useEffect(() => {
     loadNotes();
-  }, []);
 
-  // Set up file system change listener
-  useEffect(() => {
-    const removeListener = window.ipcRenderer.onFileSystemChanged(() => {
-      loadNotes();
-    });
-
+    const unsubscribe = window.ipcRenderer.onFileSystemChanged(loadNotes);
     return () => {
-      removeListener();
+      unsubscribe();
     };
-  }, [selectedFile]);
+  }, [loadNotes]);
 
-  // The context value
+  // the context value
   const value = {
     files,
     selectedFile,
     setSelectedFile,
-    loadNotes,
     handleCreateNote,
     handleCreateFolder,
-    refreshFiles,
+    loadNotes,
+    fileName,
+    sortMethod,
+    changeSortMethod,
   };
 
   return <FileContext.Provider value={value}>{children}</FileContext.Provider>;
 };
 
-// Custom hook to use the file context
 export const useFileContext = () => {
   const context = useContext(FileContext);
   if (context === undefined) {

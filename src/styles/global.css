@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@import "./variables.css";
+@import "./components/App.css";
+
+* {
+  @apply box-border;
+}
+
+html,
+body {
+  @apply h-full bg-soma-darkest text-soma-text-primary;
+}
+
+body {
+  @apply m-0 p-0;
+}
+
+:focus {
+  @apply outline-none ring-0;
+}
+
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+}
+::-webkit-scrollbar {
+  width: 14px;
+  background-color: var(--color-soma-light);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-soma-lightest);
+  border-radius: 999px;
+  border: 3px solid var(--color-soma-light);
+}
+
+input::selection {
+  @apply bg-soma-accent2 text-soma-darkest;
+}
+
+main {
+  @apply h-screen flex flex-col;
+}

@@ -26,7 +26,8 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   // You can expose other APTs you need here.
   // ...
   createMarkdownFile: () => ipcRenderer.invoke("create-markdown-file"),
-  loadExistingNotes: () => ipcRenderer.invoke("load-existing-notes"),
+  loadExistingNotes: (sortMethod: SortMethod, folderCheck: boolean = true) =>
+    ipcRenderer.invoke("load-existing-notes", sortMethod, folderCheck),
   createFolder: () => ipcRenderer.invoke("create-folder"),
   onFileSystemChanged: (callback: () => void) => {
     const subscription = (_event: any) => callback();
@@ -50,4 +51,6 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   getNotesDir: () => ipcRenderer.invoke("get-notes-dir"),
   renameFileOrFolder: (oldPath: string, newName: string) =>
     ipcRenderer.invoke("rename-file-or-folder", oldPath, newName),
+  deleteFileOrFolder: (path: string) =>
+    ipcRenderer.invoke("delete-file-or-folder", path),
 });

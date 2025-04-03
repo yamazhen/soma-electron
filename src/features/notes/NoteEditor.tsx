@@ -1,19 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useFileContext } from "../context/FileContext";
 import EditorTopBar from "./EditorTopBar";
-import { useMarkdownRenderer } from "../../hooks/useMarkdownRenderer";
-import { useNoteAutosave } from "../../hooks/useNoteAutosave";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 import TiptapEditor from "./TiptapEditor";
+import { useFileContext } from "../../context/FileContext";
+import { useMarkdownRenderer } from "../../hooks/ui/useMarkdownRenderer";
+import { useNoteAutosave } from "../../hooks/notes/useNoteAutosave";
 
 const NoteEditor: React.FC = () => {
-  const { selectedFile } = useFileContext();
+  const { selectedFile, fileName } = useFileContext();
   const [noteContent, setNoteContent] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<string>("");
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(true);
 
   const markdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,7 +21,7 @@ const NoteEditor: React.FC = () => {
     selectedFile,
     noteContent,
     loading,
-    setSaveStatus,
+    setIsSaving,
   });
 
   const toggleEditing = () => {
@@ -32,7 +30,7 @@ const NoteEditor: React.FC = () => {
 
   const handleContentChange = (newContent: string) => {
     setNoteContent(newContent);
-    setSaveStatus("Saving...");
+    setIsSaving(true);
   };
 
   useEffect(() => {
@@ -63,7 +61,7 @@ const NoteEditor: React.FC = () => {
     }
 
     loadNoteContent();
-    setIsEditing(false);
+    setIsEditing(true);
   }, [selectedFile]);
 
   useEffect(() => {
@@ -75,14 +73,14 @@ const NoteEditor: React.FC = () => {
   if (!selectedFile) return null;
   if (loading) {
     return (
-      <div className="noteEditor">
+      <div className="flex justify-center items-center">
         <p>Loading...</p>
       </div>
     );
   }
   if (error) {
     return (
-      <div className="noteEditor">
+      <div className="flex justify-center items-center">
         <p>{error}</p>
       </div>
     );
@@ -91,22 +89,22 @@ const NoteEditor: React.FC = () => {
   return (
     <div className="noteEditor">
       <EditorTopBar
-        selectedFile={selectedFile}
-        saveStatus={saveStatus}
         isEditing={isEditing}
         toggleEditing={toggleEditing}
+        isSaving={isSaving}
+        fileName={fileName}
       />
-      <SimpleBar className="editorArea" autoHide={false} scrollbarMaxSize={200}>
+      <div className="editorArea">
         <TiptapEditor
           noteContent={noteContent}
           onChange={handleContentChange}
-          className={`textEditor ${isEditing ? "visible" : "hidden"}`}
+          className="textEditor"
         />
         <div
           ref={markdownRef}
           className={`textEditor cursor-text ${isEditing ? "hidden" : "visible"}`}
         ></div>
-      </SimpleBar>
+      </div>
     </div>
   );
 };

@@ -12,6 +12,7 @@ type Props = {
 const extensions = [
   StarterKit,
   Markdown.configure({
+    bulletListMarker: "*",
     html: true,
     transformPastedText: true,
   }),
@@ -25,28 +26,17 @@ const TiptapEditor: React.FC<Props> = ({
   const editor = useEditor({
     content: noteContent,
     extensions: extensions,
-    editorProps: {
-      transformPastedText: (text) => text,
-      handleKeyDown: (view, event) => {
-        if (event.key === "Tab") {
-          event.preventDefault();
-          if (event.shiftKey) {
-            return true;
-          } else {
-            view.dispatch(view.state.tr.insertText("  "));
-            return true;
-          }
-        }
-        return false;
-      },
-    },
     onUpdate: ({ editor }) => {
       const markdownOutput = editor.storage.markdown.getMarkdown();
       onChange(markdownOutput);
     },
   });
 
-  return <EditorContent editor={editor} className={className} />;
+  return (
+    <>
+      <EditorContent editor={editor} className={className} />
+    </>
+  );
 };
 
 export default TiptapEditor;

@@ -1,5 +1,4 @@
 import React from "react";
-import { useCurrentDate } from "../utils/DateUpdater";
 import {
   Book,
   BookOpenCheck,
@@ -10,6 +9,7 @@ import {
   StickyNote,
   WalletCards,
 } from "lucide-react";
+import { useCurrentDate } from "../../utils/DateUpdater";
 
 type Props = {};
 

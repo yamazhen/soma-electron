@@ -30,6 +30,32 @@ export function getFileOrder(parentPath: string): Record<string, number> {
   }
 }
 
+export function deleteFileOrdersByPath(filePath: string): boolean {
+  try {
+    const db = getDatabase();
+
+    db.exec("BEGIN TRANSACTION;");
+
+    try {
+      const stmt = db.prepare("DELETE FROM file_orders WHERE file_path = ?");
+      stmt.run(filePath);
+
+      const dirStmt = db.prepare(
+        "DELETE FROM file_orders WHERE file_path LIKE ? OR parent_path LIKE ?",
+      );
+      dirStmt.run(`${filePath}/%`, `${filePath}/%`);
+
+      db.exec("COMMIT;");
+      return true;
+    } catch (error) {
+      db.exec("ROLLBACK;");
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
 export function updateFileOrder(
   orders: Array<{ path: string; parentPath: string; index: number }>,
 ): boolean {
@@ -77,6 +103,27 @@ export function updateFileOrder(
     }
   } catch (error) {
     return false;
+  }
+}
+
+async function deleteFileOrFolder(
+  filePath: string,
+): Promise<{ success: boolean }> {
+  try {
+    const stats = await fs.promises.stat(filePath);
+    if (stats.isDirectory()) {
+      await fs.promises.rmdir(filePath, { recursive: true });
+    } else {
+      await fs.promises.rm(filePath);
+    }
+    deleteFileOrdersByPath(filePath);
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      success: false,
+    };
   }
 }
 
@@ -133,8 +180,63 @@ async function renameFileOrFolder(
   }
 }
 
+function naturalSort(a: string, b: string): number {
+  const regex = /(\d+)|(\D+)/g;
+
+  const aParts = a.match(regex) || [];
+  const bParts = b.match(regex) || [];
+
+  for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+    if (/^\d+$/.test(aParts[i]) && /^\d+$/.test(bParts[i])) {
+      const diff = parseInt(aParts[i], 10) - parseInt(bParts[i], 10);
+      if (diff !== 0) {
+        return diff;
+      }
+    } else {
+      const diff = aParts[i].localeCompare(bParts[i]);
+      if (diff !== 0) {
+        return diff;
+      }
+    }
+  }
+
+  return aParts.length - bParts.length;
+}
+
+function sortDirectoryContents(
+  contents: DirectoryContents,
+  sortMethod: SortMethod,
+  orderMap: Record<string, number>,
+): DirectoryContents {
+  return contents.sort((a, b) => {
+    if (sortMethod === "custom") {
+      const aIndex =
+        orderMap[a.path] !== undefined
+          ? orderMap[a.path]
+          : Number.MAX_SAFE_INTEGER;
+      const bIndex =
+        orderMap[b.path] !== undefined
+          ? orderMap[b.path]
+          : Number.MAX_SAFE_INTEGER;
+      if (
+        aIndex !== Number.MAX_SAFE_INTEGER &&
+        bIndex !== Number.MAX_SAFE_INTEGER
+      ) {
+        return aIndex - bIndex;
+      }
+      if (aIndex !== Number.MAX_SAFE_INTEGER) return -1;
+      if (bIndex !== Number.MAX_SAFE_INTEGER) return 1;
+    }
+    return sortMethod === "asc"
+      ? naturalSort(a.name, b.name)
+      : naturalSort(b.name, a.name);
+  });
+}
+
 async function readDirectoryRecursively(
   directoryPath: string,
+  sortMethod: SortMethod,
+  folderCheck: boolean = true,
 ): Promise<DirectoryContents> {
   try {
     const files = await fs.promises.readdir(directoryPath);
@@ -145,8 +247,11 @@ async function readDirectoryRecursively(
       const isDirectory = stats.isDirectory();
 
       if (isDirectory) {
-        const children = await readDirectoryRecursively(filePath);
+        if (!folderCheck) {
+          return null;
+        }
 
+        const children = await readDirectoryRecursively(filePath, sortMethod);
         const dirItem: DirectoryItem = {
           path: filePath,
           name: file,
@@ -177,30 +282,9 @@ async function readDirectoryRecursively(
     }
     const validItems = items.filter(isFileItem);
 
-    const orderMap = getFileOrder(directoryPath);
+    const orderMap = sortMethod === "custom" ? getFileOrder(directoryPath) : {};
 
-    return validItems.sort((a, b) => {
-      const aIndex =
-        orderMap[a.path] !== undefined
-          ? orderMap[a.path]
-          : Number.MAX_SAFE_INTEGER;
-      const bIndex =
-        orderMap[b.path] !== undefined
-          ? orderMap[b.path]
-          : Number.MAX_SAFE_INTEGER;
-
-      if (
-        aIndex !== Number.MAX_SAFE_INTEGER &&
-        bIndex !== Number.MAX_SAFE_INTEGER
-      ) {
-        return aIndex - bIndex;
-      }
-
-      if (aIndex !== Number.MAX_SAFE_INTEGER) return -1;
-      if (bIndex !== Number.MAX_SAFE_INTEGER) return 1;
-
-      return a.name.localeCompare(b.name);
-    });
+    return sortDirectoryContents(validItems, sortMethod, orderMap);
   } catch (error) {
     return [];
   }
@@ -373,9 +457,12 @@ export async function createMarkdownFile(): Promise<MarkdownItem | null> {
   }
 }
 
-export async function loadExistingNotes() {
+export async function loadExistingNotes(
+  sortMethod: SortMethod,
+  folderCheck: boolean = true,
+): Promise<DirectoryContents> {
   try {
-    return await readDirectoryRecursively(notesDir);
+    return await readDirectoryRecursively(notesDir, sortMethod, folderCheck);
   } catch (error) {
     return [];
   }
@@ -452,9 +539,12 @@ export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
     return await createMarkdownFile();
   });
 
-  ipcMain.handle("load-existing-notes", async () => {
-    return await loadExistingNotes();
-  });
+  ipcMain.handle(
+    "load-existing-notes",
+    async (_, sortMethod: SortMethod, folderCheck: boolean = true) => {
+      return await loadExistingNotes(sortMethod, folderCheck);
+    },
+  );
 
   ipcMain.handle("create-folder", async () => {
     return await createFolder();
@@ -499,6 +589,10 @@ export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
       return renameFileOrFolder(oldPath, newName);
     },
   );
+
+  ipcMain.handle("delete-file-or-folder", async (_, filePath: string) => {
+    return deleteFileOrFolder(filePath);
+  });
 
   startFileWatcher(mainWindow);
 }

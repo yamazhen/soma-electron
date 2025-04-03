@@ -7,6 +7,40 @@ declare namespace NodeJS {
   }
 }
 
+type SortMethod = "asc" | "desc" | "custom";
+
+type XYCoord = {
+  x: number;
+  y: number;
+};
+
+interface CursorProps {
+  top: number;
+  left: number;
+}
+
+interface MovedItem {
+  oldPath: string;
+  newPath: string | undefined;
+}
+
+interface TreeNode {
+  id: string;
+  name: string;
+  isFolder: boolean;
+  children?: TreeNode[];
+  data: DirectoryItem | MarkdownItem;
+}
+
+interface FileTreeProps {
+  treeData: TreeNode[];
+}
+
+interface FileTreeHandle {
+  expandAllFolders: () => void;
+  collapseAllFolders: () => void;
+}
+
 interface FileItem {
   path: string;
   name: string;
@@ -47,7 +81,10 @@ interface Window {
 
     // File operations
     createMarkdownFile: () => Promise<MarkdownItem | null>;
-    loadExistingNotes: () => Promise<DirectoryContents>;
+    loadExistingNotes: (
+      sortMethod: SortMethod,
+      folderCheck?: boolean,
+    ) => Promise<DirectoryContents>;
     createFolder: () => Promise<DirectoryItem | null>;
     readMarkdownFile: (path: string) => Promise<MarkdownItem | null>;
     writeMarkdownFile: (path: string, content: string) => Promise<boolean>;
@@ -65,5 +102,6 @@ interface Window {
       oldPath: string,
       newName: string,
     ) => Promise<{ success: boolean; newPath?: string }>;
+    deleteFileOrFolder: (path: string) => Promise<{ success: boolean }>;
   };
 }

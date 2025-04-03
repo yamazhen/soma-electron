@@ -1,6 +1,6 @@
 import React from "react";
-import { useFileContext } from "../context/FileContext";
 import NoteEditor from "./NoteEditor";
+import { useFileContext } from "../../context/FileContext";
 
 type Props = {};
 

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { usePage } from "../context/PageContext";
-import SideMenuButton from "./SideMenuButton";
-import RotatingArrow from "./RotatingArrow";
-import Explorer from "./Explorer";
+import SideMenuButton from "../ui/buttons/SideMenuButton";
+import RotatingArrow from "../ui/common/RotatingArrow";
+import Explorer from "../ui/navigation/Explorer";
 import {
   Activity,
   BrainCircuit,
@@ -12,6 +11,7 @@ import {
   Plus,
   Settings,
 } from "lucide-react";
+import { usePage } from "../../context/PageContext";
 
 const SideMenu: React.FC = () => {
   const { activePage } = usePage();

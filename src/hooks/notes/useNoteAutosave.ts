@@ -4,37 +4,36 @@ interface Props {
   selectedFile: string | null;
   noteContent: string;
   loading: boolean;
-  setSaveStatus: (status: string) => void;
+  setIsSaving: (saving: boolean) => void;
 }
 
 export const useNoteAutosave = ({
   selectedFile,
   noteContent,
   loading,
-  setSaveStatus,
+  setIsSaving,
 }: Props) => {
   useEffect(() => {
     if (!selectedFile || !noteContent || loading) return;
 
     const saveTimeout = setTimeout(async () => {
       try {
-        setSaveStatus("Saving...");
         const success = await window.ipcRenderer.writeMarkdownFile(
           selectedFile,
           noteContent,
         );
 
         if (success) {
-          setSaveStatus("Saved");
-          setTimeout(() => setSaveStatus(""), 2000);
+          setIsSaving(true);
+          setTimeout(() => setIsSaving(false), 2000);
         } else {
-          setSaveStatus("Failed to save");
+          setIsSaving(false);
         }
       } catch (error) {
-        setSaveStatus("Failed to save");
+        setIsSaving(false);
       }
     }, 500);
 
     return () => clearTimeout(saveTimeout);
-  }, [noteContent, selectedFile, loading, setSaveStatus]);
+  }, [noteContent, selectedFile, loading, setIsSaving]);
 };

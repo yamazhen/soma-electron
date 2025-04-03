@@ -1,11 +1,11 @@
-import Flashcard from "./components/Flashcard";
-import Home from "./components/Home";
-import Notes from "./components/notePage/Notes";
-import { usePage } from "./components/context/PageContext";
-import Quiz from "./components/Quiz";
-import SideMenu from "./components/ui/SideMenu";
-import TitleBar from "./components/ui/TitleBar";
-import { FileProvider } from "./components/context/FileContext";
+import SideMenu from "./components/layout/SideMenu";
+import TitleBar from "./components/layout/TitleBar";
+import { FileProvider } from "./context/FileContext";
+import { usePage } from "./context/PageContext";
+import Notes from "./features/notes/Notes";
+import Quiz from "./features/quiz/Quiz";
+import Flashcard from "./features/flashcard/Flashcard";
+import Home from "./features/home/Home";
 
 function App() {
   const { activePage } = usePage();

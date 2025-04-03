@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import React from "react";
-import SideMenuButton from "./SideMenuButton";
+import SideMenuButton from "../buttons/SideMenuButton";
 
 interface Props {
   onClick?: () => void;
