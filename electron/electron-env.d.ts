@@ -9,9 +9,15 @@ declare namespace NodeJS {
 
 type SortMethod = "asc" | "desc" | "custom";
 
-type XYCoord = {
-  x: number;
-  y: number;
+interface DocumentState {
+  filePath: string;
+  content: string;
+  timestamp: number;
+}
+
+type TiptapEditorRef = {
+  undo: () => void;
+  redo: () => void;
 };
 
 interface CursorProps {

@@ -25,7 +25,7 @@ export const useNoteAutosave = ({
 
         if (success) {
           setIsSaving(true);
-          setTimeout(() => setIsSaving(false), 2000);
+          setTimeout(() => setIsSaving(false), 1000);
         } else {
           setIsSaving(false);
         }

@@ -125,16 +125,31 @@
   @apply bg-soma-accent2 text-soma-darkest;
 }
 .textEditor h1 {
-  @apply text-3xl font-bold underline;
+  @apply text-3xl font-bold relative mb-2 pb-2;
+}
+.textEditor h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  @apply bg-soma-accent1 opacity-50;
 }
 .textEditor h2 {
-  @apply text-2xl font-bold;
+  @apply text-2xl font-bold mb-2;
 }
 .textEditor h3 {
-  @apply text-xl font-bold;
+  @apply text-xl font-bold mb-1.5;
 }
 .textEditor h4 {
-  @apply text-lg font-bold;
+  @apply text-lg font-bold mb-1.5;
+}
+.textEditor h5 {
+  @apply text-base font-bold mb-1;
+}
+.textEditor h6 {
+  @apply text-sm font-bold uppercase tracking-wider mb-1;
 }
 .textEditor p {
   @apply text-base;

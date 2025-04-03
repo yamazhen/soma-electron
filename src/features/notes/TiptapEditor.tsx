@@ -1,6 +1,11 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import React from "react";
+import React, {
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+  ForwardRefRenderFunction,
+} from "react";
 import { Markdown } from "tiptap-markdown";
 
 type Props = {
@@ -18,11 +23,10 @@ const extensions = [
   }),
 ];
 
-const TiptapEditor: React.FC<Props> = ({
-  noteContent,
-  onChange,
-  className,
-}) => {
+const TiptapEditorComponent: ForwardRefRenderFunction<
+  TiptapEditorRef,
+  Props
+> = ({ noteContent, onChange, className }, ref: React.Ref<TiptapEditorRef>) => {
   const editor = useEditor({
     content: noteContent,
     extensions: extensions,
@@ -32,6 +36,20 @@ const TiptapEditor: React.FC<Props> = ({
     },
   });
 
+  useImperativeHandle(ref, () => ({
+    undo: () => editor?.commands.undo(),
+    redo: () => editor?.commands.redo(),
+  }));
+
+  useEffect(() => {
+    if (editor && noteContent) {
+      const currentContent = editor.storage.markdown.getMarkdown();
+      if (currentContent !== noteContent) {
+        editor.commands.setContent(noteContent);
+      }
+    }
+  }, [noteContent, editor]);
+
   return (
     <>
       <EditorContent editor={editor} className={className} />
@@ -39,4 +57,5 @@ const TiptapEditor: React.FC<Props> = ({
   );
 };
 
+const TiptapEditor = forwardRef(TiptapEditorComponent);
 export default TiptapEditor;

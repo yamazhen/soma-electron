@@ -14,6 +14,8 @@ type Props = {
   isEditing: boolean;
   toggleEditing: () => void;
   fileName: string | null;
+  onUndo: () => void;
+  onRedo: () => void;
 };
 
 const EditorTopBar: React.FC<Props> = ({
@@ -21,6 +23,8 @@ const EditorTopBar: React.FC<Props> = ({
   isEditing,
   toggleEditing,
   fileName,
+  onUndo,
+  onRedo,
 }) => {
   return (
     <div
@@ -28,15 +32,27 @@ const EditorTopBar: React.FC<Props> = ({
       className="flex justify-between items-center py-2 px-4"
     >
       <div id="undoWindow" className="flex gap-3">
-        <ArrowLeft size={16} strokeWidth={1} />
-        <ArrowRight size={16} strokeWidth={1} />
+        <SideMenuButton
+          tippyPlacement="bottom"
+          tippyContent="Undo"
+          onClick={onUndo}
+        >
+          <ArrowLeft size={16} strokeWidth={1} />
+        </SideMenuButton>
+        <SideMenuButton
+          tippyPlacement="bottom"
+          tippyContent="Redo"
+          onClick={onRedo}
+        >
+          <ArrowRight size={16} strokeWidth={1} />
+        </SideMenuButton>
       </div>
       <div id="filename" className="flex gap-2 items-center">
         <p>{fileName}</p>
         <Save
           size={16}
-          strokeWidth={1.5}
-          className={`text-soma-lightest transition-opacity duration-200 ${
+          strokeWidth={2}
+          className={`text-soma-lightest transition-opacity duration-100 ${
             isSaving ? "opacity-100 animate-pulse" : "opacity-0"
           }`}
         />

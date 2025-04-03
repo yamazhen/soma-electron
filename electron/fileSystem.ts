@@ -412,11 +412,12 @@ export async function createMarkdownFile(
   customFileName?: string,
 ): Promise<MarkdownItem | null> {
   try {
-    let fileName, displayName;
+    let fileName, displayName, fileContent;
 
     if (customFileName && customFileName.trim() !== "") {
       displayName = customFileName.trim();
       fileName = `${displayName}.md`;
+      fileContent = `# ${displayName}`;
     } else {
       const files = await fs.promises.readdir(notesDir);
       const untitledPattern = /^Untitled(?:\s(\d+))?\.md$/;
@@ -444,11 +445,10 @@ export async function createMarkdownFile(
 
       displayName = nextNumber === 0 ? "Untitled" : `Untitled ${nextNumber}`;
       fileName = `${displayName}.md`;
+      fileContent = `# ${displayName}\n\nThis is a new note created on ${new Date().toLocaleDateString()}.\n`;
     }
 
     const filePath = path.join(notesDir, fileName);
-    const fileContent = `# ${displayName}\n\nThis is a new note created on ${new Date().toLocaleDateString()}.\n`;
-
     await fs.promises.writeFile(filePath, fileContent, "utf-8");
 
     return {

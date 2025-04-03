@@ -12,6 +12,7 @@ const NoteEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(true);
+  const editorRef = useRef<TiptapEditorRef>(null);
 
   const markdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,6 +24,18 @@ const NoteEditor: React.FC = () => {
     loading,
     setIsSaving,
   });
+
+  const handleUndo = () => {
+    if (editorRef.current && isEditing) {
+      editorRef.current.undo();
+    }
+  };
+
+  const handleRedo = () => {
+    if (editorRef.current && isEditing) {
+      editorRef.current.redo();
+    }
+  };
 
   const toggleEditing = () => {
     setIsEditing((prev) => !prev);
@@ -96,10 +109,13 @@ const NoteEditor: React.FC = () => {
         toggleEditing={toggleEditing}
         isSaving={isSaving}
         fileName={fileName}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
       <div className="editorArea">
         {isEditing ? (
           <TiptapEditor
+            ref={editorRef}
             noteContent={noteContent}
             onChange={handleContentChange}
             className="textEditor"

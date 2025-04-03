@@ -37,11 +37,12 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
   const [folderExpanded, setFolderExpanded] = useState<boolean>(false);
 
   const cycleSortMethod = () => {
-    const methods = ["asc", "desc", "custom"];
-    const currentIndex = methods.indexOf(sortMethod);
+    const methods = ["asc", "desc", "custom"] as const;
+    const currentIndex = methods.indexOf(
+      sortMethod as (typeof methods)[number],
+    );
     const nextIndex = (currentIndex + 1) % methods.length;
     changeSortMethod(methods[nextIndex]);
-    console.log(`Sort method changed to: ${methods[nextIndex]}`);
   };
 
   const transformToTreeData = (items: DirectoryContents): TreeNode[] => {
@@ -69,7 +70,7 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
           <SideMenuButton
             tippyPlacement="bottom"
             tippyContent="New Note"
-            onClick={handleCreateNote}
+            onClick={() => handleCreateNote()}
           >
             <FilePenLine size={18} strokeWidth={1.5} />
           </SideMenuButton>
