@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import EditorTopBar from "./EditorTopBar";
 import TiptapEditor from "./TiptapEditor";
-import { useFileContext } from "../../context/FileContext";
 import { useMarkdownRenderer } from "../../hooks/ui/useMarkdownRenderer";
 import { useNoteAutosave } from "../../hooks/notes/useNoteAutosave";
+import { useAppContext } from "../../context/AppContext";
 
 const NoteEditor: React.FC = () => {
-  const { selectedFile, fileName, files } = useFileContext();
+  const { selectedFile, fileName, files } = useAppContext();
   const [noteContent, setNoteContent] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);

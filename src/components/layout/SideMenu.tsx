@@ -11,15 +11,12 @@ import {
   Plus,
   Settings,
 } from "lucide-react";
-import { usePage } from "../../context/PageContext";
-import { useNoteContext } from "../../context/NoteContext";
-import { useFileContext } from "../../context/FileContext";
+import { useAppContext } from "../../context/AppContext";
 
 const SideMenu: React.FC = () => {
-  const { activePage } = usePage();
   const [explorerExpanded, setExplorerExpanded] = useState(true);
-  const { toggleMindMap, setInMindMap } = useNoteContext();
-  const { createOrOpenTodaysNote } = useFileContext();
+  const { activePage, toggleMindMap, setInMindMap, createOrOpenTodaysNote } =
+    useAppContext();
 
   const toggleExplorer = () => {
     setExplorerExpanded((prev) => !prev);

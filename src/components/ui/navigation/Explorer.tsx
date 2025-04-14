@@ -11,7 +11,7 @@ import {
   NotepadTextDashed,
 } from "lucide-react";
 import FileTree from "./FileTree";
-import { useFileContext } from "../../../context/FileContext";
+import { useAppContext } from "../../../context/AppContext";
 
 type Props = {
   explorerExpanded: boolean;
@@ -32,7 +32,7 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
     handleCreateFolder,
     changeSortMethod,
     sortMethod,
-  } = useFileContext();
+  } = useAppContext();
 
   const [folderExpanded, setFolderExpanded] = useState<boolean>(false);
 

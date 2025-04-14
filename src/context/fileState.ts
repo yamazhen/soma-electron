@@ -1,29 +1,6 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 
-interface FileContextType {
-  files: DirectoryContents;
-  selectedFile: string | null;
-  setSelectedFile: (path: string | null) => void;
-  handleCreateNote: () => Promise<void>;
-  handleCreateFolder: () => Promise<void>;
-  loadNotes: () => Promise<DirectoryContents>;
-  fileName: string | null;
-  sortMethod: string;
-  changeSortMethod: (method: SortMethod) => void;
-  createOrOpenTodaysNote: () => Promise<void>;
-}
-
-const FileContext = createContext<FileContextType | undefined>(undefined);
-
-export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const useFileState = () => {
   const [files, setFiles] = useState<DirectoryContents>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [sortMethod, setSortMethod] = useState<SortMethod>("custom");
@@ -131,7 +108,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [loadNotes]);
 
   // the context value
-  const value = {
+  return {
     files,
     selectedFile,
     setSelectedFile,
@@ -143,14 +120,4 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({
     changeSortMethod,
     createOrOpenTodaysNote,
   };
-
-  return <FileContext.Provider value={value}>{children}</FileContext.Provider>;
-};
-
-export const useFileContext = () => {
-  const context = useContext(FileContext);
-  if (context === undefined) {
-    throw new Error("useFileContext must be used within a FileProvider");
-  }
-  return context;
 };

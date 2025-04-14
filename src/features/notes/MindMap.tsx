@@ -10,7 +10,7 @@ import ReactFlow, {
   useStore,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useFileContext } from "../../context/FileContext";
+import { useAppContext } from "../../context/AppContext";
 
 type NodeData = {
   label: string;
@@ -83,7 +83,7 @@ const edgeTypes = {
 };
 
 function MindMap() {
-  const { files } = useFileContext();
+  const { files } = useAppContext();
 
   // Transform files into nodes only for markdown files
   const generateNodesAndEdges = useCallback(() => {

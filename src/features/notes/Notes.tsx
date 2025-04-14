@@ -1,14 +1,12 @@
 import React from "react";
 import NoteEditor from "./NoteEditor";
-import { useFileContext } from "../../context/FileContext";
-import { useNoteContext } from "../../context/NoteContext";
 import MindMap from "./MindMap";
+import { useAppContext } from "../../context/AppContext";
 
 type Props = {};
 
 const Notes: React.FC<Props> = () => {
-  const { selectedFile } = useFileContext();
-  const { inMindMap } = useNoteContext();
+  const { selectedFile, inMindMap } = useAppContext();
   return (
     <section className="content">
       {selectedFile && !inMindMap ? (

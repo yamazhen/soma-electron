@@ -11,16 +11,14 @@ import "react-contexify/dist/ReactContexify.css";
 import { Item, ItemParams, Menu, useContextMenu } from "react-contexify";
 import useResizeObserver from "use-resize-observer";
 import { ChevronRight } from "lucide-react";
-import { useFileContext } from "../../../context/FileContext";
-import { useNoteContext } from "../../../context/NoteContext";
+import { useAppContext } from "../../../context/AppContext";
 
 function FileTree(
   { treeData }: FileTreeProps,
   forwardedRef: React.Ref<FileTreeHandle>,
 ) {
-  const { selectedFile, setSelectedFile, loadNotes, sortMethod } =
-    useFileContext();
-  const { setInMindMap } = useNoteContext();
+  const { selectedFile, setSelectedFile, loadNotes, sortMethod, setInMindMap } =
+    useAppContext();
 
   const [designatedRoot, setDesignatedRoot] = useState<string>("");
   const treeRef = useRef<any>(null);
