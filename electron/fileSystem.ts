@@ -71,12 +71,12 @@ export function updateFileOrder(
     try {
       db.prepare("SELECT * FROM file_orders").all();
       const stmt = db.prepare(`
-        INSERT INTO file_orders (file_path, parent_path, order_index)
-        VALUES (?, ?, ?)
-        ON CONFLICT(file_path) DO UPDATE SET
-          parent_path = excluded.parent_path,
-          order_index = excluded.order_index
-      `);
+INSERT INTO file_orders (file_path, parent_path, order_index)
+VALUES (?, ?, ?)
+ON CONFLICT(file_path) DO UPDATE SET
+parent_path = excluded.parent_path,
+order_index = excluded.order_index
+`);
 
       const ordersByParent: Record<
         string,
@@ -318,7 +318,7 @@ export function saveFileOrder(
     const db = getDatabase();
     const stmt =
       db.prepare(`insert into file_orders (file_path, parent_path, order_index)
-                            values (?, ?, ?) on conflict(file_path) do update set order_index = ?`);
+values (?, ?, ?) on conflict(file_path) do update set order_index = ?`);
     stmt.run(filePath, parentPath, index, index);
     return true;
   } catch (error) {

@@ -15,11 +15,16 @@ type Props = {
 };
 
 const extensions = [
-  StarterKit,
+  StarterKit.configure({
+    bulletList: false,
+  }),
   Markdown.configure({
-    bulletListMarker: "*",
+    bulletListMarker: "-",
     html: true,
+    breaks: true,
+    linkify: true,
     transformPastedText: true,
+    transformCopiedText: true,
   }),
 ];
 

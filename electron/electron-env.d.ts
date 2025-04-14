@@ -111,5 +111,6 @@ interface Window {
       newName: string,
     ) => Promise<{ success: boolean; newPath?: string }>;
     deleteFileOrFolder: (path: string) => Promise<{ success: boolean }>;
+    openExternalLink: (url: string) => Promise<void>;
   };
 }

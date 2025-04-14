@@ -97,24 +97,15 @@
 }
 
 .noteEditor {
-  @apply h-full w-full;
+  @apply h-full w-full flex flex-col;
 }
 
 .editorArea {
-  @apply h-full w-full px-16 overflow-auto;
+  @apply flex-1 w-full px-16 overflow-y-auto overflow-x-hidden;
 }
 
-.simplebar-track.simplebar-vertical {
-  width: 12px !important;
-  background-color: var(--color-soma-light);
-}
-
-.simplebar-scrollbar::before {
-  @apply rounded-xl;
-  background-color: var(--color-soma-lightest) !important;
-  width: 6px !important;
-  left: 3px !important;
-  opacity: 1 !important;
+.markdownEditor {
+  @apply h-full w-full;
 }
 
 .textEditor {
@@ -201,12 +192,6 @@
 }
 .textEditor pre code {
   @apply block p-2 overflow-x-auto text-soma-text-primary bg-transparent;
-}
-.textEditor .footnote {
-  @apply text-xs align-super text-soma-accent2;
-}
-.textEditor mark {
-  @apply bg-soma-accent1 opacity-40 px-1;
 }
 
 .fileIndentList {

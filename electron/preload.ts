@@ -54,4 +54,6 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
     ipcRenderer.invoke("rename-file-or-folder", oldPath, newName),
   deleteFileOrFolder: (path: string) =>
     ipcRenderer.invoke("delete-file-or-folder", path),
+  openExternalLink: (url: string) =>
+    ipcRenderer.invoke("open-external-link", url),
 });

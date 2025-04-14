@@ -2,6 +2,7 @@ import React from "react";
 import NoteEditor from "./NoteEditor";
 import { useFileContext } from "../../context/FileContext";
 import { useNoteContext } from "../../context/NoteContext";
+import MindMap from "./MindMap";
 
 type Props = {};
 
@@ -13,9 +14,7 @@ const Notes: React.FC<Props> = () => {
       {selectedFile && !inMindMap ? (
         <NoteEditor />
       ) : inMindMap ? (
-        <h1 className="flex justify-center items-center h-full">
-          Mind Map Mode
-        </h1>
+        <MindMap />
       ) : (
         <h1 className="flex justify-center items-center h-full">
           Welcome to Your Notes

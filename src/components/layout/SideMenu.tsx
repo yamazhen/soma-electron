@@ -18,7 +18,7 @@ import { useFileContext } from "../../context/FileContext";
 const SideMenu: React.FC = () => {
   const { activePage } = usePage();
   const [explorerExpanded, setExplorerExpanded] = useState(true);
-  const { toggleMindMap } = useNoteContext();
+  const { toggleMindMap, setInMindMap } = useNoteContext();
   const { createOrOpenTodaysNote } = useFileContext();
 
   const toggleExplorer = () => {
@@ -55,7 +55,9 @@ const SideMenu: React.FC = () => {
               <Calendar
                 size={18}
                 strokeWidth={1.5}
-                onClick={createOrOpenTodaysNote}
+                onClick={() => {
+                  createOrOpenTodaysNote(), setInMindMap(false);
+                }}
               />
             </SideMenuButton>
           </div>

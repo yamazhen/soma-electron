@@ -12,6 +12,7 @@ import { Item, ItemParams, Menu, useContextMenu } from "react-contexify";
 import useResizeObserver from "use-resize-observer";
 import { ChevronRight } from "lucide-react";
 import { useFileContext } from "../../../context/FileContext";
+import { useNoteContext } from "../../../context/NoteContext";
 
 function FileTree(
   { treeData }: FileTreeProps,
@@ -19,6 +20,7 @@ function FileTree(
 ) {
   const { selectedFile, setSelectedFile, loadNotes, sortMethod } =
     useFileContext();
+  const { setInMindMap } = useNoteContext();
 
   const [designatedRoot, setDesignatedRoot] = useState<string>("");
   const treeRef = useRef<any>(null);
@@ -160,9 +162,17 @@ function FileTree(
         setSelectedItems([nodeId]);
         setLastSelectedItem(nodeId);
         setSelectedFile(node.data.data.path);
+        setInMindMap(false);
       }
     },
-    [handleShiftSelection, handleCtrlSelection, setSelectedFile],
+    [
+      handleShiftSelection,
+      handleCtrlSelection,
+      setSelectedFile,
+      setInMindMap,
+      setSelectedItems,
+      setLastSelectedItem,
+    ],
   );
 
   const handleDeleteMultiple = async () => {
