@@ -1,13 +1,11 @@
 import React from "react";
+import { useAppContext } from "../../context/AppContext";
+import QuizListing from "./QuizListing";
+import QuizReview from "./QuizReview";
 
-type Props = {};
-
-const Quiz: React.FC<Props> = () => {
-  return (
-    <section className="content flex justify-center items-center">
-      <h1>Soma Quiz</h1>
-    </section>
-  );
+const Quiz: React.FC = () => {
+  const { inQuizListing, inQuizReview } = useAppContext();
+  return inQuizListing && !inQuizReview ? <QuizListing /> : <QuizReview />;
 };
 
 export default Quiz;

@@ -6,17 +6,29 @@ import {
   Activity,
   BrainCircuit,
   Calendar,
+  FileQuestion,
   FileSearch,
+  GraduationCap,
   LayoutGrid,
   Plus,
+  PlusCircle,
   Settings,
+  SquareAsterisk,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 
 const SideMenu: React.FC = () => {
   const [explorerExpanded, setExplorerExpanded] = useState(true);
-  const { activePage, toggleMindMap, setInMindMap, createOrOpenTodaysNote } =
-    useAppContext();
+  const {
+    activePage,
+    clickMindMap,
+    setInMindMap,
+    createOrOpenTodaysNote,
+    clickQuizListing,
+    clickQuizReview,
+    clickFCListing,
+    clickFCReview,
+  } = useAppContext();
 
   const toggleExplorer = () => {
     setExplorerExpanded((prev) => !prev);
@@ -39,13 +51,49 @@ const SideMenu: React.FC = () => {
             </SideMenuButton>
           </div>
         );
+      case "quiz":
+        return (
+          <div className="menuButtonHolder">
+            <SideMenuButton
+              className="mt-2"
+              tippyContent="Quiz Listing"
+              onClick={clickQuizListing}
+            >
+              <FileQuestion size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton tippyContent="Review" onClick={clickQuizReview}>
+              <GraduationCap size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton tippyContent="Create Quiz">
+              <PlusCircle size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+          </div>
+        );
+      case "flashcard":
+        return (
+          <div className="menuButtonHolder">
+            <SideMenuButton
+              className="mt-2"
+              tippyContent="Flashcards"
+              onClick={clickFCListing}
+            >
+              <SquareAsterisk size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton tippyContent="Review" onClick={clickFCReview}>
+              <GraduationCap size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+            <SideMenuButton tippyContent="Create Flashcard">
+              <PlusCircle size={18} strokeWidth={1.5} />
+            </SideMenuButton>
+          </div>
+        );
       case "notes":
         return (
           <div className="menuButtonHolder">
             <SideMenuButton tippyContent="Search Note" className="mt-2">
               <FileSearch size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Mind Map" onClick={toggleMindMap}>
+            <SideMenuButton tippyContent="Mind Map" onClick={clickMindMap}>
               <BrainCircuit size={18} strokeWidth={1.5} />
             </SideMenuButton>
             <SideMenuButton tippyContent="Today's Note">

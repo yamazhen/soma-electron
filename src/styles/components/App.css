@@ -1,4 +1,4 @@
-.container {
+.wrapper {
   @apply flex flex-1 overflow-hidden;
 }
 
@@ -246,21 +246,29 @@
 }
 
 .contexify.contexify_theme-my-custom-theme {
-  @apply bg-soma-medium;
-  width: 150px !important;
-  min-width: 150px !important;
+  @apply bg-soma-darkest shadow-none border-1 border-soma-medium !p-2 !rounded-md;
+  width: auto !important;
+  min-width: auto !important;
 }
 
 .contexify.contexify_theme-my-custom-theme .contexify_itemContent {
-  @apply text-soma-lightest;
+  @apply !text-soma-lightest text-xs;
 }
 /* Hover states */
 .contexify.contexify_theme-my-custom-theme .contexify_itemContent:hover {
-  @apply !bg-soma-light;
+  @apply !bg-soma-medium !text-soma-text-primary;
 }
 
 .contexify.contexify_theme-my-custom-theme
   .contexify_item:hover
   > .contexify_itemContent {
   @apply text-soma-text-primary;
+}
+
+.dropDown {
+  @apply z-10 bg-soma-darkest border-soma-medium border-1 rounded-md text-xs flex flex-col p-2 gap-2 w-auto;
+}
+
+.dropDownItem {
+  @apply hover:bg-soma-medium rounded-md p-2 flex items-center gap-1 whitespace-nowrap hover:text-soma-text-primary;
 }

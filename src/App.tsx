@@ -12,7 +12,7 @@ function App() {
   return (
     <main>
       <TitleBar />
-      <div className="container">
+      <div className="wrapper">
         <SideMenu />
         {activePage === "notes" && <Notes />}
         {activePage === "home" && <Home />}

@@ -2,10 +2,13 @@ import React from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  ClipboardList,
   Ellipsis,
   NotebookPen,
   NotebookText,
   Save,
+  SquareAsterisk,
+  WandSparkles,
 } from "lucide-react";
 import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
 
@@ -17,6 +20,23 @@ type Props = {
   onUndo: () => void;
   onRedo: () => void;
 };
+
+const generateDropdownItems = [
+  {
+    items: [
+      {
+        label: "Generate Quiz Set",
+        onClick: () => console.log("Generate Quiz Set"),
+        icon: <ClipboardList size={16} strokeWidth={1} />,
+      },
+      {
+        label: "Generate Flashcards",
+        onClick: () => console.log("Generate Flashcards"),
+        icon: <SquareAsterisk size={16} strokeWidth={1} />,
+      },
+    ],
+  },
+];
 
 const EditorTopBar: React.FC<Props> = ({
   isSaving,
@@ -75,6 +95,13 @@ const EditorTopBar: React.FC<Props> = ({
             <NotebookPen size={16} strokeWidth={2} />
           </SideMenuButton>
         )}
+        <SideMenuButton
+          tippyContent="Generate Content"
+          tippyPlacement="bottom"
+          dropdownItems={generateDropdownItems}
+        >
+          <WandSparkles size={16} strokeWidth={2} />
+        </SideMenuButton>
         <SideMenuButton tippyContent="More" tippyPlacement="bottom">
           <Ellipsis size={16} strokeWidth={2} />
         </SideMenuButton>

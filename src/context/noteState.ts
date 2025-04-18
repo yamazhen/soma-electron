@@ -3,14 +3,13 @@ import { useState } from "react";
 export const useNoteState = () => {
   const [inMindMap, setInMindMap] = useState<boolean>(false);
 
-  const toggleMindMap = () => {
-    setInMindMap((prev) => !prev);
-    console.log(`MindMap toggled: ${!inMindMap}`);
+  const clickMindMap = () => {
+    setInMindMap(true);
   };
 
   return {
     inMindMap,
     setInMindMap,
-    toggleMindMap,
+    clickMindMap,
   };
 };
