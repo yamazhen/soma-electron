@@ -346,7 +346,7 @@ const QuizCreateForm: React.FC<Props> = () => {
                   </div>
                 ))}
               </RadioGroup>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center mt-2">
                 <button
                   type="button"
                   onClick={() => addOption(question.id)}
@@ -473,13 +473,21 @@ const QuizCreateForm: React.FC<Props> = () => {
                 )}
               </div>
             ))}
-            <button
-              type="button"
-              onClick={() => addPossibleAnswer(question.id)}
-              className="add-answer-btn"
-            >
-              + Add Alternate Answer
-            </button>
+            <div className="flex items-center justify-center mt-2">
+              <button
+                type="button"
+                onClick={() => addPossibleAnswer(question.id)}
+                className="bg-soma-light p-2 rounded-full hover:bg-soma-light/50 transition-colors duration-200"
+              >
+                <SideMenuButton
+                  tippyContent={getMessage("quiz.addOption")}
+                  tippyPlacement="bottom"
+                  className="!bg-transparent"
+                >
+                  <CirclePlus size={18} />
+                </SideMenuButton>
+              </button>
+            </div>
           </div>
         );
     }
@@ -579,7 +587,7 @@ const QuizCreateForm: React.FC<Props> = () => {
             </button>
           )}
 
-          <div className="debug-section bg-soma-lightest w-full mt-32">
+          <div className="debug-section bg-soma-lightest w-full mt-32 hidden">
             <h3>Quiz Data Preview</h3>
             <pre>{JSON.stringify(getQuizData(), null, 2)}</pre>
           </div>

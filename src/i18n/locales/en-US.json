@@ -41,7 +41,8 @@
     "count": "Question Count",
     "startReview": "Start Review",
     "question": "Question",
-    "nextReview": "Next Review"
+    "nextReview": "Next Review",
+    "addOption": "Add Option"
   },
   "flashcard": {
     "listing": "Flashcard Listing",
