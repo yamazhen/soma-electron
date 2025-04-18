@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import React from "react";
 import SideMenuButton from "../buttons/SideMenuButton";
+import { useAppContext } from "../../../context/AppContext";
 
 interface Props {
   onClick?: () => void;
@@ -8,11 +9,13 @@ interface Props {
 }
 
 const RotatingArrow: React.FC<Props> = ({ onClick, rotated = false }) => {
+  const { getMessage } = useAppContext();
+
   let tippyMessage = "";
   if (rotated) {
-    tippyMessage = "Collapse";
+    tippyMessage = getMessage("common.collapse");
   } else {
-    tippyMessage = "Expand";
+    tippyMessage = getMessage("common.expand");
   }
   return (
     <button onClick={onClick}>

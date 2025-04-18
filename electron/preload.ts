@@ -56,4 +56,18 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
     ipcRenderer.invoke("delete-file-or-folder", path),
   openExternalLink: (url: string) =>
     ipcRenderer.invoke("open-external-link", url),
+  getLanguage: () => ipcRenderer.invoke("get-language"),
+  setLanguage: (language: string) =>
+    ipcRenderer.invoke("set-language", language),
+  getTranslations: (language: string) =>
+    ipcRenderer.invoke("get-translations", language),
+  getAvailableLanguages: () => ipcRenderer.invoke("get-available-languages"),
+  onLanguageChanged: (callback: (language: string) => void) => {
+    ipcRenderer.on("language-changed", (_event, language) =>
+      callback(language),
+    );
+    return () => {
+      ipcRenderer.removeAllListeners("language-changed");
+    };
+  },
 });

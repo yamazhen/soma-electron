@@ -1,25 +1,18 @@
 import { useState } from "react";
 
 export const useQuizState = () => {
-  const [inQuizListing, setInQuizListing] = useState<boolean>(true);
-  const [inQuizReview, setInQuizReview] = useState<boolean>(false);
+  const [quizView, setQuizView] = useState<"listing" | "review" | "create">(
+    "listing",
+  );
 
-  const clickQuizListing = () => {
-    setInQuizListing(true);
-    setInQuizReview(false);
-  };
-
-  const clickQuizReview = () => {
-    setInQuizReview((prev) => !prev);
-    setInQuizListing(false);
-  };
+  const clickQuizListing = () => setQuizView("listing");
+  const clickQuizReview = () => setQuizView("review");
+  const clickCreateQuiz = () => setQuizView("create");
 
   return {
-    inQuizListing,
-    setInQuizListing,
     clickQuizListing,
     clickQuizReview,
-    inQuizReview,
-    setInQuizReview,
+    clickCreateQuiz,
+    quizView,
   };
 };

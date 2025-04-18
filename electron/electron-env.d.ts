@@ -112,5 +112,10 @@ interface Window {
     ) => Promise<{ success: boolean; newPath?: string }>;
     deleteFileOrFolder: (path: string) => Promise<{ success: boolean }>;
     openExternalLink: (url: string) => Promise<void>;
+    getLanguage: () => Promise<string>;
+    setLanguage: (language: string) => Promise<void>;
+    getTranslations: (language: string) => Promise<any>;
+    getAvailableLanguages: () => Promise<string[]>;
+    onLanguageChanged: (callback: (language: string) => void) => () => void;
   };
 }

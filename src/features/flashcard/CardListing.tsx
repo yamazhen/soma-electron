@@ -1,9 +1,11 @@
 import React from "react";
 import CardSet from "./CardSet";
+import { useAppContext } from "../../context/AppContext";
 
 type Props = {};
 
 const CardListing: React.FC<Props> = () => {
+  const { getMessage } = useAppContext();
   const cards = [
     {
       id: 1,
@@ -34,7 +36,9 @@ const CardListing: React.FC<Props> = () => {
 
   return (
     <>
-      <h1 className="text-3xl text-center mb-10">Soma Flashcards</h1>
+      <h1 className="text-3xl text-center mb-10">
+        {getMessage("flashcard.listing")}
+      </h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
         {cards.map((card) => (
           <CardSet

@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "Soma"
+  },
+  "menu": {
+    "home": "Home",
+    "notes": "Notes",
+    "flashcards": "Flashcards",
+    "quiz": "Quiz",
+    "settings": "Settings"
+  },
+  "home": {
+    "welcome": "Welcome to Soma",
+    "today": "Today is ",
+    "lastNote": "Last Opened Note",
+    "lastQuiz": "Recent Quiz",
+    "lastFlashcard": "Last Flashcard Set",
+    "studyStreak": "Study Streak:",
+    "quizCompleted": "Quizzes Completed",
+    "notesCreated": "Notes Created",
+    "flashcardsCreated": "Flashcards Reviewed",
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "quickCreate": "Quick Create"
+  },
+  "notes": {
+    "welcome": "Welcome to Your Notes",
+    "search": "Search Note",
+    "mindMap": "Mind Map",
+    "today": "Today's Note",
+    "newNote": "New Note",
+    "newFolder": "New Folder",
+    "changeSort": "Change Sort Order"
+  },
+  "quiz": {
+    "listing": "Quiz Listing",
+    "review": "Quiz Review",
+    "create": "Create Quiz",
+    "listingInfo": "You can review individual questions by clicking <strongStart>Start</strongEnd> for a question in the table. Additionally, you can expand each row to view the questions and if they are scheduled for the next review session.",
+    "name": "Quiz Name",
+    "count": "Question Count",
+    "startReview": "Start Review",
+    "question": "Question",
+    "nextReview": "Next Review"
+  },
+  "flashcard": {
+    "listing": "Flashcard Listing",
+    "review": "Flashcard Review",
+    "create": "Create Flashcard Set"
+  },
+  "common": {
+    "delete": "Delete",
+    "rename": "Rename",
+    "days": "Days",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All"
+  }
+}

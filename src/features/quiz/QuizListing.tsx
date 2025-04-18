@@ -7,8 +7,10 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
+import { useAppContext } from "../../context/AppContext";
 
 const QuizListing: React.FC = () => {
+  const { getMessage } = useAppContext();
   const [expandedQuizzes, setExpandedQuizzes] = useState<number[]>([]);
   const toggleQuizExpansion = (id: number) => {
     setExpandedQuizzes((prev) =>
@@ -89,26 +91,32 @@ const QuizListing: React.FC = () => {
     },
   ];
 
+  let quizListingInfoMessage = getMessage("quiz.listingInfo");
+  quizListingInfoMessage = quizListingInfoMessage
+    .replace("<strongStart>", "<strong>")
+    .replace("</strongEnd>", "</strong>");
+
   return (
     <section className="h-full w-full flex flex-col justify-center">
       <div className="flex flex-col gap-4 items-center p-4 overflow-auto">
-        <h1 className="text-3xl">Quiz Listing</h1>
+        <span className="w-full max-w-2xl">
+          <h1 className="text-3xl">{getMessage("quiz.listing")}</h1>
+        </span>
         <div className="bg-soma-medium rounded-sm p-4 flex items-center gap-2 max-w-2xl w-full">
           <Lightbulb size={50} />
-          <p>
-            You can review individual questions by clicking{" "}
-            <strong>Start</strong> for a question in the table. Additionally,
-            you can expand each row to view the questions and if they are
-            scheduled for the next review session.
-          </p>
+          <p dangerouslySetInnerHTML={{ __html: quizListingInfoMessage }}></p>
         </div>
         <div className="bg-soma-medium rounded-sm flex items-center max-w-2xl w-full py-4">
           <table className="w-full text-left">
             <thead className="border-b-2 border-soma-light border-collapse">
               <tr>
-                <th className="px-4 pb-4">Quiz Name</th>
-                <th className="px-4 pb-4 text-center">Question Count</th>
-                <th className="px-4 pb-4 text-center">Start Review</th>
+                <th className="px-4 pb-4">{getMessage("quiz.name")}</th>
+                <th className="px-4 pb-4 text-center">
+                  {getMessage("quiz.count")}
+                </th>
+                <th className="px-4 pb-4 text-center">
+                  {getMessage("quiz.startReview")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -133,7 +141,7 @@ const QuizListing: React.FC = () => {
                     <td className="text-center">
                       <div className="flex justify-center">
                         <SideMenuButton
-                          tippyContent="Start Review"
+                          tippyContent={getMessage("quiz.startReview")}
                           tippyPlacement="bottom"
                         >
                           <Play size={16} strokeWidth={1} />
@@ -149,17 +157,23 @@ const QuizListing: React.FC = () => {
                             <table className="w-full text-left">
                               <thead className="border-b-2 border-soma-light">
                                 <tr>
-                                  <th className="pb-2 pl-4">Question</th>
+                                  <th className="pb-2 pl-4">
+                                    {getMessage("quiz.question")}
+                                  </th>
                                   <th className="pb-2 text-center">
-                                    Next Review
+                                    {getMessage("quiz.nextReview")}
                                   </th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {quiz.questions.map((question) => (
+                                {quiz.questions.map((question, index) => (
                                   <tr
                                     key={question.id}
-                                    className="border-b border-soma-light"
+                                    className={`${
+                                      index !== quiz.questions.length - 1
+                                        ? "border-b border-soma-light"
+                                        : ""
+                                    }`}
                                   >
                                     <td className="py-2 pl-4">
                                       {question.text}

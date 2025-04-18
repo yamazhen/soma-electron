@@ -26,8 +26,10 @@ const SideMenu: React.FC = () => {
     createOrOpenTodaysNote,
     clickQuizListing,
     clickQuizReview,
+    clickCreateQuiz,
     clickFCListing,
     clickFCReview,
+    getMessage,
   } = useAppContext();
 
   const toggleExplorer = () => {
@@ -40,13 +42,16 @@ const SideMenu: React.FC = () => {
       case "home":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton className="mt-2" tippyContent="Dashboard">
+            <SideMenuButton
+              className="mt-2"
+              tippyContent={getMessage("home.dashboard")}
+            >
               <LayoutGrid size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Analytics">
+            <SideMenuButton tippyContent={getMessage("home.analytics")}>
               <Activity size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Quick Create">
+            <SideMenuButton tippyContent={getMessage("home.quickCreate")}>
               <Plus size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -56,15 +61,21 @@ const SideMenu: React.FC = () => {
           <div className="menuButtonHolder">
             <SideMenuButton
               className="mt-2"
-              tippyContent="Quiz Listing"
+              tippyContent={getMessage("quiz.listing")}
               onClick={clickQuizListing}
             >
               <FileQuestion size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Review" onClick={clickQuizReview}>
+            <SideMenuButton
+              tippyContent={getMessage("quiz.review")}
+              onClick={clickQuizReview}
+            >
               <GraduationCap size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Create Quiz">
+            <SideMenuButton
+              tippyContent={getMessage("quiz.create")}
+              onClick={clickCreateQuiz}
+            >
               <PlusCircle size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -74,15 +85,18 @@ const SideMenu: React.FC = () => {
           <div className="menuButtonHolder">
             <SideMenuButton
               className="mt-2"
-              tippyContent="Flashcards"
+              tippyContent={getMessage("flashcard.listing")}
               onClick={clickFCListing}
             >
               <SquareAsterisk size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Review" onClick={clickFCReview}>
+            <SideMenuButton
+              tippyContent={getMessage("flashcard.review")}
+              onClick={clickFCReview}
+            >
               <GraduationCap size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Create Flashcard">
+            <SideMenuButton tippyContent={getMessage("flashcard.create")}>
               <PlusCircle size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>
@@ -90,13 +104,19 @@ const SideMenu: React.FC = () => {
       case "notes":
         return (
           <div className="menuButtonHolder">
-            <SideMenuButton tippyContent="Search Note" className="mt-2">
+            <SideMenuButton
+              tippyContent={getMessage("notes.search")}
+              className="mt-2"
+            >
               <FileSearch size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Mind Map" onClick={clickMindMap}>
+            <SideMenuButton
+              tippyContent={getMessage("notes.mindMap")}
+              onClick={clickMindMap}
+            >
               <BrainCircuit size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent="Today's Note">
+            <SideMenuButton tippyContent={getMessage("notes.today")}>
               <Calendar
                 size={18}
                 strokeWidth={1.5}
@@ -130,7 +150,10 @@ const SideMenu: React.FC = () => {
               rotated={explorerExpanded}
             />
           )}
-          <SideMenuButton className="mb-2" tippyContent="Settings">
+          <SideMenuButton
+            className="mb-2"
+            tippyContent={getMessage("menu.settings")}
+          >
             <Settings size={18} strokeWidth={1.5} />
           </SideMenuButton>
         </div>

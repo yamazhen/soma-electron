@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "소마"
+  },
+  "menu": {
+    "home": "홈",
+    "notes": "노트",
+    "flashcards": "플래시카드",
+    "quiz": "퀴즈",
+    "settings": "설정"
+  },
+  "home": {
+    "welcome": "소마에 오신 것을 환영합니다",
+    "today": "오늘은 ",
+    "lastNote": "최근에 연 노트",
+    "lastQuiz": "최근 퀴즈",
+    "lastFlashcard": "최근 플래시카드 세트",
+    "studyStreak": "연속 학습 일수:",
+    "quizCompleted": "완료한 퀴즈",
+    "notesCreated": "작성한 노트",
+    "flashcardsCreated": "복습한 플래시카드",
+    "dashboard": "대시보드",
+    "analytics": "분석",
+    "quickCreate": "빠른 생성"
+  },
+  "notes": {
+    "welcome": "나의 노트에 오신 것을 환영합니다",
+    "search": "노트 검색",
+    "mindMap": "마인드맵",
+    "today": "오늘의 노트",
+    "newNote": "새 노트",
+    "newFolder": "새 폴더",
+    "changeSort": "정렬 순서 변경"
+  },
+  "quiz": {
+    "listing": "퀴즈 목록",
+    "review": "퀴즈 리뷰",
+    "create": "퀴즈 만들기",
+    "listingInfo": "표에서 <strongStart>시작</strongEnd>을 클릭하면 각 문제를 검토할 수 있습니다. 또한 각 행을 확장하여 해당 질문이 다음 복습 세션에 예정되어 있는지 확인할 수 있습니다.",
+    "name": "퀴즈 이름",
+    "count": "문제 수",
+    "startReview": "리뷰 시작",
+    "question": "문제",
+    "nextReview": "다음 복습"
+  },
+  "flashcard": {
+    "listing": "플래시카드 목록",
+    "review": "플래시카드 리뷰",
+    "create": "플래시카드 세트 만들기"
+  },
+  "common": {
+    "delete": "삭제",
+    "rename": "이름 변경",
+    "days": "일",
+    "collapse": "접기",
+    "expand": "펼치기",
+    "expandAll": "모두 펼치기",
+    "collapseAll": "모두 접기"
+  }
+}

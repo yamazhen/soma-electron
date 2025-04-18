@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { setupFileSystemListeners } from "./fileSystem";
 import { initDatabase } from "./database";
+import { setupLanguageListeners } from "./translation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,5 +67,6 @@ ipcMain.handle("open-external-link", async (_event, url) => {
 app.whenReady().then(async () => {
   createWindow();
   initDatabase();
+  setupLanguageListeners(win!);
   await setupFileSystemListeners(win!);
 });

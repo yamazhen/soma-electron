@@ -32,6 +32,7 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
     handleCreateFolder,
     changeSortMethod,
     sortMethod,
+    getMessage,
   } = useAppContext();
 
   const [folderExpanded, setFolderExpanded] = useState<boolean>(false);
@@ -69,21 +70,21 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
         <div className="explorerActionBar">
           <SideMenuButton
             tippyPlacement="bottom"
-            tippyContent="New Note"
+            tippyContent={getMessage("notes.newNote")}
             onClick={() => handleCreateNote()}
           >
             <FilePenLine size={18} strokeWidth={1.5} />
           </SideMenuButton>
           <SideMenuButton
             tippyPlacement="bottom"
-            tippyContent="New Folder"
+            tippyContent={getMessage("notes.newFolder")}
             onClick={handleCreateFolder}
           >
             <FolderPlus size={18} strokeWidth={1.5} />
           </SideMenuButton>
           <SideMenuButton
             tippyPlacement="bottom"
-            tippyContent="Change Sort Order"
+            tippyContent={getMessage("notes.changeSort")}
             onClick={cycleSortMethod}
           >
             {sortMethod === "asc" ? (
@@ -97,7 +98,7 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
           {folderExpanded ? (
             <SideMenuButton
               tippyPlacement="bottom"
-              tippyContent="Collapse All"
+              tippyContent={getMessage("common.collapseAll")}
               onClick={() => {
                 setFolderExpanded(false);
                 fileTreeRef.current?.collapseAllFolders();
@@ -108,7 +109,7 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
           ) : (
             <SideMenuButton
               tippyPlacement="bottom"
-              tippyContent="Expand All"
+              tippyContent={getMessage("common.expandAll")}
               onClick={() => {
                 setFolderExpanded(true);
                 fileTreeRef.current?.expandAllFolders();

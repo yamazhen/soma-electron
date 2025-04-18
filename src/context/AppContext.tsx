@@ -4,12 +4,14 @@ import { useNoteState } from "./noteState";
 import { usePageState } from "./pageState";
 import { useQuizState } from "./quizState";
 import { useFlashCardState } from "./flashCardState";
+import { useLanguageState } from "./languageState";
 
 type AppContextType = ReturnType<typeof useFileState> &
   ReturnType<typeof useNoteState> &
   ReturnType<typeof usePageState> &
   ReturnType<typeof useQuizState> &
-  ReturnType<typeof useFlashCardState>;
+  ReturnType<typeof useFlashCardState> &
+  ReturnType<typeof useLanguageState>;
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -21,6 +23,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const pageState = usePageState();
   const quizState = useQuizState();
   const flashCardState = useFlashCardState();
+  const languageState = useLanguageState();
 
   const value = {
     ...fileState,
@@ -28,6 +31,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     ...pageState,
     ...quizState,
     ...flashCardState,
+    ...languageState,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
