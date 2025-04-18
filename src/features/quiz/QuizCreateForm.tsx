@@ -2,6 +2,7 @@ import { CirclePlus, X } from "lucide-react";
 import React, { useState } from "react";
 import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
 import { useAppContext } from "../../context/AppContext";
+import { RadioGroup, Radio } from "@headlessui/react";
 
 type QuestionType =
   | "multiple-choice"
@@ -307,36 +308,44 @@ const QuizCreateForm: React.FC<Props> = () => {
           <>
             <div className="flex flex-col gap-2">
               <p>Answer choices:</p>
-              {question.options.map((option) => (
-                <div key={option.id} className="flex items-center w-full gap-2">
-                  <input
-                    type="radio"
-                    id={`q${question.id}-option${option.id}`}
-                    name={`question-${question.id}-correct`}
-                    checked={option.isCorrect}
-                    onChange={() => setCorrectOption(question.id, option.id)}
-                    className="accent-soma-lightest w-4 h-4 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={option.text}
-                    onChange={(e) =>
-                      updateOptionText(question.id, option.id, e.target.value)
-                    }
-                    placeholder={`Option ${option.id}`}
-                    className="border border-soma-light rounded-md p-2 w-full"
-                  />
-                  {question.options.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOption(question.id, option.id)}
-                      className="hover:bg-soma-error p-1 rounded-full"
+              <RadioGroup
+                by="id"
+                value={question.options.find((o) => o.isCorrect)}
+                onChange={(option) => setCorrectOption(question.id, option.id)}
+                className="space-y-2"
+              >
+                {question.options.map((option) => (
+                  <div
+                    key={option.id}
+                    className="flex items-center w-full gap-2"
+                  >
+                    <Radio
+                      value={option}
+                      className="group flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-soma-light data-[checked]:bg-soma-lightest data-[checked]:ring-soma-lightest"
                     >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-              ))}
+                      <span className="h-2 w-2 rounded-full bg-soma-accent1 opacity-0 group-data-[checked]:opacity-100" />
+                    </Radio>
+                    <input
+                      type="text"
+                      value={option.text}
+                      onChange={(e) =>
+                        updateOptionText(question.id, option.id, e.target.value)
+                      }
+                      placeholder={`Option ${option.id}`}
+                      className="border border-soma-light rounded-md p-2 w-full"
+                    />
+                    {question.options.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeOption(question.id, option.id)}
+                        className="hover:bg-soma-error p-1 rounded-full"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </RadioGroup>
               <div className="flex items-center justify-center">
                 <button
                   type="button"
@@ -409,26 +418,32 @@ const QuizCreateForm: React.FC<Props> = () => {
         return (
           <div className="flex flex-col gap-2">
             <p>Correct answer:</p>
-            <div className="flex gap-2">
-              <label className="flex gap-2">
-                <input
-                  type="radio"
-                  name={`tf-question-${question.id}`}
-                  checked={question.correctAnswer === true}
-                  onChange={() => setTrueFalseAnswer(question.id, true)}
-                />
-                True
-              </label>
-              <label className="flex gap-2">
-                <input
-                  type="radio"
-                  name={`tf-question-${question.id}`}
-                  checked={question.correctAnswer === false}
-                  onChange={() => setTrueFalseAnswer(question.id, false)}
-                />
-                False
-              </label>
-            </div>
+            <RadioGroup
+              value={question.correctAnswer}
+              onChange={(value) => setTrueFalseAnswer(question.id, value)}
+              className="space-y-2"
+            >
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <Radio
+                    value={true}
+                    className="group flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-soma-light data-[checked]:bg-soma-lightest data-[checked]:ring-soma-lightest"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-soma-accent1 opacity-0 group-data-[checked]:opacity-100" />
+                  </Radio>
+                  <span>True</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Radio
+                    value={false}
+                    className="group flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-soma-light data-[checked]:bg-soma-lightest data-[checked]:ring-soma-lightest"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-soma-accent1 opacity-0 group-data-[checked]:opacity-100" />
+                  </Radio>
+                  <span>False</span>
+                </div>
+              </div>
+            </RadioGroup>
           </div>
         );
 
@@ -558,8 +573,13 @@ const QuizCreateForm: React.FC<Props> = () => {
               {renderQuestionEditor(question)}
             </div>
           ))}
+          {questions.length > 0 && (
+            <button className="bg-soma-accent2 text-soma-darkest py-2 px-12 rounded-md hover:bg-soma-accent2/75 hover:text-soma-light">
+              Submit
+            </button>
+          )}
 
-          <div className="debug-section bg-soma-lightest w-full mt-32 hidden">
+          <div className="debug-section bg-soma-lightest w-full mt-32">
             <h3>Quiz Data Preview</h3>
             <pre>{JSON.stringify(getQuizData(), null, 2)}</pre>
           </div>
