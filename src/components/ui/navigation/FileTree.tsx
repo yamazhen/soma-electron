@@ -191,7 +191,12 @@ function FileTree(
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Delete" && selectedItems.length > 0) {
+      const target = e.target as HTMLElement;
+      const isInputElement =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+      if (e.key === "Delete" && selectedItems.length > 0 && !isInputElement) {
         handleDeleteMultiple();
       }
     };

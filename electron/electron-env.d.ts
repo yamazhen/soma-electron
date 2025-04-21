@@ -9,10 +9,50 @@ declare namespace NodeJS {
 
 type SortMethod = "asc" | "desc" | "custom";
 
+interface QuizOption {
+  id: number;
+  text: string;
+  isCorrect: boolean;
+}
+
+interface QuizQuestion {
+  id: number;
+  text: string;
+  type: "multiple-choice" | "fill-in-blank" | "true-false" | "short-answer";
+  options?: QuizOption[];
+  answers?: string[];
+  possibleAnswers?: string[];
+  correctAnswer?: boolean;
+  scheduled?: boolean;
+}
+
+interface QuizData {
+  id?: number;
+  title: string;
+  questions: QuizQuestion[];
+}
+
 interface DocumentState {
   filePath: string;
   content: string;
   timestamp: number;
+}
+
+interface QuizReview {
+  id?: number;
+  quizId: number;
+  correct_questions: number[];
+  wrong_questions: number[];
+  score: number;
+  createdAt?: Date;
+}
+
+interface QuizSubmission {
+  quizId: number;
+  answers: {
+    questionId: number;
+    answer: string;
+  }[];
 }
 
 type TiptapEditorRef = {
@@ -117,5 +157,28 @@ interface Window {
     getTranslations: (language: string) => Promise<any>;
     getAvailableLanguages: () => Promise<string[]>;
     onLanguageChanged: (callback: (language: string) => void) => () => void;
+    quizSave: (
+      quizData: QuizData,
+    ) => Promise<{ success: boolean; quizId?: number; error?: string }>;
+    quizFindById: (
+      quizId: number,
+    ) => Promise<{ success: boolean; quizData?: QuizData; error?: string }>;
+    quizFindAll: () => Promise<{
+      success: boolean;
+      quizData?: QuizData[];
+      error?: string;
+    }>;
+    quizSubmitReview: (submission: QuizSubmission) => Promise<{
+      success: boolean;
+      reviewId?: number;
+      review?: QuizReview;
+      error?: string;
+    }>;
+    quizFindReviewById: (
+      reviewId: number,
+    ) => Promise<{ success: boolean; error?: string; review?: QuizReview }>;
+    quizFindReviewsByQuizId: (
+      quizId: number,
+    ) => Promise<{ success: boolean; error?: string; reviews?: QuizReview[] }>;
   };
 }

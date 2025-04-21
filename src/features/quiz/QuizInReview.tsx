@@ -12,12 +12,9 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [score, setScore] = useState(0);
   const [quizComplete, setQuizComplete] = useState(false);
-  const [answers, setAnswers] = useState;
-  {
-    questionId: number;
-    answer: string;
-  }
-  [] > [];
+  const [answers, setAnswers] = useState<
+    { questionId: number; answer: string }[]
+  >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewResult, setReviewResult] = useState<QuizReview | null>(null);
   const [error, setError] = useState<string | null>(null);

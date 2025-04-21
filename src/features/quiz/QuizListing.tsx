@@ -10,8 +10,9 @@ import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
 import { useAppContext } from "../../context/AppContext";
 
 const QuizListing: React.FC = () => {
-  const { getMessage } = useAppContext();
+  const { getMessage, reviewQuiz, quizzes } = useAppContext();
   const [expandedQuizzes, setExpandedQuizzes] = useState<number[]>([]);
+
   const toggleQuizExpansion = (id: number) => {
     setExpandedQuizzes((prev) =>
       prev.includes(id)
@@ -19,77 +20,6 @@ const QuizListing: React.FC = () => {
         : [...prev, id],
     );
   };
-  const quizzes = [
-    {
-      id: 1,
-      name: "Sample Quiz 1",
-      questionCount: 10,
-      questions: [
-        { id: 101, text: "What is the capital of France?", scheduled: true },
-        {
-          id: 102,
-          text: "What is the largest planet in our solar system?",
-          scheduled: false,
-        },
-        { id: 103, text: "Who wrote Romeo and Juliet?", scheduled: true },
-      ],
-    },
-    {
-      id: 2,
-      name: "Sample Quiz 2",
-      questionCount: 20,
-      questions: [
-        { id: 201, text: "What is the square root of 144?", scheduled: true },
-        {
-          id: 202,
-          text: "What is the chemical symbol for gold?",
-          scheduled: false,
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: "Sample Quiz 2",
-      questionCount: 20,
-      questions: [
-        { id: 201, text: "What is the square root of 144?", scheduled: true },
-        {
-          id: 202,
-          text: "What is the chemical symbol for gold?",
-          scheduled: false,
-        },
-      ],
-    },
-    {
-      id: 4,
-      name: "Sample Quiz 2",
-      questionCount: 20,
-      questions: [
-        { id: 201, text: "What is the square root of 144?", scheduled: true },
-        { id: 202, text: "What is the square root of 144?", scheduled: true },
-        { id: 203, text: "What is the square root of 144?", scheduled: true },
-        { id: 204, text: "What is the square root of 144?", scheduled: true },
-        {
-          id: 202,
-          text: "What is the chemical symbol for gold?",
-          scheduled: false,
-        },
-      ],
-    },
-    {
-      id: 5,
-      name: "Sample Quiz 2",
-      questionCount: 20,
-      questions: [
-        { id: 201, text: "What is the square root of 144?", scheduled: true },
-        {
-          id: 202,
-          text: "What is the chemical symbol for gold?",
-          scheduled: false,
-        },
-      ],
-    },
-  ];
 
   let quizListingInfoMessage = getMessage("quiz.listingInfo");
   quizListingInfoMessage = quizListingInfoMessage
@@ -120,88 +50,101 @@ const QuizListing: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {quizzes.map((quiz) => (
-                <React.Fragment key={quiz.id}>
-                  <tr className="border-b border-t border-soma-light">
-                    <td className="py-2 px-4">
-                      <div className="flex items-center">
-                        <button onClick={() => toggleQuizExpansion(quiz.id)}>
-                          {expandedQuizzes.includes(quiz.id) ? (
-                            <ChevronDown size={18} strokeWidth={2} />
-                          ) : (
-                            <ChevronRight size={18} strokeWidth={2} />
-                          )}
-                        </button>
-                        <span className="border border-soma-light rounded-xl px-4 min-w-[200px]">
-                          {quiz.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-center">{quiz.questionCount}</td>
-                    <td className="text-center">
-                      <div className="flex justify-center">
-                        <SideMenuButton
-                          tippyContent={getMessage("quiz.startReview")}
-                          tippyPlacement="bottom"
-                        >
-                          <Play size={16} strokeWidth={1} />
-                        </SideMenuButton>
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedQuizzes.includes(quiz.id) && (
-                    <tr className="bg-soma-darkest/60 text-sm">
-                      <td colSpan={3} className="px-2 pt-2">
-                        <div>
-                          {quiz.questions && quiz.questions.length > 0 ? (
-                            <table className="w-full text-left">
-                              <thead className="border-b-2 border-soma-light">
-                                <tr>
-                                  <th className="pb-2 pl-4">
-                                    {getMessage("quiz.question")}
-                                  </th>
-                                  <th className="pb-2 text-center">
-                                    {getMessage("quiz.nextReview")}
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {quiz.questions.map((question, index) => (
-                                  <tr
-                                    key={question.id}
-                                    className={`${
-                                      index !== quiz.questions.length - 1
-                                        ? "border-b border-soma-light"
-                                        : ""
-                                    }`}
-                                  >
-                                    <td className="py-2 pl-4">
-                                      {question.text}
-                                    </td>
-                                    <td className="py-2 text-center">
-                                      <div className="flex justify-center items-center">
-                                        {question.scheduled ? (
-                                          <CalendarCheck2 size={16} />
-                                        ) : (
-                                          <p>Not Scheduled</p>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : (
-                            <p className="text-soma-text-secondary italic">
-                              No questions available
-                            </p>
-                          )}
+              {quizzes && quizzes.length > 0 ? (
+                quizzes.map((quiz) => (
+                  <React.Fragment key={quiz.id}>
+                    <tr className="border-b border-t border-soma-light">
+                      <td className="py-2 px-4">
+                        <div className="flex items-center">
+                          <button
+                            onClick={() =>
+                              quiz.id && toggleQuizExpansion(quiz.id)
+                            }
+                          >
+                            {quiz.id && expandedQuizzes.includes(quiz.id) ? (
+                              <ChevronDown size={18} strokeWidth={2} />
+                            ) : (
+                              <ChevronRight size={18} strokeWidth={2} />
+                            )}
+                          </button>
+                          <span className="border border-soma-light rounded-xl px-4 min-w-[200px]">
+                            {quiz.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="text-center">{quiz.questions.length}</td>
+                      <td className="text-center">
+                        <div className="flex justify-center">
+                          <SideMenuButton
+                            tippyContent={getMessage("quiz.startReview")}
+                            tippyPlacement="bottom"
+                            onClick={() => quiz.id && reviewQuiz(quiz.id)}
+                          >
+                            <Play size={16} strokeWidth={1} />
+                          </SideMenuButton>
                         </div>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
+                    {quiz.id && expandedQuizzes.includes(quiz.id) && (
+                      <tr className="bg-soma-darkest/60 text-sm">
+                        <td colSpan={3} className="px-2 pt-2">
+                          <div>
+                            {quiz.questions && quiz.questions.length > 0 ? (
+                              <table className="w-full text-left">
+                                <thead className="border-b-2 border-soma-light">
+                                  <tr>
+                                    <th className="pb-2 pl-4">
+                                      {getMessage("quiz.question")}
+                                    </th>
+                                    <th className="pb-2 text-center">
+                                      {getMessage("quiz.nextReview")}
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {quiz.questions.map((question, index) => (
+                                    <tr
+                                      key={question.id}
+                                      className={`${
+                                        index !== quiz.questions.length - 1
+                                          ? "border-b border-soma-light"
+                                          : ""
+                                      }`}
+                                    >
+                                      <td className="py-2 pl-4">
+                                        {question.text}
+                                      </td>
+                                      <td className="py-2 text-center">
+                                        <div className="flex justify-center items-center">
+                                          {question.scheduled ? (
+                                            <CalendarCheck2 size={16} />
+                                          ) : (
+                                            <p>Not Scheduled</p>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <p className="text-soma-text-secondary italic">
+                                No questions available
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))
+              ) : (
+                <tr className="border-b-2 border-soma-light bg-soma-light/40">
+                  <td colSpan={3} className="text-center py-4">
+                    No Quizzes
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

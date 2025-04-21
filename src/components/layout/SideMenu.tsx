@@ -24,12 +24,10 @@ const SideMenu: React.FC = () => {
     clickMindMap,
     setInMindMap,
     createOrOpenTodaysNote,
-    clickQuizListing,
-    clickQuizReview,
-    clickCreateQuiz,
     clickFCListing,
     clickFCReview,
     getMessage,
+    setQuizView,
   } = useAppContext();
 
   const toggleExplorer = () => {
@@ -62,19 +60,19 @@ const SideMenu: React.FC = () => {
             <SideMenuButton
               className="mt-2"
               tippyContent={getMessage("quiz.listing")}
-              onClick={clickQuizListing}
+              onClick={() => setQuizView("listing")}
             >
               <FileQuestion size={18} strokeWidth={1.5} />
             </SideMenuButton>
             <SideMenuButton
               tippyContent={getMessage("quiz.review")}
-              onClick={clickQuizReview}
+              onClick={() => setQuizView("review")}
             >
               <GraduationCap size={18} strokeWidth={1.5} />
             </SideMenuButton>
             <SideMenuButton
               tippyContent={getMessage("quiz.create")}
-              onClick={clickCreateQuiz}
+              onClick={() => setQuizView("create")}
             >
               <PlusCircle size={18} strokeWidth={1.5} />
             </SideMenuButton>

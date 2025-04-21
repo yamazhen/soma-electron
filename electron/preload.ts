@@ -70,4 +70,14 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
       ipcRenderer.removeAllListeners("language-changed");
     };
   },
+  quizSave: (quizData: QuizData) => ipcRenderer.invoke("quiz-save", quizData),
+  quizFindAll: () => ipcRenderer.invoke("quiz-find-all"),
+  quizFindById: (quizId: number) =>
+    ipcRenderer.invoke("quiz-find-by-id", quizId),
+  quizSubmitReview: (submission: QuizSubmission) =>
+    ipcRenderer.invoke("quiz-submit-review", submission),
+  quizFindReviewById: (reviewId: number) =>
+    ipcRenderer.invoke("quiz-get-review-by-id", reviewId),
+  quizFindReviewsByQuizId: (quizId: number) =>
+    ipcRenderer.invoke("quiz-get-reviews-by-quiz-id", quizId),
 });

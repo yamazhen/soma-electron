@@ -2,8 +2,9 @@ import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { setupFileSystemListeners } from "./fileSystem";
-import { initDatabase } from "./database";
 import { setupLanguageListeners } from "./translation";
+import { closeDatabase, initDatabase } from "./database/database";
+import { setupQuizHandlers } from "./quiz";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,7 +35,7 @@ function createWindow() {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
   });
 
-  if (VITE_DEV_SERVER_URL) {
+  if (VITE_DEV_SERVER_URL && process.env.NODE_ENV === "development") {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
@@ -66,7 +67,13 @@ ipcMain.handle("open-external-link", async (_event, url) => {
 
 app.whenReady().then(async () => {
   createWindow();
-  initDatabase();
+  const dbConnection = await initDatabase();
+  if (!dbConnection) console.error("Failed to initialize database connection.");
   setupLanguageListeners(win!);
   await setupFileSystemListeners(win!);
+  setupQuizHandlers();
+});
+
+app.on("will-quit", () => {
+  closeDatabase();
 });

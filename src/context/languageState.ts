@@ -19,7 +19,6 @@ export const useLanguageState = () => {
 
         const language = await window.ipcRenderer.getLanguage();
         setCurrentLang(language);
-        console.log("Current language:", language);
 
         const availableLangs = await window.ipcRenderer.getAvailableLanguages();
         setAvailableLanguages(availableLangs);

@@ -2,7 +2,7 @@ import fs, { watch } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { BrowserWindow, ipcMain } from "electron";
-import { getDatabase } from "./database";
+import { getDatabase } from "./database/database";
 
 let fileWatcher: fs.FSWatcher | null = null;
 
