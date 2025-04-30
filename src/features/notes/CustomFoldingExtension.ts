@@ -15,7 +15,6 @@ import {
 
 const toggleFoldEffect = StateEffect.define<number>();
 
-// fold marker component for gutter
 class HeadingFoldMarker extends GutterMarker {
   constructor(
     private folded: boolean,
@@ -92,7 +91,6 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
         const lineNumber = effect.value;
         const line = tr.state.doc.line(lineNumber);
 
-        // check if it's a heading
         const headingMatch = line.text.match(/^(#+)\s+/);
         if (!headingMatch) continue;
 
@@ -101,7 +99,6 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
         let pos = line.to + 1;
         let foundContent = false;
 
-        // find where section ends (next heading of same or higher level)
         while (pos < tr.state.doc.length) {
           const nextLine = tr.state.doc.lineAt(pos);
           const nextHeadingMatch = nextLine.text.match(/^(#+)\s+/);
@@ -109,13 +106,11 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
           if (nextHeadingMatch) {
             const nextLevel = nextHeadingMatch[1].length;
             if (nextLevel <= headingLevel) {
-              // stop before the next heading
               endPos = nextLine.from - 1;
               break;
             }
           }
 
-          // track if we found actual content to fold
           if (nextLine.text.trim() !== "") {
             foundContent = true;
           }
@@ -123,19 +118,16 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
           pos = nextLine.to + 1;
         }
 
-        // check if already folded
         let isFolded = false;
         folds.between(line.from, line.from + 1, () => {
           isFolded = true;
         });
 
         if (isFolded) {
-          // unfold
           folds = folds.update({
             filter: (from) => from !== line.from,
           });
         } else {
-          // only fold if we found content
           if (foundContent && endPos > line.to) {
             const decoration = new FoldDecoration(line.to, endPos);
             folds = folds.update({
@@ -169,7 +161,6 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
   },
 });
 
-// gutter extension that shows fold markers for all headings
 const headingFoldGutter = gutter({
   class: "cm-heading-fold-gutter",
   lineMarker: (view: EditorView, line: { from: number; to: number }) => {
@@ -177,15 +168,12 @@ const headingFoldGutter = gutter({
     const lineText = doc.lineAt(line.from).text;
     const headingMatch = lineText.match(/^(#+)\s+/);
 
-    // only show markers for heading lines
     if (!headingMatch) return null;
 
     const level = headingMatch[1].length;
     const lineNo = doc.lineAt(line.from).number;
 
-    // show fold icon for all headings except the last line
     if (lineNo < doc.lines) {
-      // check if folded
       const folds = view.state.field(foldStateField);
       let isFolded = false;
 
@@ -214,7 +202,6 @@ const headingFoldGutter = gutter({
   },
 });
 
-// command to toggle the current heading fold
 function toggleHeadingFold(view: EditorView) {
   const pos = view.state.selection.main.head;
   const line = view.state.doc.lineAt(pos);
@@ -233,12 +220,10 @@ export const customFoldingExtension = [
   headingFoldGutter,
   EditorState.transactionFilter.of((tr: Transaction) => {
     if (!tr.changes.empty) {
-      // Check if the transaction contains a newline character
       let hasNewline = false;
       let changePos = -1;
 
       tr.changes.iterChanges((_, __, fromB, ___, inserted) => {
-        // Check if the inserted content contains a newline
         if (inserted.toString().includes("\n")) {
           hasNewline = true;
           changePos = fromB;
@@ -246,12 +231,10 @@ export const customFoldingExtension = [
       });
 
       if (hasNewline && changePos >= 0) {
-        // Get the line where the newline was inserted
         const line = tr.startState.doc.lineAt(changePos);
         const headingMatch = line.text.match(/^(#+)\s+/);
 
         if (headingMatch) {
-          // Check if this heading is folded
           const folds = tr.startState.field(foldStateField);
           let isFolded = false;
 
@@ -259,7 +242,6 @@ export const customFoldingExtension = [
             isFolded = true;
           });
 
-          // If folded, add an effect to unfold it
           if (isFolded) {
             return [tr, { effects: toggleFoldEffect.of(line.number) }];
           }

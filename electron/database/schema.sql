@@ -52,6 +52,18 @@ CREATE TABLE IF NOT EXISTS quiz_review (
   foreign key (quiz_id) references quiz (id)
 );
 
+CREATE TABLE IF NOT EXISTS decks (id integer primary key, title text not null);
+
+CREATE TABLE IF NOT EXISTS cards (
+  id integer primary key,
+  deck_id integer not null,
+  front text not null,
+  back text not null,
+  foreign key (deck_id) references decks (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cards_deck_id ON cards (deck_id);
+
 CREATE INDEX IF NOT EXISTS idx_questions_quiz_id ON questions (quiz_id);
 
 CREATE INDEX IF NOT EXISTS idx_options_question_id ON options (question_id);

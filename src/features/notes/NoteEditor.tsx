@@ -1,22 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import EditorTopBar from "./EditorTopBar";
-import TiptapEditor from "./TiptapEditor";
-import { useMarkdownRenderer } from "../../hooks/ui/useMarkdownRenderer";
 import { useNoteAutosave } from "../../hooks/notes/useNoteAutosave";
 import { useAppContext } from "../../context/AppContext";
+import MarkdownEditor, { MarkdownEditorRef } from "./MarkdownEditor";
+import MarkdownViewer from "./MarkdownViewer";
 
 const NoteEditor: React.FC = () => {
-  const { selectedFile, fileName, files } = useAppContext();
+  const { selectedFile, files } = useAppContext();
   const [noteContent, setNoteContent] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(true);
-  const editorRef = useRef<TiptapEditorRef>(null);
-
-  const markdownRef = useRef<HTMLDivElement>(null);
-
-  const { renderMarkdown } = useMarkdownRenderer();
+  const editorRef = useRef<MarkdownEditorRef>(null);
 
   useNoteAutosave({
     selectedFile,
@@ -80,12 +76,6 @@ const NoteEditor: React.FC = () => {
     setIsEditing(true);
   }, [selectedFile, files.length]);
 
-  useEffect(() => {
-    if (markdownRef.current && !isEditing) {
-      renderMarkdown(markdownRef, noteContent);
-    }
-  }, [noteContent, isEditing, renderMarkdown]);
-
   if (!selectedFile) return null;
   if (loading) {
     return (
@@ -108,20 +98,18 @@ const NoteEditor: React.FC = () => {
         isEditing={isEditing}
         toggleEditing={toggleEditing}
         isSaving={isSaving}
-        fileName={fileName}
         onUndo={handleUndo}
         onRedo={handleRedo}
       />
       <div className="editorArea">
         {isEditing ? (
-          <TiptapEditor
-            ref={editorRef}
-            noteContent={noteContent}
+          <MarkdownEditor
+            initialValue={noteContent}
             onChange={handleContentChange}
-            className="textEditor"
+            ref={editorRef}
           />
         ) : (
-          <div ref={markdownRef} className="textEditor"></div>
+          <MarkdownViewer content={noteContent} />
         )}
       </div>
     </div>

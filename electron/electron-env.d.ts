@@ -9,6 +9,19 @@ declare namespace NodeJS {
 
 type SortMethod = "asc" | "desc" | "custom";
 
+interface Card {
+  id?: number;
+  deckId?: number;
+  front: string;
+  back: string;
+}
+
+interface Deck {
+  id?: number;
+  title: string;
+  cards: Card[];
+}
+
 interface QuizOption {
   id: number;
   text: string;
@@ -54,11 +67,6 @@ interface QuizSubmission {
     answer: string;
   }[];
 }
-
-type TiptapEditorRef = {
-  undo: () => void;
-  redo: () => void;
-};
 
 interface CursorProps {
   top: number;
@@ -151,7 +159,6 @@ interface Window {
       newName: string,
     ) => Promise<{ success: boolean; newPath?: string }>;
     deleteFileOrFolder: (path: string) => Promise<{ success: boolean }>;
-    openExternalLink: (url: string) => Promise<void>;
     getLanguage: () => Promise<string>;
     setLanguage: (language: string) => Promise<void>;
     getTranslations: (language: string) => Promise<any>;
@@ -168,7 +175,7 @@ interface Window {
       quizData?: QuizData[];
       error?: string;
     }>;
-    quizSubmitReview: (submission: QuizSubmission) => Promise<{
+    reviewSubmit: (submission: QuizSubmission) => Promise<{
       success: boolean;
       reviewId?: number;
       review?: QuizReview;
@@ -180,5 +187,17 @@ interface Window {
     quizFindReviewsByQuizId: (
       quizId: number,
     ) => Promise<{ success: boolean; error?: string; reviews?: QuizReview[] }>;
+    deckSave: (
+      deckData: Deck,
+    ) => Promise<{ success: boolean; deckId?: number; error?: string }>;
+    deckFindById: (
+      deckId: number,
+    ) => Promise<{ success: boolean; deck?: Deck; error?: string }>;
+    deckFindAll: () => Promise<{
+      success: boolean;
+      decks?: Deck[];
+      error?: string;
+    }>;
+    openExternalLink: (url: string) => Promise<void>;
   };
 }

@@ -1,25 +1,51 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const useFlashCardState = () => {
-  const [inFCListing, setInFCListing] = useState<boolean>(true);
-  const [inFCReview, setInFCReview] = useState<boolean>(false);
+  const [cardView, setCardView] = useState<
+    "listing" | "review" | "create" | "viewing" | "inReview"
+  >("listing");
+  const [decks, setDecks] = useState<Deck[] | undefined>([]);
+  const [deckInView, setDeckInView] = useState<Deck | undefined>(undefined);
 
-  const clickFCListing = () => {
-    setInFCListing(true);
-    setInFCReview(false);
+  const viewCardSet = (deckId: number) => {
+    try {
+      window.ipcRenderer.deckFindById(deckId).then((res) => {
+        if (res.success) {
+          setDeckInView(res.deck);
+          setCardView("viewing");
+        } else {
+          console.error("Error fetching deck:", res.error);
+        }
+      });
+    } catch (e) {
+      console.error("Error fetching deck:", e);
+    }
   };
 
-  const clickFCReview = () => {
-    setInFCListing(false);
-    setInFCReview(true);
+  const fetchDecks = async () => {
+    try {
+      const response = await window.ipcRenderer.deckFindAll();
+      if (response.success) {
+        setDecks(response.decks);
+      } else {
+        console.error("Error fetching decks:", response.error);
+      }
+    } catch (e) {
+      console.error("Error fetching decks:", e);
+    }
   };
+
+  useEffect(() => {
+    fetchDecks();
+  }, []);
 
   return {
-    inFCReview,
-    clickFCListing,
-    clickFCReview,
-    inFCListing,
-    setInFCListing,
-    setInFCReview,
+    cardView,
+    setCardView,
+    decks,
+    fetchDecks,
+    deckInView,
+    setDeckInView,
+    viewCardSet,
   };
 };

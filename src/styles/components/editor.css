@@ -1,0 +1,180 @@
+.cm-editor,
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+
+.cm-cursor {
+  @apply border-l-soma-lightest! border-l-[1.5px]!;
+}
+
+.cm-gutters {
+  @apply bg-transparent! border-none!;
+}
+
+.cm-markdoc-hidden {
+  display: none;
+}
+
+.cm-markdoc-bullet * {
+  display: none;
+}
+
+.cm-markdoc-monospace,
+.markdownViewer code {
+  @apply text-soma-accent3 font-mono text-sm;
+}
+.cm-markdoc-bullet::after {
+  display: inline !important;
+  color: darkgray;
+  content: "•";
+}
+
+.cm-markdoc-renderBlock {
+  font-family: sans-serif;
+}
+
+/* code blocks */
+.cm-markdoc-code,
+.markdownViewer pre {
+  @apply block w-full m-0 px-1 text-xs relative;
+}
+.cm-markdoc-code::before {
+  content: "";
+  @apply absolute inset-0 -z-10 bg-soma-light;
+}
+.markdownViewer pre {
+  @apply bg-soma-light;
+}
+
+.cm-markdoc-renderBlock table,
+.markdownViewer table {
+  border-collapse: collapse;
+  margin-left: 5px;
+}
+
+.cm-markdoc-renderBlock th,
+.markdownViewer th,
+.cm-markdoc-renderBlock td,
+.markdownViewer td {
+  border: 1px solid lightgray;
+  padding: 5px 10px;
+}
+
+.cm-markdoc-renderBlock blockquote,
+.markdownViewer blockquote {
+  border-left: 3px solid lightgray;
+  padding-left: 10px;
+}
+
+.cm-markdoc-link,
+.markdownViewer a {
+  text-decoration: none;
+  @apply text-soma-accent1;
+}
+
+.cm-markdoc-link:hover,
+.markdownViewer a:hover {
+  text-decoration: underline;
+}
+
+.cm-markdoc-renderBlock p,
+.markdownViewer p {
+  margin: 3px;
+}
+
+.cm-markdoc-tag {
+  color: darkgray;
+}
+
+.cm-markdoc-fallbackTag {
+  @apply border-[2px]! border-soma-light! rounded-sm!;
+}
+.markdownViewer .cm-markdoc-fallbackTag {
+  margin: 1em 0;
+}
+
+.cm-markdoc-fallbackTag--name {
+  @apply bg-soma-light!;
+  padding: 5px;
+}
+
+.cm-markdoc-fallbackTag--inner {
+  padding: 10px;
+}
+
+.cm-markdoc-callout {
+  @apply bg-soma-accent3! text-soma-light! rounded-sm!;
+  display: flex;
+  padding: 10px;
+}
+.markdownViewer .cm-markdoc-callout {
+  margin: 1em 0;
+}
+
+.cm-markdoc-callout .icon {
+  font-size: 24px;
+  margin-right: 10px;
+  color: rgb(164, 205, 254);
+}
+
+.cm-markdoc-callout--warning {
+  background-color: rgb(252, 249, 233);
+  border-color: rgb(249, 229, 185);
+}
+
+.cm-markdoc-callout--warning .icon {
+  color: rgb(229, 153, 62);
+}
+
+.cm-markdoc-meta {
+  @apply text-soma-text-secondary;
+}
+
+.markdownViewer {
+  user-select: text;
+}
+&.cm-focused .cm-selectionBackground,
+.cm-selectionBackground,
+.markdownViewer ::selection {
+  @apply bg-soma-accent2!;
+}
+.markdownViewer h1,
+.cm-markdoc-heading1 {
+  @apply text-4xl font-bold;
+}
+
+.markdownViewer h2,
+.cm-markdoc-heading2 {
+  @apply text-3xl font-bold;
+}
+
+.markdownViewer h3,
+.cm-markdoc-heading3 {
+  @apply text-2xl font-bold;
+}
+.markdownViewer h4,
+.cm-markdoc-heading4 {
+  @apply text-xl font-bold;
+}
+.markdownViewer h5,
+.cm-markdoc-heading5 {
+  @apply text-lg font-bold;
+}
+.markdownViewer h6,
+.cm-markdoc-heading6 {
+  @apply text-base font-bold;
+}
+
+.markdownViewer ul {
+  @apply list-disc list-inside;
+}
+.markdownViewer ul ul {
+  @apply pl-4;
+}
+
+.markdownViewer ol {
+  @apply list-decimal list-inside;
+}
+.markdownViewer ol ol {
+  @apply pl-4;
+}

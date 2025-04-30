@@ -5,6 +5,7 @@ import { setupFileSystemListeners } from "./fileSystem";
 import { setupLanguageListeners } from "./translation";
 import { closeDatabase, initDatabase } from "./database/database";
 import { setupQuizHandlers } from "./quiz";
+import { setupCardHandlers } from "./card";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,6 +32,17 @@ function createWindow() {
     trafficLightPosition: { x: 15, y: 13 },
   });
 
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
+  win.webContents.on("will-navigate", (e, url) => {
+    if (win === null) return;
+    if (url !== win.webContents.getURL()) {
+      e.preventDefault();
+      shell.openExternal(url);
+    }
+  });
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
   });
@@ -72,6 +84,7 @@ app.whenReady().then(async () => {
   setupLanguageListeners(win!);
   await setupFileSystemListeners(win!);
   setupQuizHandlers();
+  setupCardHandlers();
 });
 
 app.on("will-quit", () => {

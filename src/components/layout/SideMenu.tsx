@@ -24,8 +24,7 @@ const SideMenu: React.FC = () => {
     clickMindMap,
     setInMindMap,
     createOrOpenTodaysNote,
-    clickFCListing,
-    clickFCReview,
+    setCardView,
     getMessage,
     setQuizView,
   } = useAppContext();
@@ -84,17 +83,20 @@ const SideMenu: React.FC = () => {
             <SideMenuButton
               className="mt-2"
               tippyContent={getMessage("flashcard.listing")}
-              onClick={clickFCListing}
+              onClick={() => setCardView("listing")}
             >
               <SquareAsterisk size={18} strokeWidth={1.5} />
             </SideMenuButton>
             <SideMenuButton
               tippyContent={getMessage("flashcard.review")}
-              onClick={clickFCReview}
+              onClick={() => setCardView("review")}
             >
               <GraduationCap size={18} strokeWidth={1.5} />
             </SideMenuButton>
-            <SideMenuButton tippyContent={getMessage("flashcard.create")}>
+            <SideMenuButton
+              tippyContent={getMessage("flashcard.create")}
+              onClick={() => setCardView("create")}
+            >
               <PlusCircle size={18} strokeWidth={1.5} />
             </SideMenuButton>
           </div>

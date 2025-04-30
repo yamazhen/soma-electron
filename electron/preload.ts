@@ -70,14 +70,22 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
       ipcRenderer.removeAllListeners("language-changed");
     };
   },
+  // quiz
   quizSave: (quizData: QuizData) => ipcRenderer.invoke("quiz-save", quizData),
   quizFindAll: () => ipcRenderer.invoke("quiz-find-all"),
   quizFindById: (quizId: number) =>
     ipcRenderer.invoke("quiz-find-by-id", quizId),
-  quizSubmitReview: (submission: QuizSubmission) =>
-    ipcRenderer.invoke("quiz-submit-review", submission),
-  quizFindReviewById: (reviewId: number) =>
-    ipcRenderer.invoke("quiz-get-review-by-id", reviewId),
-  quizFindReviewsByQuizId: (quizId: number) =>
-    ipcRenderer.invoke("quiz-get-reviews-by-quiz-id", quizId),
+  // quiz reviews
+  reviewSubmit: (submission: QuizSubmission) =>
+    ipcRenderer.invoke("review-submit", submission),
+  reviewFindById: (reviewId: number) =>
+    ipcRenderer.invoke("review-find-by-id", reviewId),
+  reviewFindByQuizId: (quizId: number) =>
+    ipcRenderer.invoke("review-find-by-quiz-id", quizId),
+
+  // deck
+  deckSave: (deckData: Deck) => ipcRenderer.invoke("deck-save", deckData),
+  deckFindById: (deckId: number) =>
+    ipcRenderer.invoke("deck-find-by-id", deckId),
+  deckFindAll: () => ipcRenderer.invoke("deck-find-all"),
 });

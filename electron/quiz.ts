@@ -238,7 +238,6 @@ export function quizSave(quizData: QuizData): number {
 
   try {
     const newQuizId = transaction(quizData);
-    console.log("Quiz saved with ID:", newQuizId);
     return newQuizId;
   } catch (e) {
     console.error("Error saving quiz:", e);
@@ -418,7 +417,7 @@ export function setupQuizHandlers() {
   });
 
   ipcMain.handle(
-    "quiz-submit-review",
+    "review-submit",
     async (_event, submission: QuizSubmission) => {
       try {
         const reviewId = saveQuizReview(submission);
@@ -435,7 +434,7 @@ export function setupQuizHandlers() {
     },
   );
 
-  ipcMain.handle("quiz-get-review-by-id", async (_event, reviewId: number) => {
+  ipcMain.handle("review_find_by_id", async (_event, reviewId: number) => {
     try {
       const review = getQuizReviewById(reviewId);
       if (!review) {
@@ -447,7 +446,7 @@ export function setupQuizHandlers() {
     }
   });
 
-  ipcMain.handle("quiz-get-review-by-quiz", async (_event, quizId: number) => {
+  ipcMain.handle("review_find_by_quiz_id", async (_event, quizId: number) => {
     try {
       const reviews = getQuizReviews(quizId);
       return { success: true, reviews };

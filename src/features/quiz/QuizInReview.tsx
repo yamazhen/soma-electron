@@ -1,401 +1,299 @@
 import React, { useEffect, useState } from "react";
+import { useAppContext } from "../../context/AppContext";
+import { CircleHelp } from "lucide-react";
 
 type Props = {
   quiz: QuizData;
-  onComplete?: (review: any) => void;
+  onComplete?: (review: QuizReview) => void;
 };
 
 const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [index, setIndex] = useState(0);
+  const [time, setTime] = useState(10);
   const [userAnswer, setUserAnswer] = useState<string | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState(false);
   const [score, setScore] = useState(0);
-  const [quizComplete, setQuizComplete] = useState(false);
   const [answers, setAnswers] = useState<
     { questionId: number; answer: string }[]
   >([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [reviewResult, setReviewResult] = useState<QuizReview | null>(null);
+  const [review, setReview] = useState<QuizReview | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { setQuizView, fetchQuizzes } = useAppContext();
 
-  // Validate quiz data
+  const question = quiz?.questions?.[index];
+
   useEffect(() => {
-    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+    if (!quiz?.questions?.length) {
       setError("Invalid quiz data: missing questions");
-      return;
+    } else {
+      setError(null);
     }
-    // Reset error if valid
-    setError(null);
   }, [quiz]);
 
-  // Safe access to current question
-  const currentQuestion = quiz?.questions?.[currentQuestionIndex] || null;
-
   useEffect(() => {
-    // Don't proceed if there's an error or no current question
-    if (error || !currentQuestion) return;
+    if (!question || error) return;
 
-    setTimeLeft(10);
+    setTime(100000);
     setUserAnswer(null);
-    setShowFeedback(false);
-
-    if (currentQuestionIndex >= (quiz?.questions?.length || 0)) {
-      setQuizComplete(true);
-      submitQuizReview();
-      return;
-    }
+    setFeedback(false);
 
     const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
+      setTime((t) => {
+        if (t <= 1) {
           clearInterval(timer);
-          handleTimerEnd();
+          endTimer();
           return 0;
         }
-        return prevTime - 1;
+        return t - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, quiz?.questions?.length, error]);
+  }, [index, question, error]);
 
-  const submitQuizReview = async () => {
-    if (!quiz?.id || answers.length === 0 || isSubmitting) return;
+  useEffect(() => {
+    if (answers.length === quiz.questions.length && !submitting && !review) {
+      handleSubmit();
+    }
+  }, [answers]);
 
-    setIsSubmitting(true);
+  const endTimer = () => {
+    setFeedback(true);
+    setTimeout(() => setIndex((i) => i + 1), 2000);
+  };
+
+  const checkCorrect = (q: QuizQuestion | null, a: string): boolean => {
+    if (!q) return false;
+
+    if (q.type === "true-false") {
+      return (a === "true") === q.correctAnswer;
+    }
+
+    if (q.type === "multiple-choice") {
+      const correct = q.options?.find((opt) => opt?.isCorrect);
+      return a === correct?.text || a === correct?.id?.toString();
+    }
+
+    const answers = q.type === "fill-in-blank" ? q.answers : q.possibleAnswers;
+    return (
+      answers?.some((ans) => {
+        const norm = (s: string) =>
+          s
+            .toLowerCase()
+            .replace(/[^\w\s]|_/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+        return norm(a) === norm(ans);
+      }) || false
+    );
+  };
+
+  const handleSelect = (a: string) => {
+    if (time === 0 || userAnswer !== null || !question) return;
+
+    setUserAnswer(a);
+    setFeedback(true);
+
+    setAnswers((prev) => [...prev, { questionId: question.id, answer: a }]);
+    if (checkCorrect(question, a)) setScore((s) => s + 1);
+
+    setTimeout(() => setIndex((i) => i + 1), 2000);
+  };
+
+  const handleSubmit = async () => {
+    if (!quiz.id || !answers.length || submitting) return;
+    setSubmitting(true);
 
     try {
-      const submission: QuizSubmission = {
+      const result = await window.ipcRenderer.reviewSubmit({
         quizId: quiz.id,
-        answers: answers,
-      };
+        answers,
+      });
 
-      const result = await window.ipcRenderer.quizSubmitReview(submission);
-
-      if (result.success) {
-        if (result.review) {
-          setReviewResult(result.review);
-          if (onComplete) {
-            onComplete(result.review);
-          }
-        }
+      if (result.success && result.review) {
+        setReview(result.review);
+        onComplete?.(result.review);
       } else {
-        console.error("Failed to submit quiz review:", result.error);
-        setError(
-          `Failed to submit quiz review: ${result.error || "Unknown error"}`,
-        );
+        setError(`Failed to submit review: ${result.error || "Unknown error"}`);
       }
-    } catch (error) {
-      console.error("Error submitting quiz review:", error);
-      setError(
-        `Error submitting quiz review: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setError(`Submission error: ${msg}`);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  const handleTimerEnd = () => {
-    setShowFeedback(true);
-    setTimeout(moveToNextQuestion, 2000);
-  };
-
-  const checkIfAnswerIsCorrect = (
-    question: QuizQuestion | null,
-    answer: string,
-  ): boolean => {
-    if (!question) return false;
-
-    if (question.type === "true-false") {
-      return (answer === "true") === question.correctAnswer;
-    }
+  const renderOptions = () => {
+    if (!question) return null;
 
     if (question.type === "multiple-choice") {
-      const correctOption = question.options?.find((opt) => opt?.isCorrect);
       return (
-        answer === correctOption?.text ||
-        answer === correctOption?.id?.toString()
-      );
-    }
-
-    if (question.type === "fill-in-blank" || question.type === "short-answer") {
-      const possibleAnswers =
-        question.type === "fill-in-blank"
-          ? question.answers
-          : question.possibleAnswers;
-
-      console.log("User answer:", answer);
-      console.log("Possible answers:", possibleAnswers);
-
-      // More lenient matching
-      return (
-        (Array.isArray(possibleAnswers) &&
-          possibleAnswers.some((possible) => {
-            if (!possible) return false;
-
-            const normalizedPossible = possible.toLowerCase().trim();
-            const normalizedAnswer = answer.toLowerCase().trim();
-
-            console.log(
-              `Comparing: "${normalizedAnswer}" with "${normalizedPossible}"`,
-            );
-
-            // Try exact match first
-            if (normalizedAnswer === normalizedPossible) return true;
-
-            // Try removing punctuation and extra spaces
-            const cleanPossible = normalizedPossible
-              .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "")
-              .replace(/\s+/g, " ");
-            const cleanAnswer = normalizedAnswer
-              .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "")
-              .replace(/\s+/g, " ");
-
-            return cleanAnswer === cleanPossible;
-          })) ||
-        false
-      );
-    }
-
-    return false;
-  };
-
-  const handleAnswerSelect = (answer: string) => {
-    if (timeLeft === 0 || userAnswer !== null || !currentQuestion) return;
-
-    setUserAnswer(answer);
-    setShowFeedback(true);
-
-    setAnswers((prev) => [
-      ...prev,
-      {
-        questionId: currentQuestion.id,
-        answer: answer,
-      },
-    ]);
-
-    if (checkIfAnswerIsCorrect(currentQuestion, answer)) {
-      setScore((prevScore) => prevScore + 1);
-    }
-
-    setTimeout(moveToNextQuestion, 2000);
-  };
-
-  const moveToNextQuestion = () => {
-    setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
-  };
-
-  const renderQuestion = () => {
-    const question = currentQuestion;
-
-    if (!question) {
-      return <p>Question not available</p>;
-    }
-
-    switch (question.type) {
-      case "multiple-choice":
-        return (
-          <div>
-            {Array.isArray(question.options) && question.options.length > 0 ? (
-              <div className="flex flex-col space-y-2">
-                {question.options.map((option) => {
-                  return option ? (
-                    <button
-                      key={option.id || `option-${Math.random()}`}
-                      className={`border p-2 ${
-                        showFeedback
-                          ? option.isCorrect
-                            ? "bg-green-100"
-                            : userAnswer === option.text
-                              ? "bg-red-100"
-                              : ""
-                          : "hover:bg-gray-100"
-                      }`}
-                      onClick={() => handleAnswerSelect(option.text || "")}
-                      disabled={showFeedback}
-                    >
-                      {option.text || "No text provided"}
-                    </button>
-                  ) : null;
-                })}
-              </div>
-            ) : (
-              <p>No options available for this question</p>
-            )}
-          </div>
-        );
-
-      case "true-false":
-        return (
-          <div className="flex flex-col space-y-2">
-            {["true", "false"].map((option) => (
+        <div className="flex flex-col space-y-2">
+          {question.options?.map((opt) =>
+            opt ? (
               <button
-                key={option}
+                key={opt.id}
                 className={`border p-2 ${
-                  showFeedback
-                    ? option === String(question.correctAnswer)
+                  feedback
+                    ? opt.isCorrect
                       ? "bg-green-100"
-                      : userAnswer === option
+                      : userAnswer === opt.text
                         ? "bg-red-100"
                         : ""
                     : "hover:bg-gray-100"
                 }`}
-                onClick={() => handleAnswerSelect(option)}
-                disabled={showFeedback}
+                onClick={() => handleSelect(opt.text || "")}
+                disabled={feedback}
               >
-                {option.charAt(0).toUpperCase() + option.slice(1)}
+                {opt.text || "No text"}
               </button>
-            ))}
-          </div>
-        );
-
-      case "fill-in-blank":
-      case "short-answer":
-        return (
-          <div>
-            <input
-              type="text"
-              placeholder="Type your answer"
-              disabled={showFeedback}
-              id="answer-input"
-              className="border p-2 w-full mb-2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !showFeedback) {
-                  const value = e.currentTarget.value.trim();
-                  handleAnswerSelect(value);
-                }
-              }}
-            />
-            <button
-              onClick={(e) => {
-                const input = e.currentTarget
-                  .previousElementSibling as HTMLInputElement;
-                const value = input?.value?.trim() || "";
-                handleAnswerSelect(value);
-              }}
-              disabled={showFeedback}
-              className="border p-2 w-full"
-            >
-              Submit
-            </button>
-            {showFeedback && (
-              <div className="mt-2 p-2 bg-gray-100">
-                <p>
-                  Correct answers:{" "}
-                  {(question.type === "fill-in-blank"
-                    ? question.answers
-                    : question.possibleAnswers
-                  )?.join(", ") || "None provided"}
-                </p>
-              </div>
-            )}
-          </div>
-        );
-
-      default:
-        return <p>Question type not supported</p>;
+            ) : null,
+          )}
+        </div>
+      );
     }
+
+    if (question.type === "true-false") {
+      return (
+        <div className="flex flex-col space-y-2">
+          {["true", "false"].map((val) => (
+            <button
+              key={val}
+              className={`border p-2 ${
+                feedback
+                  ? val === String(question.correctAnswer)
+                    ? "bg-green-100"
+                    : userAnswer === val
+                      ? "bg-red-100"
+                      : ""
+                  : "hover:bg-gray-100"
+              }`}
+              onClick={() => handleSelect(val)}
+              disabled={feedback}
+            >
+              {val.charAt(0).toUpperCase() + val.slice(1)}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    if (["fill-in-blank", "short-answer"].includes(question.type)) {
+      return (
+        <div>
+          <input
+            type="text"
+            placeholder="Type your answer"
+            disabled={feedback}
+            className="border p-2 w-full mb-2"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const value = e.currentTarget.value.trim();
+                handleSelect(value);
+              }
+            }}
+          />
+          <button
+            className="border p-2 w-full"
+            onClick={(e) => {
+              const input = e.currentTarget
+                .previousElementSibling as HTMLInputElement;
+              handleSelect(input?.value?.trim() || "");
+            }}
+            disabled={feedback}
+          >
+            Submit
+          </button>
+          {feedback && (
+            <div className="mt-2 p-2 bg-gray-100">
+              <p>
+                Correct answers:{" "}
+                {(question.answers || question.possibleAnswers)?.join(", ") ||
+                  "None"}
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return <p>Unsupported question type</p>;
   };
 
-  // Display error message if necessary
   if (error) {
     return (
-      <div className="p-4">
-        <div className="border p-4">
-          <h2 className="text-red-500 mb-2">Error</h2>
-          <p>{error}</p>
-          <button
-            onClick={() => window.history.back()}
-            className="border p-2 mt-4"
-          >
-            Back to Quizzes
-          </button>
-        </div>
+      <div className="p-4 border">
+        <h2 className="text-red-500 mb-2">Error</h2>
+        <p>{error}</p>
+        <button
+          className="border p-2 mt-4"
+          onClick={() => window.history.back()}
+        >
+          Back to Quizzes
+        </button>
       </div>
     );
   }
 
-  if (quizComplete) {
+  if (index >= quiz.questions.length) {
     return (
-      <div className="p-4">
-        <div className="border p-4 text-center">
-          <h2 className="mb-2">Quiz Complete</h2>
-          <p className="mb-4">
-            Score: {score}/{quiz?.questions?.length || 0}
-          </p>
+      <div className="p-20 flex flex-col w-full h-full justify-center gap-4">
+        <h2 className="mb-2">Quiz Complete</h2>
+        <p className="mb-4">
+          Score: {score}/{quiz.questions.length}
+        </p>
 
-          {isSubmitting ? (
-            <div>
-              <p>Submitting results...</p>
+        {submitting ? (
+          <p>Submitting...</p>
+        ) : review ? (
+          <div className="border p-2 text-center">
+            <p>Review saved!</p>
+            <div className="flex justify-around">
+              <p>{review.correct_questions.length} Correct</p>
+              <p>{review.wrong_questions.length} Wrong</p>
             </div>
-          ) : reviewResult ? (
-            <div className="border p-2 mt-4">
-              <p className="mb-2">Review saved successfully</p>
-              <div className="flex justify-around">
-                <div>
-                  <p>{reviewResult.correct_questions?.length || 0} Correct</p>
-                </div>
-                <div>
-                  <p>{reviewResult.wrong_questions?.length || 0} Wrong</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={submitQuizReview}
-              className="border p-2 w-full mb-2"
-            >
-              Save Results
-            </button>
-          )}
-
-          <button
-            onClick={() => window.history.back()}
-            className="border p-2 w-full"
-          >
-            Back to Quizzes
+          </div>
+        ) : (
+          <button onClick={handleSubmit} className="border p-2 w-full mb-2">
+            Save Results
           </button>
-        </div>
-      </div>
-    );
-  }
+        )}
 
-  // Render loading state if no question is available
-  if (!currentQuestion) {
-    return (
-      <div className="p-4 text-center">
-        <p>Loading quiz...</p>
+        <button
+          onClick={() => {
+            fetchQuizzes();
+            setQuizView("listing");
+          }}
+          className="border p-2 w-full hover:bg-soma-light"
+        >
+          Back to Quizzes
+        </button>
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Question counter */}
+    <div className="flex flex-col h-full w-full justify-center p-20">
       <div className="border-b p-2">
         <p>
-          Question {currentQuestionIndex + 1}/{quiz?.questions?.length || 0}
+          Question {index + 1}/{quiz.questions.length}
         </p>
-        <p>Time remaining: {timeLeft}s</p>
+        <p>Time left: {time}s</p>
       </div>
 
-      {/* Question display */}
       <div className="p-4">
-        <div className="border p-4 mb-4">
-          <p>{currentQuestion.text || "No question text available"}</p>
+        <div className="p-4 mb-4 flex gap-2 items-center justify-center">
+          <p className="text-3xl">{question?.text || "No question text"}</p>
+          <CircleHelp size={30} strokeWidth={2} />
         </div>
-
-        {renderQuestion()}
-
-        {/* Feedback display */}
-        {showFeedback && (
+        {renderOptions()}
+        {feedback && (
           <div className="mt-4 p-2 border">
             {userAnswer === null
               ? "Time's up!"
-              : checkIfAnswerIsCorrect(currentQuestion, userAnswer)
+              : checkCorrect(question, userAnswer)
                 ? "Correct"
                 : "Incorrect"}
           </div>

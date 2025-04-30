@@ -37,6 +37,19 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
 
   const [folderExpanded, setFolderExpanded] = useState<boolean>(false);
 
+  let sortTippyMessage = null;
+  switch (sortMethod) {
+    case "asc":
+      sortTippyMessage = getMessage("notes.sortAsc");
+      break;
+    case "desc":
+      sortTippyMessage = getMessage("notes.sortDesc");
+      break;
+    case "custom":
+      sortTippyMessage = getMessage("notes.sortCustom");
+      break;
+  }
+
   const cycleSortMethod = () => {
     const methods = ["asc", "desc", "custom"] as const;
     const currentIndex = methods.indexOf(
@@ -84,7 +97,7 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
           </SideMenuButton>
           <SideMenuButton
             tippyPlacement="bottom"
-            tippyContent={getMessage("notes.changeSort")}
+            tippyContent={sortTippyMessage}
             onClick={cycleSortMethod}
           >
             {sortMethod === "asc" ? (

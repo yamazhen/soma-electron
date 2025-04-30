@@ -30,7 +30,9 @@
     "today": "Today's Note",
     "newNote": "New Note",
     "newFolder": "New Folder",
-    "changeSort": "Change Sort Order"
+    "sortAsc": "Ascending Order",
+    "sortDesc": "Descending Order",
+    "sortCustom": "Custom Order"
   },
   "quiz": {
     "listing": "Quiz Listing",

@@ -11,12 +11,12 @@ import {
   WandSparkles,
 } from "lucide-react";
 import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
+import { useAppContext } from "../../context/AppContext";
 
 type Props = {
   isSaving: boolean;
   isEditing: boolean;
   toggleEditing: () => void;
-  fileName: string | null;
   onUndo: () => void;
   onRedo: () => void;
 };
@@ -42,10 +42,10 @@ const EditorTopBar: React.FC<Props> = ({
   isSaving,
   isEditing,
   toggleEditing,
-  fileName,
   onUndo,
   onRedo,
 }) => {
+  const { fileName } = useAppContext();
   return (
     <div
       id="editorTopBar"

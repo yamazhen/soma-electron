@@ -7,22 +7,26 @@ import QuizInReview from "./QuizInReview";
 
 const Quiz: React.FC = () => {
   const { quizView, quizInReview } = useAppContext();
-  if (quizView === "listing") {
-    return <QuizListing />;
-  }
-  if (quizView === "review") {
-    return <QuizReview />;
-  }
-  if (quizView === "inReview" && quizInReview) {
-    return (
-      <QuizInReview
-        quiz={quizInReview}
-        onComplete={() => console.log("Quiz Complted")}
-      />
-    );
-  }
-  if (quizView === "create") {
-    return <QuizCreateForm />;
+  switch (quizView) {
+    case "listing":
+      return <QuizListing />;
+    case "review":
+      return <QuizReview />;
+    case "create":
+      return <QuizCreateForm />;
+    case "inReview":
+      if (quizInReview) {
+        return (
+          <QuizInReview
+            quiz={quizInReview}
+            onComplete={() => console.log("Quiz Complted")}
+          />
+        );
+      } else {
+        return <QuizListing />;
+      }
+    default:
+      return <QuizListing />;
   }
 };
 

@@ -14,7 +14,6 @@ export const useQuizState = () => {
       const response = await window.ipcRenderer.quizFindById(quizId);
 
       if (response.success) {
-        console.log("Quiz data:", response.quizData);
         setQuizInReview(response.quizData);
         setQuizView("inReview");
       } else {
@@ -30,7 +29,6 @@ export const useQuizState = () => {
       const response = await window.ipcRenderer.quizFindAll();
       if (response.success) {
         setQuizzes(response.quizData);
-        console.log("Fetched quizzes:", response.quizData);
       } else {
         console.error("Error fetching quizzes:", response.error);
       }
