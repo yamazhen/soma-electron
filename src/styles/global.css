@@ -15,8 +15,17 @@ svg {
 }
 
 html,
+body,
+#root {
+  @apply h-full text-soma-text-primary cursor-default;
+}
+
 body {
-  @apply h-full bg-soma-darkest text-soma-text-primary cursor-default;
+  @apply bg-soma-darkest;
+}
+
+body.search-mode {
+  @apply bg-soma-light;
 }
 
 html {
@@ -54,4 +63,7 @@ input::selection {
 
 main {
   @apply h-screen flex flex-col;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
 }

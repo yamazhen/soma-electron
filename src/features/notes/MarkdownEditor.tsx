@@ -27,10 +27,11 @@ import {
   indentUnit,
 } from "@codemirror/language";
 import { Table } from "@lezer/markdown";
-import richEditor from "codemirror-rich-markdoc/src";
+import richEditor from "./editor/codemirrorMarkdownExtension";
 import markdocConfig from "./markdoc";
 import { richMarkdocTheme } from "./editorTheme";
 import { customFoldingExtension } from "./CustomFoldingExtension";
+import { wikiLinks } from "./NoteLinkExtension";
 
 interface EditorProps {
   initialValue?: string;
@@ -71,7 +72,6 @@ const MarkdownEditorComponent: ForwardRefRenderFunction<
     rectangularSelection(),
     history(),
     indentOnInput(),
-    syntaxHighlighting(richMarkdocTheme),
     indentUnit.of("   "),
     customFoldingExtension,
     keymap.of([indentWithTab, ...historyKeymap, ...foldKeymap]),

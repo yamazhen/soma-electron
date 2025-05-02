@@ -16,18 +16,24 @@ import {
   SquareAsterisk,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import { ipcRenderer } from "electron/renderer";
 
 const SideMenu: React.FC = () => {
   const [explorerExpanded, setExplorerExpanded] = useState(true);
   const {
     activePage,
-    clickMindMap,
     setInMindMap,
     createOrOpenTodaysNote,
     setCardView,
     getMessage,
     setQuizView,
+    setSelectedFile,
   } = useAppContext();
+
+  const clickMindMap = () => {
+    setInMindMap(true);
+    setSelectedFile("");
+  };
 
   const toggleExplorer = () => {
     setExplorerExpanded((prev) => !prev);
@@ -107,6 +113,7 @@ const SideMenu: React.FC = () => {
             <SideMenuButton
               tippyContent={getMessage("notes.search")}
               className="mt-2"
+              onClick={() => window.ipcRenderer.openSearchPopup()}
             >
               <FileSearch size={18} strokeWidth={1.5} />
             </SideMenuButton>

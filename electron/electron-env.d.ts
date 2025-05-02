@@ -199,5 +199,10 @@ interface Window {
       error?: string;
     }>;
     openExternalLink: (url: string) => Promise<void>;
+    openSearchPopup: () => Promise<void>;
+    hideSearchPopup: () => Promise<void>;
+    expandSearchPopup: (expand) => Promise<void>;
+    onSearchOpenNote: (cb: (filePath: string) => void) => void;
+    offSearchOpenNote: (cb: (filePath: string) => void) => void;
   };
 }

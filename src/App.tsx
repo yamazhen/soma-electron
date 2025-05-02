@@ -5,6 +5,8 @@ import Quiz from "./features/quiz/Quiz";
 import Flashcard from "./features/flashcard/Flashcard";
 import Home from "./features/home/Home";
 import { useAppContext } from "./context/AppContext";
+import { Routes, Route, HashRouter } from "react-router-dom";
+import Search from "./features/notes/search/Search";
 
 function App() {
   const { activePage } = useAppContext();
@@ -27,16 +29,28 @@ function App() {
   );
 
   return (
-    <main>
-      <TitleBar />
-      <div className="wrapper">
-        <SideMenu />
-        {activePage === "notes" && <Notes />}
-        {activePage === "home" && <Home />}
-        {activePage === "quiz" && <Quiz />}
-        {activePage === "flashcard" && <Flashcard />}
-      </div>
-    </main>
+    <HashRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <main id="mainApp">
+                <TitleBar />
+                <div className="wrapper">
+                  <SideMenu />
+                  {activePage === "notes" && <Notes />}
+                  {activePage === "home" && <Home />}
+                  {activePage === "quiz" && <Quiz />}
+                  {activePage === "flashcard" && <Flashcard />}
+                </div>
+              </main>
+            </>
+          }
+        />
+        <Route path="/search" element={<Search />} />
+      </Routes>
+    </HashRouter>
   );
 }
 

@@ -1,7 +1,7 @@
 import { HighlightStyle } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 
-export const richMarkdocTheme = HighlightStyle.define([
+export default HighlightStyle.define([
   {
     tag: t.heading1,
     class: "cm-markdoc-heading1",

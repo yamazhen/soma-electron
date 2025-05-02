@@ -16,3 +16,8 @@ export function joinPaths(parentPath: string, childPath: string): string {
     return parentPath + "/" + childPath;
   }
 }
+
+export const getParentDirName = (filePath: string): string => {
+  const withoutFile = filePath.slice(0, filePath.lastIndexOf("/"));
+  return withoutFile.slice(withoutFile.lastIndexOf("/") + 1);
+};

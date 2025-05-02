@@ -182,3 +182,8 @@
 .dropDownItem {
   @apply hover:bg-soma-medium rounded-md p-2 flex items-center gap-1 whitespace-nowrap hover:text-soma-text-primary;
 }
+
+#search {
+  -webkit-app-region: drag;
+  @apply w-full h-full rounded-lg shadow-lg m-0 text-soma-text-primary;
+}

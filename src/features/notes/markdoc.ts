@@ -41,5 +41,27 @@ export default {
         ]);
       },
     },
+    wikilink: {
+      attributes: {
+        note: { type: String, required: true },
+      },
+      transform(node, config) {
+        const note = node.attributes.note;
+        return new markdoc.Tag(
+          "a",
+          {
+            class: "cm-soma-wikilink",
+            "data-note": note,
+          },
+          [note],
+        );
+      },
+    },
   },
 } as Config;
+
+export function processWikiLinks(content: string): string {
+  return content.replace(/@@([^@\n]+)@@/g, (_, noteName) => {
+    return `{% wikilink note="${noteName}" %}`;
+  });
+}

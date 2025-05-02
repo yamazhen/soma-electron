@@ -17,8 +17,14 @@ function FileTree(
   { treeData }: FileTreeProps,
   forwardedRef: React.Ref<FileTreeHandle>,
 ) {
-  const { selectedFile, setSelectedFile, loadNotes, sortMethod, setInMindMap } =
-    useAppContext();
+  const {
+    selectedFile,
+    setSelectedFile,
+    loadNotesWithoutCheck,
+    sortMethod,
+    setInMindMap,
+    loadNotes,
+  } = useAppContext();
 
   const [designatedRoot, setDesignatedRoot] = useState<string>("");
   const treeRef = useRef<any>(null);
@@ -225,8 +231,8 @@ function FileTree(
     if (result.success && result.newPath) {
       if (selectedFile === nodeId) {
         setSelectedFile(result.newPath);
+        await loadNotesWithoutCheck();
       }
-      await loadNotes();
     }
 
     setRenamingNode(null);

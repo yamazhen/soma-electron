@@ -601,5 +601,9 @@ export async function setupFileSystemListeners(mainWindow: BrowserWindow) {
     return deleteFileOrFolder(filePath);
   });
 
+  ipcMain.on("search-open-note", (_event, filePath) => {
+    mainWindow.webContents.send("search-open-note", filePath);
+  });
+
   startFileWatcher(mainWindow);
 }

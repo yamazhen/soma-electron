@@ -1,4 +1,9 @@
-import { ipcRenderer, contextBridge } from "electron";
+import { ipcRenderer, contextBridge, IpcRendererEvent } from "electron";
+
+const listeners = new Map<
+  (filePath: string) => void,
+  (event: IpcRendererEvent, filePath: string) => void
+>();
 
 contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args: Parameters<typeof ipcRenderer.on>) {
@@ -88,4 +93,21 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   deckFindById: (deckId: number) =>
     ipcRenderer.invoke("deck-find-by-id", deckId),
   deckFindAll: () => ipcRenderer.invoke("deck-find-all"),
+  openSearchPopup: () => ipcRenderer.invoke("open-search-popup"),
+  hideSearchPopup: () => ipcRenderer.invoke("hide-search-popup"),
+  expandSearchPopup: (expanded: boolean) =>
+    ipcRenderer.invoke("expand-search-popup", expanded),
+  onSearchOpenNote: (callback: (filePath: string) => void) => {
+    const wrapped = (_: IpcRendererEvent, filePath: string) =>
+      callback(filePath);
+    listeners.set(callback, wrapped);
+    ipcRenderer.on("search-open-note", wrapped);
+  },
+  offSearchOpenNote: (callback: (filePath: string) => void) => {
+    const wrapped = listeners.get(callback);
+    if (wrapped) {
+      ipcRenderer.removeListener("search-open-note", wrapped);
+      listeners.delete(callback);
+    }
+  },
 });

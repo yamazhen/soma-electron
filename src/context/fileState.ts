@@ -18,6 +18,18 @@ export const useFileState = () => {
     loadNotes();
   };
 
+  // listening to open note requests from search window
+  useEffect(() => {
+    const handleOpen = (filePath: string) => {
+      setSelectedFile(filePath);
+    };
+
+    window.ipcRenderer.onSearchOpenNote(handleOpen);
+    return () => {
+      window.ipcRenderer.offSearchOpenNote(handleOpen);
+    };
+  }, [setSelectedFile]);
+
   // function to check if the file still exists
   const fileExists = (notes: DirectoryContents, filePath: string): boolean => {
     for (const item of notes) {
@@ -32,6 +44,20 @@ export const useFileState = () => {
     }
     return false;
   };
+
+  // function to load notes without checking (for rename)
+  const loadNotesWithoutCheck = useCallback(async () => {
+    try {
+      const loadedFiles = await window.ipcRenderer.loadExistingNotes(
+        sortMethod,
+        true,
+      );
+      setFiles(loadedFiles);
+      return loadedFiles;
+    } catch (error) {
+      return [];
+    }
+  }, [selectedFile, sortMethod]);
 
   // function to load notes
   const loadNotes = useCallback(async () => {
@@ -51,7 +77,7 @@ export const useFileState = () => {
     } catch (error) {
       return [];
     }
-  }, [selectedFile, sortMethod]);
+  }, [sortMethod]);
 
   const createOrOpenTodaysNote = async () => {
     const today = new Date();
@@ -83,6 +109,22 @@ export const useFileState = () => {
     } catch (error) {
       console.error("Error creating note:", error);
     }
+  };
+
+  const getAllNotesOnly = (): MarkdownItem[] => {
+    const flatten = (items: DirectoryContents): MarkdownItem[] => {
+      const result: MarkdownItem[] = [];
+      for (const item of items) {
+        if (item.isDirectory && item.children) {
+          result.push(...flatten(item.children));
+        } else {
+          result.push(item as MarkdownItem);
+        }
+      }
+      return result;
+    };
+
+    return flatten(files);
   };
 
   // function to create a new folder
@@ -119,5 +161,7 @@ export const useFileState = () => {
     sortMethod,
     changeSortMethod,
     createOrOpenTodaysNote,
+    loadNotesWithoutCheck,
+    getAllNotesOnly,
   };
 };
