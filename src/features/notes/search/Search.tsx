@@ -34,14 +34,26 @@ const Search: React.FC = () => {
 
   // highlight input when search popup is opened
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setTimeout(() => {
+          inputRef.current?.select();
+        }, 10);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     const selectText = () => {
       inputRef.current?.select();
     };
     window.ipcRenderer?.on("search-focus-input", selectText);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.ipcRenderer?.off("search-focus-input", selectText);
     };
-  });
+  }, []);
 
   // esc to close search popup
   useEffect(() => {
