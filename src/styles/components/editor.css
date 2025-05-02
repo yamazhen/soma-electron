@@ -134,6 +134,22 @@
   @apply text-soma-accent2!;
 }
 
+.cm-tooltip-autocomplete {
+  @apply bg-soma-dark! border-2! border-soma-light! shadow-2xl;
+}
+
+.cm-tooltip-autocomplete > ul > li {
+  @apply cursor-pointer! px-2! py-1!;
+}
+
+.cm-tooltip-autocomplete > ul > li:hover {
+  @apply bg-soma-accent3/50!;
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  @apply bg-soma-accent3! text-soma-dark!;
+}
+
 .markdownViewer {
   user-select: text;
 }
