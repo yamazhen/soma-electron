@@ -7,6 +7,11 @@ declare namespace NodeJS {
   }
 }
 
+interface ElectronThemeColor {
+  main: string;
+  search: string;
+}
+
 type SortMethod = "asc" | "desc" | "custom";
 
 interface Card {
@@ -204,5 +209,12 @@ interface Window {
     expandSearchPopup: (expand) => Promise<void>;
     onSearchOpenNote: (cb: (filePath: string) => void) => void;
     offSearchOpenNote: (cb: (filePath: string) => void) => void;
+    changeTheme: (theme: string) => Promise<void>;
+    getTheme: () => Promise<string>;
+    openSettings: () => Promise<void>;
+    closeSettings: () => Promise<void>;
+    onWindowStateChange: (
+      callback: (state: { isFullScreen: boolean; isMacOS: boolean }) => void,
+    ) => () => void;
   };
 }

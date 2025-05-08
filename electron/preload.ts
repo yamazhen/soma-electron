@@ -110,4 +110,22 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
       listeners.delete(callback);
     }
   },
+  // theme
+  changeTheme: (theme: string) => ipcRenderer.invoke("change-theme", theme),
+  getTheme: () => ipcRenderer.invoke("get-theme"),
+  // settings
+  openSettings: () => ipcRenderer.invoke("open-settings"),
+  closeSettings: () => ipcRenderer.invoke("close-settings"),
+  // window state
+  onWindowStateChange: (
+    callback: (state: { isFullScreen: boolean; isMacOS: boolean }) => void,
+  ) => {
+    ipcRenderer.on(
+      "window-state-change",
+      (
+        _event: Electron.IpcRendererEvent,
+        state: { isFullScreen: boolean; isMacOS: boolean },
+      ) => callback(state),
+    );
+  },
 });

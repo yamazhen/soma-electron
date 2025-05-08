@@ -181,10 +181,14 @@
 }
 
 .dropDownItem {
-  @apply hover:bg-soma-medium rounded-md p-2 flex items-center gap-1 whitespace-nowrap hover:text-soma-text-primary;
+  @apply hover:bg-soma-medium rounded-md p-2 flex items-center gap-1 whitespace-nowrap;
 }
 
 #search {
   -webkit-app-region: drag;
   @apply w-full h-full rounded-lg shadow-lg m-0 text-soma-text-primary;
+}
+
+.settingsButton {
+  @apply text-left text-sm hover:bg-soma-medium px-2 py-1 rounded-md;
 }

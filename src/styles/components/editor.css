@@ -1,3 +1,7 @@
+.cm-content {
+  font-family: "Inter", sans-serif;
+}
+
 .cm-editor,
 .cm-editor.cm-focused {
   outline: none !important;

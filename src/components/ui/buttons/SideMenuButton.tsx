@@ -26,12 +26,19 @@ type Props = {
 const SideMenuButton: React.FC<Props> = ({
   children,
   className,
-  tippyContent = "TippyMessage",
+  tippyContent,
   tippyPlacement = "right",
   onClick,
   dropdownItems,
 }) => {
-  if (!dropdownItems) {
+  if (!tippyContent || tippyContent === "") {
+    return (
+      <div className={`menuButton ${className}`} onClick={onClick}>
+        {children}
+      </div>
+    );
+  }
+  if (!dropdownItems && tippyContent && tippyContent !== "") {
     return (
       <Tippy
         content={tippyContent}

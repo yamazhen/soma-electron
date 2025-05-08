@@ -22,6 +22,9 @@ const Search: React.FC = () => {
     [flatNotes],
   );
 
+  // update theme on theme change
+  useThemeListener();
+
   // reset body class
   useEffect(() => {
     if (location.pathname === "/search") {
@@ -150,3 +153,6 @@ const Search: React.FC = () => {
 };
 
 export default Search;
+function useThemeListener() {
+  throw new Error("Function not implemented.");
+}

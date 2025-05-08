@@ -16,7 +16,6 @@ import {
   SquareAsterisk,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
-import { ipcRenderer } from "electron/renderer";
 
 const SideMenu: React.FC = () => {
   const [explorerExpanded, setExplorerExpanded] = useState(true);
@@ -37,6 +36,10 @@ const SideMenu: React.FC = () => {
 
   const toggleExplorer = () => {
     setExplorerExpanded((prev) => !prev);
+  };
+
+  const openSettings = () => {
+    window.ipcRenderer.openSettings();
   };
 
   // Render different menu buttons based on active page
@@ -146,7 +149,7 @@ const SideMenu: React.FC = () => {
           explorerExpanded && activePage === "notes"
             ? "bg-soma-dark"
             : "bg-transparent transition-colors duration-700"
-        } ${activePage !== "notes" && "!duration-75"}`}
+        } ${activePage !== "notes" && "!duration-0"}`}
       >
         {renderPageButtons()}
 
@@ -160,6 +163,7 @@ const SideMenu: React.FC = () => {
           <SideMenuButton
             className="mb-2"
             tippyContent={getMessage("menu.settings")}
+            onClick={openSettings}
           >
             <Settings size={18} strokeWidth={1.5} />
           </SideMenuButton>

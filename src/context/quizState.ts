@@ -5,24 +5,6 @@ export const useQuizState = () => {
     "listing" | "review" | "create" | "inReview"
   >("listing");
   const [quizzes, setQuizzes] = useState<QuizData[] | undefined>([]);
-  const [quizInReview, setQuizInReview] = useState<QuizData | undefined>(
-    undefined,
-  );
-
-  const reviewQuiz = async (quizId: number) => {
-    try {
-      const response = await window.ipcRenderer.quizFindById(quizId);
-
-      if (response.success) {
-        setQuizInReview(response.quizData);
-        setQuizView("inReview");
-      } else {
-        console.error("Error fetching quiz:", response.error);
-      }
-    } catch (e) {
-      console.error("Exception while fetching quiz:", e);
-    }
-  };
 
   const fetchQuizzes = async () => {
     try {
@@ -46,8 +28,6 @@ export const useQuizState = () => {
     quizView,
     quizzes,
     setQuizzes,
-    quizInReview,
-    reviewQuiz,
     fetchQuizzes,
   };
 };

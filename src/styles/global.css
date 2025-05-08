@@ -1,7 +1,14 @@
 @import "tailwindcss";
-@import "./variables.css";
+@import "./theme.css";
 @import "./components/App.css";
 @import "./components/editor.css";
+
+@font-face {
+  font-family: "Inter";
+  src: url("../../public/fonts/inter4/Inter.ttc") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
 
 * {
   @apply box-border;
@@ -21,6 +28,7 @@ body,
 }
 
 body {
+  font-family: "Inter", sans-serif;
   @apply bg-soma-darkest;
 }
 
@@ -66,4 +74,7 @@ main {
 }
 .no-drag {
   -webkit-app-region: no-drag;
+}
+.drag {
+  -webkit-app-region: drag;
 }

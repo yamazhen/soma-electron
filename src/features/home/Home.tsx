@@ -70,25 +70,25 @@ const Home: React.FC<Props> = () => {
       </div>
 
       {/* Study Streak & Progress */}
-      <div className="mt-6 p-4 bg-soma-medium rounded-lg shadow flex flex-col justify-between text-soma-text-primary">
+      <div className="mt-6 p-4 bg-soma-medium rounded-lg shadow flex flex-col justify-between text-soma-text-primary text-md">
         <div className="flex flex-row items-center gap-2">
           <Flame size={18}></Flame>
-          <p className="text-lg">
+          <p>
             {getMessage("home.studyStreak")}{" "}
-            <span className="font-bold">5 {getMessage("common.days")}</span>
+            <strong>5 {getMessage("common.days")}</strong>
           </p>
         </div>
         <div className="flex flex-row items-center gap-2">
           <BookOpenCheck size={18}></BookOpenCheck>
-          <p className="text-lg">3 {getMessage("home.quizCompleted")}</p>
+          <p>3 {getMessage("home.quizCompleted")}</p>
         </div>
         <div className="flex flex-row items-center gap-2">
           <NotebookText size={18}></NotebookText>
-          <p className="text-lg">12 {getMessage("home.notesCreated")}</p>
+          <p>12 {getMessage("home.notesCreated")}</p>
         </div>
         <div className="flex flex-row items-center gap-2">
           <StickyNote size={18}></StickyNote>
-          <p className="text-lg">20 {getMessage("home.flashcardsCreated")}</p>
+          <p>20 {getMessage("home.flashcardsCreated")}</p>
         </div>
       </div>
     </section>

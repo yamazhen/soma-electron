@@ -1,0 +1,49 @@
+@theme {
+  /* Soma Color Palette */
+  --color-soma-darkest: #1c1c1e;
+  --color-soma-dark: #2c2c2e;
+  --color-soma-medium: #3a3a3c;
+  --color-soma-light: #48484a;
+  --color-soma-lightest: #8e8e93;
+
+  /* Accent Colors */
+  --color-soma-accent1: #0071e3;
+  --color-soma-accent2: #bf5af2;
+  --color-soma-accent3: #32d74b;
+
+  /* Neutral Colors */
+  --color-soma-bg-light: #f2f2f7;
+  --color-soma-bg-dark: #28282a;
+  --color-soma-text-primary: #f2f2f7;
+  --color-soma-text-secondary: #aeaeb2;
+
+  /* Status Colors */
+  --color-soma-success: #30d158;
+  --color-soma-warning: #ff9f0a;
+  --color-soma-error: #ff453a;
+}
+
+[data-theme="light"] {
+  /* Soma Color Palette */
+  --color-soma-darkest: #e0e0e5;
+  --color-soma-dark: #d0d0d5;
+  --color-soma-medium: #c0c0c5;
+  --color-soma-light: #a0a0a5;
+  --color-soma-lightest: #505055;
+
+  /* Accent Colors */
+  --color-soma-accent1: #007aff;
+  --color-soma-accent2: #5856d6;
+  --color-soma-accent3: #34c759;
+
+  /* Neutral Colors */
+  --color-soma-bg-light: #ffffff;
+  --color-soma-bg-dark: #f2f2f7;
+  --color-soma-text-primary: #000000;
+  --color-soma-text-secondary: #3a3a3d;
+
+  /* Status Colors */
+  --color-soma-success: #34c759;
+  --color-soma-warning: #ff9500;
+  --color-soma-error: #ff3b30;
+}

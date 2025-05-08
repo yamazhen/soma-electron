@@ -9,9 +9,28 @@ import React, { useState } from "react";
 import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
 import { useAppContext } from "../../context/AppContext";
 
-const QuizListing: React.FC = () => {
-  const { getMessage, reviewQuiz, quizzes } = useAppContext();
+interface Props {
+  setQuizInReview: (quizData: QuizData | undefined) => void;
+}
+
+const QuizListing: React.FC<Props> = ({ setQuizInReview }) => {
+  const { getMessage, quizzes, setQuizView } = useAppContext();
   const [expandedQuizzes, setExpandedQuizzes] = useState<number[]>([]);
+
+  const reviewQuiz = async (quizId: number) => {
+    try {
+      const response = await window.ipcRenderer.quizFindById(quizId);
+
+      if (response.success) {
+        setQuizInReview(response.quizData);
+        setQuizView("inReview");
+      } else {
+        console.error("Error fetching quiz:", response.error);
+      }
+    } catch (e) {
+      console.error("Exception while fetching quiz:", e);
+    }
+  };
 
   const toggleQuizExpansion = (id: number) => {
     setExpandedQuizzes((prev) =>

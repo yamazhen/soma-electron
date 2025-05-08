@@ -23,7 +23,6 @@ export async function initDatabase() {
     );
     const schema = fs.readFileSync(schemaPath, "utf-8");
 
-    console.log("NODE_ENV?", process.env.NODE_ENV);
     db = new Database(dbPath, {
       verbose: process.env.NODE_ENV === "development" ? console.log : undefined,
     });

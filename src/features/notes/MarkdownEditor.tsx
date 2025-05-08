@@ -20,18 +20,11 @@ import {
   undo,
   redo,
 } from "@codemirror/commands";
-import {
-  syntaxHighlighting,
-  indentOnInput,
-  foldKeymap,
-  indentUnit,
-} from "@codemirror/language";
+import { indentOnInput, foldKeymap, indentUnit } from "@codemirror/language";
 import { Table } from "@lezer/markdown";
 import richEditor from "./editor/codemirrorMarkdownExtension";
 import markdocConfig from "./markdoc";
-import { richMarkdocTheme } from "./editorTheme";
 import { customFoldingExtension } from "./CustomFoldingExtension";
-import { wikiLinks } from "./NoteLinkExtension";
 
 interface EditorProps {
   initialValue?: string;

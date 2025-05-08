@@ -1,15 +1,12 @@
-import SideMenu from "./components/layout/SideMenu";
-import TitleBar from "./components/layout/TitleBar";
-import Notes from "./features/notes/Notes";
-import Quiz from "./features/quiz/Quiz";
-import Flashcard from "./features/flashcard/Flashcard";
-import Home from "./features/home/Home";
-import { useAppContext } from "./context/AppContext";
 import { Routes, Route, HashRouter } from "react-router-dom";
 import Search from "./features/notes/search/Search";
+import MainWindow from "./components/layout/MainWindow";
+import Settings from "./components/layout/Settings";
+import { setInitialTheme, useThemeListener } from "./hooks/themeHooks";
 
 function App() {
-  const { activePage } = useAppContext();
+  setInitialTheme();
+  useThemeListener();
 
   window.addEventListener(
     "click",
@@ -31,24 +28,9 @@ function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <main id="mainApp">
-                <TitleBar />
-                <div className="wrapper">
-                  <SideMenu />
-                  {activePage === "notes" && <Notes />}
-                  {activePage === "home" && <Home />}
-                  {activePage === "quiz" && <Quiz />}
-                  {activePage === "flashcard" && <Flashcard />}
-                </div>
-              </main>
-            </>
-          }
-        />
+        <Route path="/" element={<MainWindow />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </HashRouter>
   );
