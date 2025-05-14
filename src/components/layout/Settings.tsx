@@ -1,40 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useAppContext } from "../../context/AppContext";
+import React from "react";
 import { X } from "lucide-react";
-import SideMenuButton from "../ui/buttons/SideMenuButton";
-import { Select } from "@headlessui/react";
+import SideMenuButton from "../ui/buttons/Button";
+import { useAppContext } from "../../context/AppContext";
+import GeneralSettings from "./settings/GeneralSettings";
 
-type Props = {};
-
-const Settings: React.FC<Props> = () => {
+const Settings: React.FC = () => {
   const { setSettingsPage, settingsPage } = useAppContext();
-  const [theme, setTheme] = useState<string>("system");
-  useEffect(() => {
-    window.ipcRenderer.getTheme().then(setTheme);
-  }, []);
-
-  const changeTheme = (theme: string) => {
-    switch (theme) {
-      case "dark":
-        document.documentElement.setAttribute("data-theme", "dark");
-        window.ipcRenderer.changeTheme("dark");
-        setTheme("dark");
-        break;
-      case "light":
-        document.documentElement.setAttribute("data-theme", "light");
-        window.ipcRenderer.changeTheme("light");
-        setTheme("light");
-        break;
-      case "system":
-        document.documentElement.removeAttribute("data-theme");
-        window.ipcRenderer.changeTheme("system");
-        setTheme("system");
-        break;
-      default:
-        console.error("Invalid theme selected");
-        break;
-    }
-  };
 
   return (
     <section className="flex h-full w-full">
@@ -68,20 +39,7 @@ const Settings: React.FC<Props> = () => {
         </button>
       </div>
       <div className="bg-soma-darkest flex-1 px-4 pt-5 pb-4 text-sm">
-        <div id="theme" className="flex items-center gap-2">
-          <label>Theme</label>
-          <Select
-            name="theme"
-            aria-label="App Theme"
-            className="bg-soma-light border border-soma-medium py-0.5 rounded-md no-drag z-50"
-            value={theme}
-            onChange={(e) => changeTheme(e.target.value)}
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="system">System</option>
-          </Select>
-        </div>
+        {settingsPage === "general" && <GeneralSettings />}
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 import { CirclePlus, X } from "lucide-react";
 import React, { useState } from "react";
-import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
+import SideMenuButton from "../../components/ui/buttons/Button";
 import { useAppContext } from "../../context/AppContext";
 import { RadioGroup, Radio } from "@headlessui/react";
 

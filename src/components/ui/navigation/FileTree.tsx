@@ -22,8 +22,8 @@ function FileTree(
     setSelectedFile,
     loadNotesWithoutCheck,
     sortMethod,
-    setInMindMap,
     loadNotes,
+    setNoteView,
   } = useAppContext();
 
   const [designatedRoot, setDesignatedRoot] = useState<string>("");
@@ -166,14 +166,14 @@ function FileTree(
         setSelectedItems([nodeId]);
         setLastSelectedItem(nodeId);
         setSelectedFile(node.data.data.path);
-        setInMindMap(false);
+        setNoteView("note");
       }
     },
     [
       handleShiftSelection,
       handleCtrlSelection,
       setSelectedFile,
-      setInMindMap,
+      setNoteView,
       setSelectedItems,
       setLastSelectedItem,
     ],

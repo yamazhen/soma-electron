@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
-import { CircleHelp } from "lucide-react";
+import { CircleHelp, Timer, CheckCircle, XCircle } from "lucide-react";
 
 type Props = {
   quiz: QuizData;
@@ -34,7 +34,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
   useEffect(() => {
     if (!question || error) return;
 
-    setTime(100000);
+    setTime(30);
     setUserAnswer(null);
     setFeedback(false);
 
@@ -95,7 +95,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
     setUserAnswer(a);
     setFeedback(true);
 
-    setAnswers((prev) => [...prev, { questionId: question.id, answer: a }]);
+    setAnswers((prev) => [...prev, { questionId: question.id!, answer: a }]);
     if (checkCorrect(question, a)) setScore((s) => s + 1);
 
     setTimeout(() => setIndex((i) => i + 1), 2000);
@@ -130,19 +130,19 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
 
     if (question.type === "multiple-choice") {
       return (
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-3">
           {question.options?.map((opt) =>
             opt ? (
               <button
                 key={opt.id}
-                className={`border p-2 ${
+                className={`p-4 rounded-xl text-left transition-all ${
                   feedback
                     ? opt.isCorrect
-                      ? "bg-green-100"
+                      ? "bg-soma-success/20 border-2 border-soma-success text-soma-text-primary"
                       : userAnswer === opt.text
-                        ? "bg-red-100"
-                        : ""
-                    : "hover:bg-gray-100"
+                        ? "bg-soma-error/20 border-2 border-soma-error text-soma-text-primary"
+                        : "bg-soma-dark/50 text-soma-text-secondary opacity-50"
+                    : "bg-soma-dark hover:bg-soma-medium text-soma-text-primary cursor-pointer"
                 }`}
                 onClick={() => handleSelect(opt.text || "")}
                 disabled={feedback}
@@ -157,18 +157,18 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
 
     if (question.type === "true-false") {
       return (
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-3">
           {["true", "false"].map((val) => (
             <button
               key={val}
-              className={`border p-2 ${
+              className={`p-4 rounded-xl text-left transition-all ${
                 feedback
                   ? val === String(question.correctAnswer)
-                    ? "bg-green-100"
+                    ? "bg-soma-success/20 border-2 border-soma-success text-soma-text-primary"
                     : userAnswer === val
-                      ? "bg-red-100"
-                      : ""
-                  : "hover:bg-gray-100"
+                      ? "bg-soma-error/20 border-2 border-soma-error text-soma-text-primary"
+                      : "bg-soma-dark/50 text-soma-text-secondary opacity-50"
+                  : "bg-soma-dark hover:bg-soma-medium text-soma-text-primary cursor-pointer"
               }`}
               onClick={() => handleSelect(val)}
               disabled={feedback}
@@ -182,12 +182,12 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
 
     if (["fill-in-blank", "short-answer"].includes(question.type)) {
       return (
-        <div>
+        <div className="space-y-3">
           <input
             type="text"
             placeholder="Type your answer"
             disabled={feedback}
-            className="border p-2 w-full mb-2"
+            className="w-full p-4 rounded-xl bg-soma-dark text-soma-text-primary placeholder-soma-text-secondary focus:outline-none focus:ring-2 focus:ring-soma-accent1 disabled:opacity-50"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const value = e.currentTarget.value.trim();
@@ -196,7 +196,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
             }}
           />
           <button
-            className="border p-2 w-full"
+            className="w-full p-4 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all disabled:opacity-50"
             onClick={(e) => {
               const input = e.currentTarget
                 .previousElementSibling as HTMLInputElement;
@@ -204,12 +204,12 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
             }}
             disabled={feedback}
           >
-            Submit
+            Submit Answer
           </button>
           {feedback && (
-            <div className="mt-2 p-2 bg-gray-100">
-              <p>
-                Correct answers:{" "}
+            <div className="p-4 rounded-xl bg-soma-dark">
+              <p className="text-soma-text-primary">
+                <span className="font-semibold">Correct answers:</span>{" "}
                 {(question.answers || question.possibleAnswers)?.join(", ") ||
                   "None"}
               </p>
@@ -219,87 +219,168 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
       );
     }
 
-    return <p>Unsupported question type</p>;
+    return <p className="text-soma-error">Unsupported question type</p>;
   };
 
   if (error) {
     return (
-      <div className="p-4 border">
-        <h2 className="text-red-500 mb-2">Error</h2>
-        <p>{error}</p>
-        <button
-          className="border p-2 mt-4"
-          onClick={() => window.history.back()}
-        >
-          Back to Quizzes
-        </button>
-      </div>
+      <section className="h-full w-full bg-soma-darkest flex items-center justify-center">
+        <div className="bg-soma-dark rounded-xl p-8 max-w-md">
+          <h2 className="text-2xl font-bold text-soma-error mb-4">Error</h2>
+          <p className="text-soma-text-primary mb-6">{error}</p>
+          <button
+            className="w-full p-3 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all"
+            onClick={() => window.history.back()}
+          >
+            Back to Quizzes
+          </button>
+        </div>
+      </section>
     );
   }
 
   if (index >= quiz.questions.length) {
     return (
-      <div className="p-20 flex flex-col w-full h-full justify-center gap-4">
-        <h2 className="mb-2">Quiz Complete</h2>
-        <p className="mb-4">
-          Score: {score}/{quiz.questions.length}
-        </p>
+      <section className="h-full w-full bg-soma-darkest flex items-center justify-center">
+        <div className="bg-soma-dark rounded-xl p-8 max-w-md w-full">
+          <h2 className="text-3xl font-bold text-soma-text-primary mb-6 text-center">
+            Quiz Complete!
+          </h2>
 
-        {submitting ? (
-          <p>Submitting...</p>
-        ) : review ? (
-          <div className="border p-2 text-center">
-            <p>Review saved!</p>
-            <div className="flex justify-around">
-              <p>{review.correct_questions.length} Correct</p>
-              <p>{review.wrong_questions.length} Wrong</p>
-            </div>
+          <div className="bg-soma-medium rounded-xl p-6 mb-6">
+            <p className="text-4xl font-bold text-soma-text-primary text-center mb-2">
+              {Math.round((score / quiz.questions.length) * 100)}%
+            </p>
+            <p className="text-soma-text-secondary text-center">
+              Score: {score}/{quiz.questions.length}
+            </p>
           </div>
-        ) : (
-          <button onClick={handleSubmit} className="border p-2 w-full mb-2">
-            Save Results
-          </button>
-        )}
 
-        <button
-          onClick={() => {
-            fetchQuizzes();
-            setQuizView("listing");
-          }}
-          className="border p-2 w-full hover:bg-soma-light"
-        >
-          Back to Quizzes
-        </button>
-      </div>
+          {submitting ? (
+            <div className="text-center py-4">
+              <p className="text-soma-text-secondary">Submitting...</p>
+            </div>
+          ) : review ? (
+            <div className="bg-soma-medium rounded-xl p-4 mb-6">
+              <p className="text-soma-text-primary text-center mb-3">
+                Review saved!
+              </p>
+              <div className="flex justify-around">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-soma-success">
+                    {review.correct_questions.length}
+                  </p>
+                  <p className="text-soma-text-secondary text-sm">Correct</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-soma-error">
+                    {review.wrong_questions.length}
+                  </p>
+                  <p className="text-soma-text-secondary text-sm">Wrong</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="w-full p-3 rounded-xl bg-soma-success text-white hover:bg-opacity-90 transition-all mb-4"
+            >
+              Save Results
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              fetchQuizzes();
+              setQuizView("listing");
+            }}
+            className="w-full p-3 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all"
+          >
+            Back to Quizzes
+          </button>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="flex flex-col h-full w-full justify-center p-20">
-      <div className="border-b p-2">
-        <p>
-          Question {index + 1}/{quiz.questions.length}
-        </p>
-        <p>Time left: {time}s</p>
-      </div>
-
-      <div className="p-4">
-        <div className="p-4 mb-4 flex gap-2 items-center justify-center">
-          <p className="text-3xl">{question?.text || "No question text"}</p>
-          <CircleHelp size={30} strokeWidth={2} />
-        </div>
-        {renderOptions()}
-        {feedback && (
-          <div className="mt-4 p-2 border">
-            {userAnswer === null
-              ? "Time's up!"
-              : checkCorrect(question, userAnswer)
-                ? "Correct"
-                : "Incorrect"}
+    <section className="h-full w-full bg-soma-darkest flex items-center justify-center">
+      <div className="w-full max-w-2xl p-6">
+        {/* Progress Bar */}
+        <div className="bg-soma-dark rounded-xl p-5 mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-soma-text-secondary">
+              Question {index + 1} of {quiz.questions.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Timer className="text-soma-accent1" size={20} />
+              <span
+                className={`text-lg font-semibold ${time <= 10 ? "text-soma-error" : "text-soma-text-primary"}`}
+              >
+                {time}s
+              </span>
+            </div>
           </div>
-        )}
+          <div className="w-full bg-soma-medium rounded-full h-2">
+            <div
+              className="bg-soma-accent1 rounded-full h-2 transition-all duration-300"
+              style={{
+                width: `${((index + 1) / quiz.questions.length) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Question Card */}
+        <div className="bg-soma-dark rounded-xl p-8">
+          <div className="mb-8 text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <p className="text-2xl font-semibold text-soma-text-primary">
+                {question?.text || "No question text"}
+              </p>
+              <CircleHelp className="text-soma-text-secondary" size={24} />
+            </div>
+          </div>
+
+          {renderOptions()}
+
+          {feedback && (
+            <div
+              className={`mt-6 p-4 rounded-xl flex items-center gap-3 ${
+                userAnswer === null
+                  ? "bg-soma-warning/20"
+                  : checkCorrect(question, userAnswer)
+                    ? "bg-soma-success/20"
+                    : "bg-soma-error/20"
+              }`}
+            >
+              {userAnswer === null ? (
+                <>
+                  <Timer className="text-soma-warning" size={24} />
+                  <span className="text-soma-warning font-semibold">
+                    Time's up!
+                  </span>
+                </>
+              ) : checkCorrect(question, userAnswer) ? (
+                <>
+                  <CheckCircle className="text-soma-success" size={24} />
+                  <span className="text-soma-success font-semibold">
+                    Correct!
+                  </span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="text-soma-error" size={24} />
+                  <span className="text-soma-error font-semibold">
+                    Incorrect
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

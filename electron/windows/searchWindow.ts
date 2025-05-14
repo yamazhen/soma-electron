@@ -1,5 +1,4 @@
 import { BrowserWindow } from "electron";
-import path from "path";
 import { env } from "../config";
 
 export function createSearchWindow(
@@ -18,7 +17,7 @@ export function createSearchWindow(
   const searchWin = new BrowserWindow({
     parent: parentWindow || undefined,
     width: 600,
-    height: 50,
+    height: 60,
     resizable: false,
     movable: true,
     modal: true,
@@ -53,9 +52,7 @@ export function createSearchWindow(
   if (env.viteDevServerUrl && env.nodeEnv === "development") {
     searchWin.loadURL(`${env.viteDevServerUrl}/#/search`);
   } else {
-    searchWin.loadFile(path.join(env.rendererDist, "index.html"), {
-      hash: "search",
-    });
+    searchWin.loadFile(env.indexPath);
   }
 
   return searchWin;

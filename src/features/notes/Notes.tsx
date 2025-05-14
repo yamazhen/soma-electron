@@ -6,12 +6,12 @@ import { useAppContext } from "../../context/AppContext";
 type Props = {};
 
 const Notes: React.FC<Props> = () => {
-  const { selectedFile, inMindMap, getMessage } = useAppContext();
+  const { selectedFile, noteView, getMessage } = useAppContext();
   return (
     <section className="content">
-      {selectedFile && !inMindMap ? (
+      {selectedFile && noteView === "note" ? (
         <NoteEditor />
-      ) : inMindMap ? (
+      ) : noteView === "mindmap" ? (
         <MindMap />
       ) : (
         <h1 className="flex justify-center items-center h-full">

@@ -19,4 +19,5 @@ export const env = {
   rendererDist: RENDERER_DIST,
   viteDevServerUrl: VITE_DEV_SERVER_URL,
   nodeEnv: NODE_ENV,
+  indexPath: path.join(RENDERER_DIST, "index.html"),
 };

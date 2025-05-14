@@ -1,10 +1,13 @@
 import { useState } from "react";
 
 export const useNoteState = () => {
-  const [inMindMap, setInMindMap] = useState<boolean>(false);
+  const [noteView, setNoteView] = useState<"mindmap" | "note">("note");
+  const [explorerExpanded, setExplorerExpanded] = useState(true);
 
   return {
-    inMindMap,
-    setInMindMap,
+    noteView,
+    setNoteView,
+    explorerExpanded,
+    setExplorerExpanded,
   };
 };

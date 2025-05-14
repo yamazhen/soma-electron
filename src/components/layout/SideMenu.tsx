@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import SideMenuButton from "../ui/buttons/SideMenuButton";
+import React from "react";
 import RotatingArrow from "../ui/common/RotatingArrow";
 import Explorer from "../ui/navigation/Explorer";
 import {
@@ -14,25 +13,29 @@ import {
   PlusCircle,
   Settings,
   SquareAsterisk,
+  Home,
+  Brain,
+  BookOpen,
+  WalletCards,
+  NotebookIcon,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import SidebarButton from "../ui/buttons/SidebarButton";
 
 const SideMenu: React.FC = () => {
-  const [explorerExpanded, setExplorerExpanded] = useState(true);
   const {
     activePage,
-    setInMindMap,
+    setNoteView,
     createOrOpenTodaysNote,
     setCardView,
-    getMessage,
+    setExplorerExpanded,
+    explorerExpanded,
     setQuizView,
-    setSelectedFile,
+    setActivePage,
+    noteView,
+    quizView,
+    cardView,
   } = useAppContext();
-
-  const clickMindMap = () => {
-    setInMindMap(true);
-    setSelectedFile("");
-  };
 
   const toggleExplorer = () => {
     setExplorerExpanded((prev) => !prev);
@@ -42,134 +45,184 @@ const SideMenu: React.FC = () => {
     window.ipcRenderer.openSettings();
   };
 
-  // Render different menu buttons based on active page
-  const renderPageButtons = () => {
+  const navItems = [
+    { id: "home", icon: Home, label: "Home" },
+    { id: "notes", icon: BookOpen, label: "Notes" },
+    { id: "quiz", icon: Brain, label: "Quizzes" },
+    { id: "flashcard", icon: WalletCards, label: "Flashcards" },
+  ];
+
+  const renderPageActions = () => {
     switch (activePage) {
       case "home":
         return (
-          <div className="menuButtonHolder">
-            <SideMenuButton
-              className="mt-2"
-              tippyContent={getMessage("home.dashboard")}
-            >
-              <LayoutGrid size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton tippyContent={getMessage("home.analytics")}>
-              <Activity size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton tippyContent={getMessage("home.quickCreate")}>
-              <Plus size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-          </div>
+          <>
+            <SidebarButton
+              icon={LayoutGrid}
+              variant="secondary"
+              isActive
+              tippyContent="Dashboard"
+            />
+            <SidebarButton
+              icon={Activity}
+              variant="secondary"
+              tippyContent="Analytics"
+            />
+          </>
         );
       case "quiz":
         return (
-          <div className="menuButtonHolder">
-            <SideMenuButton
-              className="mt-2"
-              tippyContent={getMessage("quiz.listing")}
+          <>
+            <SidebarButton
+              tippyContent="Quiz Sets"
+              icon={FileQuestion}
               onClick={() => setQuizView("listing")}
-            >
-              <FileQuestion size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton
-              tippyContent={getMessage("quiz.review")}
+              variant="secondary"
+              isActive={quizView === "listing"}
+            />
+            <SidebarButton
+              tippyContent="Quiz Reviews"
+              icon={GraduationCap}
               onClick={() => setQuizView("review")}
-            >
-              <GraduationCap size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton
-              tippyContent={getMessage("quiz.create")}
+              variant="secondary"
+              isActive={quizView === "review"}
+            />
+            <SidebarButton
+              tippyContent="Create Quiz Set"
+              icon={PlusCircle}
               onClick={() => setQuizView("create")}
-            >
-              <PlusCircle size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-          </div>
+              variant="secondary"
+              isActive={quizView === "create"}
+            />
+          </>
         );
       case "flashcard":
         return (
-          <div className="menuButtonHolder">
-            <SideMenuButton
-              className="mt-2"
-              tippyContent={getMessage("flashcard.listing")}
+          <>
+            <SidebarButton
+              tippyContent="Flashcard Decks"
+              icon={SquareAsterisk}
               onClick={() => setCardView("listing")}
-            >
-              <SquareAsterisk size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton
-              tippyContent={getMessage("flashcard.review")}
+              variant="secondary"
+              isActive={cardView === "listing"}
+            />
+            <SidebarButton
+              tippyContent="Flashcard Reviews"
+              icon={GraduationCap}
               onClick={() => setCardView("review")}
-            >
-              <GraduationCap size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton
-              tippyContent={getMessage("flashcard.create")}
+              variant="secondary"
+              isActive={cardView === "review"}
+            />
+            <SidebarButton
+              tippyContent="Create Flashcard Deck"
+              icon={PlusCircle}
               onClick={() => setCardView("create")}
-            >
-              <PlusCircle size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-          </div>
+              variant="secondary"
+              isActive={cardView === "create"}
+            />
+          </>
         );
       case "notes":
         return (
-          <div className="menuButtonHolder">
-            <SideMenuButton
-              tippyContent={getMessage("notes.search")}
-              className="mt-2"
+          <>
+            <SidebarButton
+              tippyContent="Notes"
+              icon={NotebookIcon}
+              onClick={() => setNoteView("note")}
+              variant="secondary"
+              isActive={noteView === "note"}
+            />
+            <SidebarButton
+              tippyContent="Mind Map"
+              icon={BrainCircuit}
+              onClick={() => setNoteView("mindmap")}
+              variant="secondary"
+              isActive={noteView === "mindmap"}
+            />
+            <SidebarButton
+              tippyContent="Create Today's Note"
+              icon={Calendar}
+              onClick={() => {
+                createOrOpenTodaysNote();
+                setNoteView("note");
+              }}
+              variant="secondary"
+            />
+            <SidebarButton
+              tippyContent="Search Notes"
+              icon={FileSearch}
               onClick={() => window.ipcRenderer.openSearchPopup()}
-            >
-              <FileSearch size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton
-              tippyContent={getMessage("notes.mindMap")}
-              onClick={clickMindMap}
-            >
-              <BrainCircuit size={18} strokeWidth={1.5} />
-            </SideMenuButton>
-            <SideMenuButton tippyContent={getMessage("notes.today")}>
-              <Calendar
-                size={18}
-                strokeWidth={1.5}
-                onClick={() => {
-                  createOrOpenTodaysNote(), setInMindMap(false);
-                }}
-              />
-            </SideMenuButton>
-          </div>
+              variant="secondary"
+            />
+          </>
         );
       default:
-        return <div className="menuButtonHolder"></div>;
+        return null;
     }
   };
 
   return (
     <>
-      <section
-        className={`menu ${
+      <aside
+        className={`
+        relative flex flex-col h-full w-16
+        ${
           explorerExpanded && activePage === "notes"
-            ? "bg-soma-dark"
-            : "bg-transparent transition-colors duration-700"
-        } ${activePage !== "notes" && "!duration-0"}`}
+            ? "bg-soma-dark shadow-xl"
+            : "bg-soma-dark/80 backdrop-blur-sm"
+        }
+        transition-all duration-300
+        border-r border-soma-light/10
+        flex-shrink-0
+      `}
       >
-        {renderPageButtons()}
+        {/* Main Navigation */}
+        <nav className="flex-1 flex flex-col">
+          {/* Primary Navigation */}
+          <div className="p-2 space-y-1 mt-2">
+            {navItems.map((item) => (
+              <SidebarButton
+                key={item.id}
+                icon={item.icon}
+                isActive={activePage === item.id}
+                onClick={() => setActivePage?.(item.id)}
+                tippyContent={item.label}
+              />
+            ))}
+          </div>
 
-        <div className="menuButtonHolder">
+          {/* Separator */}
+          <div className="mx-3 my-2">
+            <div className="h-px bg-soma-light/20" />
+          </div>
+
+          {/* Page Actions */}
+          <div className="p-2 space-y-1 flex-1">{renderPageActions()}</div>
+        </nav>
+
+        {/* Bottom Section */}
+        <div className="p-2 space-y-1 border-t border-soma-light/10 flex flex-col gap-1 mb-1">
           {activePage === "notes" && (
-            <RotatingArrow
-              onClick={toggleExplorer}
-              rotated={explorerExpanded}
-            />
+            <div className="flex justify-center">
+              <RotatingArrow
+                onClick={toggleExplorer}
+                rotated={explorerExpanded}
+              />
+            </div>
           )}
-          <SideMenuButton
-            className="mb-2"
-            tippyContent={getMessage("menu.settings")}
-            onClick={openSettings}
-          >
-            <Settings size={18} strokeWidth={1.5} />
-          </SideMenuButton>
+          <div className="flex justify-center">
+            <SidebarButton
+              icon={Settings}
+              onClick={openSettings}
+              size="sm"
+              variant="secondary"
+              tippyContent="Settings"
+            />
+          </div>
         </div>
-      </section>
+      </aside>
 
+      {/* Explorer panel */}
       {activePage === "notes" && (
         <Explorer explorerExpanded={explorerExpanded} />
       )}

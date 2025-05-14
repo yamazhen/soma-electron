@@ -67,20 +67,31 @@ const SideMenuButton: React.FC<Props> = ({
           {children}
         </MenuButton>
       </Tippy>
-
-      <MenuItems anchor="bottom">
-        {dropdownItems.map((section, sectionIdx) => (
-          <div key={sectionIdx} className="dropDown">
-            {section.items.map((item, itemIdx) => (
-              <MenuItem key={itemIdx}>
-                <button onClick={item.onClick} className="dropDownItem">
-                  {item.icon && item.icon}
-                  {item.label}
-                </button>
-              </MenuItem>
-            ))}
-          </div>
-        ))}
+      <MenuItems
+        anchor="bottom"
+        className="w-56 bg-soma-dark rounded-lg shadow-xl border border-soma-light/10 py-1 mt-2 z-50"
+      >
+        {dropdownItems &&
+          dropdownItems.map((section, sectionIdx) => (
+            <div key={sectionIdx}>
+              {sectionIdx > 0 && <div className="h-px bg-soma-light/10 my-1" />}
+              {section.items.map((item, itemIdx) => (
+                <MenuItem key={itemIdx}>
+                  <button
+                    onClick={item.onClick}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors text-soma-text-secondary hover:text-soma-text-primary hover:bg-soma-light/10 data-[active]:bg-soma-light/10 data-[active]:text-soma-text-primary"
+                  >
+                    {item.icon && (
+                      <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                        {item.icon}
+                      </span>
+                    )}
+                    <span className="flex-1 text-left">{item.label}</span>
+                  </button>
+                </MenuItem>
+              ))}
+            </div>
+          ))}
       </MenuItems>
     </Menu>
   );

@@ -4,13 +4,13 @@ import { useNoteAutosave } from "../../hooks/notes/useNoteAutosave";
 import { useAppContext } from "../../context/AppContext";
 import MarkdownEditor, { MarkdownEditorRef } from "./MarkdownEditor";
 import MarkdownViewer from "./MarkdownViewer";
+import { MoonLoader } from "react-spinners";
 
 const NoteEditor: React.FC = () => {
   const { selectedFile, files } = useAppContext();
   const [noteContent, setNoteContent] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const editorRef = useRef<MarkdownEditorRef>(null);
 
@@ -18,7 +18,6 @@ const NoteEditor: React.FC = () => {
     selectedFile,
     noteContent,
     loading,
-    setIsSaving,
   });
 
   const handleUndo = () => {
@@ -39,7 +38,6 @@ const NoteEditor: React.FC = () => {
 
   const handleContentChange = (newContent: string) => {
     setNoteContent(newContent);
-    setIsSaving(true);
   };
 
   useEffect(() => {
@@ -79,8 +77,8 @@ const NoteEditor: React.FC = () => {
   if (!selectedFile) return null;
   if (loading) {
     return (
-      <div className="flex justify-center items-center">
-        <p>Loading...</p>
+      <div className="flex justify-center items-center h-full w-full">
+        <MoonLoader size={40} color="var(--color-soma-accent1)" />
       </div>
     );
   }
@@ -93,24 +91,25 @@ const NoteEditor: React.FC = () => {
   }
 
   return (
-    <div className="noteEditor">
+    <div className="noteEditor h-full flex flex-col">
       <EditorTopBar
         isEditing={isEditing}
         toggleEditing={toggleEditing}
-        isSaving={isSaving}
         onUndo={handleUndo}
         onRedo={handleRedo}
       />
-      <div className="editorArea">
-        {isEditing ? (
-          <MarkdownEditor
-            initialValue={noteContent}
-            onChange={handleContentChange}
-            ref={editorRef}
-          />
-        ) : (
-          <MarkdownViewer content={noteContent} />
-        )}
+      <div className="editorArea flex-1 flex justify-center overflow-auto">
+        <div className="w-full max-w-4xl py-13">
+          {isEditing ? (
+            <MarkdownEditor
+              initialValue={noteContent}
+              onChange={handleContentChange}
+              ref={editorRef}
+            />
+          ) : (
+            <MarkdownViewer content={noteContent} />
+          )}
+        </div>
       </div>
     </div>
   );

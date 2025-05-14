@@ -20,10 +20,10 @@ export function createMainWindow(
     },
     frame: false,
     titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 15, y: 13 },
+    trafficLightPosition: { x: 20, y: 20 },
     backgroundColor: themeColor.main,
-    minHeight: 400,
-    minWidth: 400,
+    minHeight: 480,
+    minWidth: 480,
     show: false,
   });
 
@@ -69,7 +69,7 @@ export function createMainWindow(
   if (env.viteDevServerUrl && env.nodeEnv === "development") {
     mainWindow.loadURL(env.viteDevServerUrl);
   } else {
-    mainWindow.loadFile(path.join(env.rendererDist, "index.html"));
+    mainWindow.loadFile(env.indexPath);
   }
   return mainWindow;
 }

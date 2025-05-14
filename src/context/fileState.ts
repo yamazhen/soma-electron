@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export const useFileState = () => {
+export const useFileState = (onFileSelected?: (filePath: string) => void) => {
   const [files, setFiles] = useState<DirectoryContents>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [sortMethod, setSortMethod] = useState<SortMethod>("custom");
@@ -22,13 +22,14 @@ export const useFileState = () => {
   useEffect(() => {
     const handleOpen = (filePath: string) => {
       setSelectedFile(filePath);
+      onFileSelected?.(filePath);
     };
 
     window.ipcRenderer.onSearchOpenNote(handleOpen);
     return () => {
       window.ipcRenderer.offSearchOpenNote(handleOpen);
     };
-  }, [setSelectedFile]);
+  }, [setSelectedFile, onFileSelected]);
 
   // function to check if the file still exists
   const fileExists = (notes: DirectoryContents, filePath: string): boolean => {

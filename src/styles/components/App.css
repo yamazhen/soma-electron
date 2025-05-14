@@ -12,12 +12,12 @@
 
 .titleBar {
   -webkit-app-region: drag;
-  @apply bg-soma-medium flex h-[2.5rem] items-center gap-1 w-full flex-shrink-0;
+  @apply bg-soma-medium flex h-[2.5rem] items-center justify-between flex-shrink-0 w-full;
 }
 
 .titleBarButton {
   -webkit-app-region: no-drag;
-  @apply hover:bg-soma-light duration-100 transition-colors ease-in-out w-[2rem] h-[1.5rem] flex justify-center items-center rounded-sm cursor-pointer text-soma-lightest;
+  @apply hover:bg-soma-light duration-100 transition-colors ease-in-out w-[1.75rem] h-[1.75rem] flex justify-center items-center rounded-sm cursor-pointer text-soma-lightest;
 }
 
 .menu {

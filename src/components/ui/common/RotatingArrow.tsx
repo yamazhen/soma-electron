@@ -1,35 +1,53 @@
-import { ArrowRight } from "lucide-react";
 import React from "react";
-import SideMenuButton from "../buttons/SideMenuButton";
-import { useAppContext } from "../../../context/AppContext";
+import { ArrowRight } from "lucide-react";
+import { useAppContext } from "@/context/AppContext";
+import Tippy from "@tippyjs/react";
 
 interface Props {
-  onClick?: () => void;
+  onClick: () => void;
   rotated?: boolean;
+  className?: string;
 }
 
-const RotatingArrow: React.FC<Props> = ({ onClick, rotated = false }) => {
+const RotatingArrow: React.FC<Props> = ({
+  onClick,
+  rotated = false,
+  className = "",
+}) => {
   const { getMessage } = useAppContext();
 
-  let tippyMessage = "";
-  if (rotated) {
-    tippyMessage = getMessage("common.collapse");
-  } else {
-    tippyMessage = getMessage("common.expand");
-  }
+  const tooltip = rotated
+    ? getMessage("common.collapse")
+    : getMessage("common.expand");
+
   return (
-    <button onClick={onClick}>
-      <SideMenuButton
-        className="hover:!bg-transparent"
-        tippyContent={tippyMessage}
-      >
-        <ArrowRight
-          size={18}
-          strokeWidth={1.5}
-          className={`transition-transform duration-200 ease-in-out ${rotated ? "-rotate-180" : "rotate-0"}`}
-        />
-      </SideMenuButton>
-    </button>
+    <Tippy
+      content={tooltip}
+      theme="custom"
+      arrow={true}
+      placement="right"
+      delay={200}
+    >
+      <div className="relative group flex justify-center">
+        <button
+          onClick={onClick}
+          className={`
+          w-8 h-8 flex items-center justify-center
+          rounded-lg transition-all duration-200
+          hover:bg-soma-light/5 text-soma-text-secondary hover:text-soma-text-primary
+          ${className}
+        `}
+        >
+          <ArrowRight
+            size={16}
+            strokeWidth={1.8}
+            className={`transition-transform duration-200 ease-in-out ${
+              rotated ? "-rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+      </div>
+    </Tippy>
   );
 };
 

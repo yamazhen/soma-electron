@@ -1,6 +1,7 @@
 import { BrowserWindow } from "electron";
 import { env } from "../config";
-export function createSettingsWindow(
+
+export function createStartupWindow(
   existingWindow: BrowserWindow | null,
   themeColor: ElectronThemeColor,
 ) {
@@ -12,19 +13,17 @@ export function createSettingsWindow(
     return existingWindow;
   }
 
-  const newSettingWin = new BrowserWindow({
-    title: "Settings",
-    frame: false,
-    modal: true,
+  const startupWin = new BrowserWindow({
+    width: 400,
+    height: 400,
+    resizable: false,
     movable: true,
-    fullscreenable: false,
     maximizable: false,
-    show: false,
-    minHeight: 300,
-    minWidth: 300,
-    height: 600,
-    width: 800,
+    modal: true,
+    frame: false,
+    fullscreenable: false,
     backgroundColor: themeColor.main,
+    show: false,
     webPreferences: {
       preload: env.preload,
       contextIsolation: true,
@@ -32,18 +31,18 @@ export function createSettingsWindow(
     },
   });
 
-  newSettingWin.setTitle("Settings");
+  startupWin.setTitle("Soma");
 
-  newSettingWin.once("ready-to-show", () => {
-    newSettingWin.show();
-    newSettingWin.focus();
+  startupWin.once("ready-to-show", () => {
+    startupWin.show();
+    startupWin.focus();
   });
 
   if (env.viteDevServerUrl && env.nodeEnv === "development") {
-    newSettingWin.loadURL(`${env.viteDevServerUrl}/#/settings`);
+    startupWin.loadURL(`${env.viteDevServerUrl}/#/settings`);
   } else {
-    newSettingWin.loadFile(env.indexPath);
+    startupWin.loadFile(env.indexPath);
   }
 
-  return newSettingWin;
+  return startupWin;
 }

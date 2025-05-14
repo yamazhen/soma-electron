@@ -4,9 +4,11 @@ import {
   ChevronRight,
   Lightbulb,
   Play,
+  FileQuestion,
+  Clock,
+  Plus,
 } from "lucide-react";
 import React, { useState } from "react";
-import SideMenuButton from "../../components/ui/buttons/SideMenuButton";
 import { useAppContext } from "../../context/AppContext";
 
 interface Props {
@@ -46,126 +48,145 @@ const QuizListing: React.FC<Props> = ({ setQuizInReview }) => {
     .replace("</strongEnd>", "</strong>");
 
   return (
-    <section className="h-full w-full flex flex-col justify-center">
-      <div className="flex flex-col gap-4 items-center p-4 overflow-auto">
-        <span className="w-full max-w-2xl">
-          <h1 className="text-3xl">{getMessage("quiz.listing")}</h1>
-        </span>
-        <div className="bg-soma-medium rounded-sm p-4 flex items-center gap-2 max-w-2xl w-full">
-          <Lightbulb size={50} />
-          <p dangerouslySetInnerHTML={{ __html: quizListingInfoMessage }}></p>
-        </div>
-        <div className="bg-soma-medium rounded-sm flex items-center max-w-2xl w-full py-4">
-          <table className="w-full text-left">
-            <thead className="border-b-2 border-soma-light border-collapse">
-              <tr>
-                <th className="px-4 pb-4">{getMessage("quiz.name")}</th>
-                <th className="px-4 pb-4 text-center">
-                  {getMessage("quiz.count")}
-                </th>
-                <th className="px-4 pb-4 text-center">
-                  {getMessage("quiz.startReview")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {quizzes && quizzes.length > 0 ? (
-                quizzes.map((quiz) => (
-                  <React.Fragment key={quiz.id}>
-                    <tr className="border-b border-t border-soma-light">
-                      <td className="py-2 px-4">
-                        <div className="flex items-center">
-                          <button
-                            onClick={() =>
-                              quiz.id && toggleQuizExpansion(quiz.id)
-                            }
-                          >
-                            {quiz.id && expandedQuizzes.includes(quiz.id) ? (
-                              <ChevronDown size={18} strokeWidth={2} />
-                            ) : (
-                              <ChevronRight size={18} strokeWidth={2} />
-                            )}
-                          </button>
-                          <span className="border border-soma-light rounded-xl px-4 min-w-[200px]">
-                            {quiz.title}
-                          </span>
+    <section className="h-full w-full bg-soma-darkest overflow-auto">
+      <div className="min-h-full flex items-center justify-center py-6">
+        <div className="w-full max-w-4xl px-6">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-soma-text-primary mb-2">
+              {getMessage("quiz.listing")}
+            </h1>
+            <p className="text-soma-text-secondary">
+              Manage and review your quizzes
+            </p>
+          </div>
+
+          {/* Info Banner */}
+          <div className="bg-soma-dark p-5 rounded-xl mb-6 flex items-center gap-3">
+            <div className="p-2.5 bg-yellow-500/20 rounded-lg">
+              <Lightbulb className="text-soma-warning" size={20} />
+            </div>
+            <p
+              className="text-soma-text-primary text-sm leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: quizListingInfoMessage }}
+            />
+          </div>
+
+          {/* Quiz Cards */}
+          <div className="space-y-3 pb-6">
+            {quizzes && quizzes.length > 0 ? (
+              quizzes.map((quiz) => (
+                <div
+                  key={quiz.id}
+                  className="bg-soma-dark rounded-xl p-5 hover:bg-soma-medium transition-colors"
+                >
+                  {/* Quiz Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => quiz.id && toggleQuizExpansion(quiz.id)}
+                        className="p-1.5 hover:bg-soma-light hover:bg-opacity-20 rounded-lg transition-colors"
+                      >
+                        {quiz.id && expandedQuizzes.includes(quiz.id) ? (
+                          <ChevronDown
+                            className="text-soma-text-secondary"
+                            size={20}
+                          />
+                        ) : (
+                          <ChevronRight
+                            className="text-soma-text-secondary"
+                            size={20}
+                          />
+                        )}
+                      </button>
+                      <div>
+                        <h3 className="text-xl font-semibold text-soma-text-primary">
+                          {quiz.title}
+                        </h3>
+                        <span className="text-soma-text-secondary text-sm">
+                          {quiz.questions.length} questions
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => quiz.id && reviewQuiz(quiz.id)}
+                      className="px-4 py-2.5 bg-soma-success text-white rounded-lg hover:bg-opacity-90 transition-all flex items-center gap-2 text-sm font-medium"
+                    >
+                      <Play size={18} />
+                      Start Review
+                    </button>
+                  </div>
+
+                  {/* Expanded Questions */}
+                  {quiz.id && expandedQuizzes.includes(quiz.id) && (
+                    <div className="mt-4 border-t border-soma-light border-opacity-20 pt-4">
+                      {quiz.questions && quiz.questions.length > 0 ? (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-semibold text-soma-text-secondary uppercase tracking-wider mb-3">
+                            Questions
+                          </h4>
+                          {quiz.questions.map((question, index) => (
+                            <div
+                              key={question.id}
+                              className="bg-soma-medium bg-opacity-50 p-4 rounded-lg hover:bg-soma-medium transition-colors"
+                            >
+                              <div className="flex items-center justify-between gap-4">
+                                <p className="text-soma-text-primary text-sm flex-1">
+                                  {question.text}
+                                </p>
+
+                                <div className="flex-shrink-0">
+                                  {question.scheduled ? (
+                                    <div className="flex items-center gap-1.5 text-soma-success text-sm">
+                                      <CalendarCheck2 size={14} />
+                                      <span>Scheduled</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5 text-soma-lightest text-sm">
+                                      <Clock size={14} />
+                                      <span>Not Scheduled</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </td>
-                      <td className="text-center">{quiz.questions.length}</td>
-                      <td className="text-center">
-                        <div className="flex justify-center">
-                          <SideMenuButton
-                            tippyContent={getMessage("quiz.startReview")}
-                            tippyPlacement="bottom"
-                            onClick={() => quiz.id && reviewQuiz(quiz.id)}
-                          >
-                            <Play size={16} strokeWidth={1} />
-                          </SideMenuButton>
-                        </div>
-                      </td>
-                    </tr>
-                    {quiz.id && expandedQuizzes.includes(quiz.id) && (
-                      <tr className="bg-soma-darkest/60 text-sm">
-                        <td colSpan={3} className="px-2 pt-2">
-                          <div>
-                            {quiz.questions && quiz.questions.length > 0 ? (
-                              <table className="w-full text-left">
-                                <thead className="border-b-2 border-soma-light">
-                                  <tr>
-                                    <th className="pb-2 pl-4">
-                                      {getMessage("quiz.question")}
-                                    </th>
-                                    <th className="pb-2 text-center">
-                                      {getMessage("quiz.nextReview")}
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {quiz.questions.map((question, index) => (
-                                    <tr
-                                      key={question.id}
-                                      className={`${
-                                        index !== quiz.questions.length - 1
-                                          ? "border-b border-soma-light"
-                                          : ""
-                                      }`}
-                                    >
-                                      <td className="py-2 pl-4">
-                                        {question.text}
-                                      </td>
-                                      <td className="py-2 text-center">
-                                        <div className="flex justify-center items-center">
-                                          {question.scheduled ? (
-                                            <CalendarCheck2 size={16} />
-                                          ) : (
-                                            <p>Not Scheduled</p>
-                                          )}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            ) : (
-                              <p className="text-soma-text-secondary italic">
-                                No questions available
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr className="border-b-2 border-soma-light bg-soma-light/40">
-                  <td colSpan={3} className="text-center py-4">
-                    No Quizzes
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      ) : (
+                        <p className="text-soma-text-secondary italic text-center py-6 text-sm">
+                          No questions available
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="bg-soma-dark rounded-xl p-12">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <div className="p-4 bg-soma-medium bg-opacity-30 rounded-full">
+                    <FileQuestion
+                      size={32}
+                      className="text-soma-text-secondary"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-soma-text-primary mb-2">
+                      No Quizzes Yet
+                    </h3>
+                    <p className="text-soma-text-secondary">
+                      Create your first quiz to get started
+                    </p>
+                  </div>
+                  <button className="mt-2 px-6 py-2.5 bg-soma-accent1 text-white rounded-lg hover:bg-opacity-90 transition-all flex items-center gap-2 font-medium">
+                    <Plus size={20} />
+                    Create New Quiz
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>

@@ -1,14 +1,56 @@
 import React, { useState } from "react";
 import { useAppContext } from "../../context/AppContext";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  Grid3X3,
+  List,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
 
 const CardSetView: React.FC = () => {
   const { deckInView, setCardView } = useAppContext();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showBack, setShowBack] = useState(false);
+  const [viewMode, setViewMode] = useState<"stack" | "grid">("stack");
+  const [showAllAnswers, setShowAllAnswers] = useState(false);
+
   if (deckInView === undefined) {
-    return <div>No deck selected</div>;
+    return (
+      <section className="h-full w-full bg-soma-darkest flex items-center justify-center">
+        <div className="bg-soma-dark rounded-xl p-8 max-w-md">
+          <div className="flex flex-col items-center gap-4">
+            <Package size={48} className="text-soma-text-secondary" />
+            <h2 className="text-xl font-semibold text-soma-text-primary">
+              No deck selected
+            </h2>
+            <button
+              onClick={() => setCardView("listing")}
+              className="px-4 py-2 bg-soma-accent1 text-white rounded-lg hover:bg-opacity-90 transition-all"
+            >
+              Back to Decks
+            </button>
+          </div>
+        </div>
+      </section>
+    );
   }
+
   const cards = deckInView.cards;
+
+  const handleCardClick = (idx: number) => {
+    if (viewMode === "stack") {
+      setShowBack(!showBack);
+    } else {
+      setCurrentIdx(idx);
+      setViewMode("stack");
+    }
+  };
+
   const prev = () => {
     if (currentIdx > 0) {
       setCurrentIdx(currentIdx - 1);
@@ -22,46 +64,278 @@ const CardSetView: React.FC = () => {
       setShowBack(false);
     }
   };
-  const sideTxt = showBack ? "Back" : "Front";
+
+  // Keyboard navigation
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (viewMode === "stack") {
+        if (e.key === "ArrowLeft") prev();
+        if (e.key === "ArrowRight") next();
+        if (e.key === " ") {
+          e.preventDefault();
+          setShowBack(!showBack);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [currentIdx, showBack, viewMode]);
+
   return (
-    <section className="h-full w-full flex flex-col items-center p-4">
-      <button
-        onClick={() => setCardView("listing")}
-        className="self-end bg-soma-light px-2 py-1 rounded-md hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200"
-      >
-        ← Back to decks
-      </button>
+    <section className="h-full w-full bg-soma-darkest overflow-auto">
+      <div className="min-h-full p-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Header - same as before */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setCardView("listing")}
+                className="flex items-center gap-2 text-soma-text-secondary hover:text-soma-text-primary transition-colors"
+              >
+                <ChevronLeft size={20} />
+                Back to decks
+              </button>
 
-      <h2 className="text-2xl font-semibold mb-6">{deckInView.title}</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode("stack")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "stack"
+                      ? "bg-soma-accent1 text-white"
+                      : "bg-soma-dark text-soma-text-secondary hover:bg-soma-medium"
+                  }`}
+                >
+                  <Grid3X3 size={20} />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "grid"
+                      ? "bg-soma-accent1 text-white"
+                      : "bg-soma-dark text-soma-text-secondary hover:bg-soma-medium"
+                  }`}
+                >
+                  <List size={20} />
+                </button>
+              </div>
+            </div>
 
-      <p className="mb-2 text-xl">{sideTxt}</p>
-      <div
-        onClick={() => setShowBack(!showBack)}
-        className="w-[300px] h-[400px] flex items-center justify-center rounded-lg shadow cursor-pointer p-4 text-xl bg-soma-light"
-      >
-        {showBack ? cards[currentIdx].back : cards[currentIdx].front}
-      </div>
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-soma-text-primary">
+                {deckInView.title}
+              </h1>
+              <span className="text-soma-text-secondary">
+                {cards.length} cards
+              </span>
+            </div>
+          </div>
 
-      <div className="flex items-center gap-4 mt-6">
-        <button
-          onClick={prev}
-          disabled={currentIdx === 0}
-          className="px-4 py-2 bg-soma-light rounded disabled:opacity-50 cursor-pointer hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200"
-        >
-          Previous
-        </button>
+          {/* Stack View with improved navigation */}
+          {viewMode === "stack" && (
+            <div className="flex flex-col items-center">
+              {/* Progress Bar instead of dots */}
+              <div className="w-full max-w-2xl mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-soma-text-secondary">
+                    Progress
+                  </span>
+                  <span className="text-sm text-soma-text-primary font-medium">
+                    {currentIdx + 1} / {cards.length}
+                  </span>
+                </div>
+                <div className="w-full bg-soma-medium rounded-full h-2">
+                  <div
+                    className="bg-soma-accent1 rounded-full h-2 transition-all duration-300"
+                    style={{
+                      width: `${((currentIdx + 1) / cards.length) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
 
-        <span>
-          {currentIdx + 1} / {cards.length}
-        </span>
+              {/* Card Stack with side navigation buttons */}
+              <div className="relative w-full max-w-2xl">
+                {/* Left Navigation */}
+                <button
+                  onClick={prev}
+                  disabled={currentIdx === 0}
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-30 p-3 rounded-full transition-all duration-200 ${
+                    currentIdx === 0
+                      ? "bg-soma-medium/30 text-soma-text-secondary cursor-not-allowed"
+                      : "bg-soma-dark hover:bg-soma-medium text-soma-text-primary hover:scale-110"
+                  }`}
+                >
+                  <ArrowLeft size={24} />
+                </button>
 
-        <button
-          onClick={next}
-          disabled={currentIdx === cards.length - 1}
-          className="px-4 py-2 bg-soma-light rounded disabled:opacity-50 cursor-pointer hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200"
-        >
-          Next
-        </button>
+                {/* Right Navigation */}
+                <button
+                  onClick={next}
+                  disabled={currentIdx === cards.length - 1}
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-30 p-3 rounded-full transition-all duration-200 ${
+                    currentIdx === cards.length - 1
+                      ? "bg-soma-medium/30 text-soma-text-secondary cursor-not-allowed"
+                      : "bg-soma-dark hover:bg-soma-medium text-soma-text-primary hover:scale-110"
+                  }`}
+                >
+                  <ArrowRight size={24} />
+                </button>
+
+                {/* Shadow cards for stack effect */}
+                {currentIdx < cards.length - 2 && (
+                  <div className="absolute inset-0 transform translate-y-4 translate-x-4 opacity-30 z-0">
+                    <div className="bg-soma-dark rounded-xl h-[400px]" />
+                  </div>
+                )}
+                {currentIdx < cards.length - 1 && (
+                  <div className="absolute inset-0 transform translate-y-2 translate-x-2 opacity-60 z-10">
+                    <div className="bg-soma-dark rounded-xl h-[400px]" />
+                  </div>
+                )}
+
+                {/* Main Card */}
+                <div
+                  onClick={() => handleCardClick(currentIdx)}
+                  className="relative bg-soma-dark rounded-xl p-12 cursor-pointer min-h-[400px] flex flex-col items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 z-20 transform hover:scale-[1.02]"
+                >
+                  <div className="text-center max-w-lg">
+                    <p className="text-2xl text-soma-text-primary leading-relaxed">
+                      {showBack
+                        ? cards[currentIdx].back
+                        : cards[currentIdx].front}
+                    </p>
+                  </div>
+
+                  {/* Side indicator */}
+                  <div
+                    className={`absolute top-4 right-4 px-3 py-1 rounded-full text-sm font-medium ${
+                      showBack
+                        ? "bg-soma-accent3/20 text-soma-accent3"
+                        : "bg-soma-accent1/20 text-soma-accent1"
+                    }`}
+                  >
+                    {showBack ? "Answer" : "Question"}
+                  </div>
+
+                  {/* Click hint */}
+                  <p className="absolute bottom-4 text-sm text-soma-text-secondary">
+                    Click to flip • Space to flip • ← → to navigate
+                  </p>
+                </div>
+              </div>
+
+              {/* Minimalist Bottom Navigation */}
+              <div className="flex items-center gap-8 mt-8">
+                <button
+                  onClick={prev}
+                  disabled={currentIdx === 0}
+                  className={`group flex items-center gap-2 transition-all duration-200 ${
+                    currentIdx === 0
+                      ? "text-soma-text-secondary cursor-not-allowed opacity-50"
+                      : "text-soma-text-secondary hover:text-soma-text-primary"
+                  }`}
+                >
+                  <ChevronLeft
+                    size={20}
+                    className="group-hover:-translate-x-1 transition-transform"
+                  />
+                  <span className="text-sm font-medium">Previous</span>
+                </button>
+
+                <div className="flex gap-2">
+                  {cards.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentIdx(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        idx === currentIdx
+                          ? "w-8 bg-soma-accent1"
+                          : "w-2 bg-soma-medium hover:bg-soma-light"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={next}
+                  disabled={currentIdx === cards.length - 1}
+                  className={`group flex items-center gap-2 transition-all duration-200 ${
+                    currentIdx === cards.length - 1
+                      ? "text-soma-text-secondary cursor-not-allowed opacity-50"
+                      : "text-soma-text-secondary hover:text-soma-text-primary"
+                  }`}
+                >
+                  <span className="text-sm font-medium">Next</span>
+                  <ChevronRight
+                    size={20}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Grid View - same as before */}
+          {viewMode === "grid" && (
+            <div>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setShowAllAnswers(!showAllAnswers)}
+                  className="flex items-center gap-2 px-4 py-2 bg-soma-dark rounded-lg hover:bg-soma-medium transition-all"
+                >
+                  {showAllAnswers ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <span className="text-soma-text-primary">
+                    {showAllAnswers ? "Hide answers" : "Show answers"}
+                  </span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cards.map((card, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleCardClick(idx)}
+                    className="bg-soma-dark rounded-xl p-6 hover:bg-soma-medium cursor-pointer transition-all duration-200 hover:shadow-lg"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-sm text-soma-text-secondary">
+                        Card {idx + 1}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          idx === currentIdx
+                            ? "bg-soma-accent1/20 text-soma-accent1"
+                            : "bg-soma-medium text-soma-text-secondary"
+                        }`}
+                      >
+                        {idx === currentIdx ? "Current" : ""}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-soma-text-secondary mb-1">
+                          Question
+                        </p>
+                        <p className="text-soma-text-primary">{card.front}</p>
+                      </div>
+
+                      {showAllAnswers && (
+                        <div>
+                          <p className="text-xs text-soma-text-secondary mb-1">
+                            Answer
+                          </p>
+                          <p className="text-soma-text-primary">{card.back}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
