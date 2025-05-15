@@ -8,9 +8,15 @@ import React, {
 import { DragPreviewProps, NodeRendererProps, Tree } from "react-arborist";
 import { getParentPath } from "../../../utils/path";
 import "react-contexify/dist/ReactContexify.css";
-import { Item, ItemParams, Menu, useContextMenu } from "react-contexify";
+import {
+  Item,
+  ItemParams,
+  Menu,
+  Separator,
+  useContextMenu,
+} from "react-contexify";
 import useResizeObserver from "use-resize-observer";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Edit2, Trash2 } from "lucide-react";
 import { useAppContext } from "../../../context/AppContext";
 
 function FileTree(
@@ -458,8 +464,19 @@ function FileTree(
             }
           }}
         >
-          Rename
+          <div className="flex items-center gap-2">
+            <div
+              className="p-1.5 rounded-md"
+              style={{ backgroundColor: "rgba(59, 130, 246, 0.1)" }}
+            >
+              <Edit2 size={14} style={{ color: "#3b82f6" }} />
+            </div>
+            <span>Rename</span>
+          </div>
         </Item>
+
+        <Separator />
+
         <Item
           onClick={(args: ItemParams<any, any>) => {
             const { props } = args;
@@ -468,8 +485,20 @@ function FileTree(
             }
           }}
         >
-          Delete{" "}
-          {selectedItems.length > 1 ? `(${selectedItems.length} items)` : ""}
+          <div className="flex items-center gap-2">
+            <div
+              className="p-1.5 rounded-md"
+              style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+            >
+              <Trash2 size={14} style={{ color: "#ef4444" }} />
+            </div>
+            <span>
+              Delete
+              {selectedItems.length > 1
+                ? ` (${selectedItems.length} items)`
+                : ""}
+            </span>
+          </div>
         </Item>
       </Menu>
     </>

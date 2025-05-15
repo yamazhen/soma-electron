@@ -7,9 +7,21 @@ import {
   FileQuestion,
   Clock,
   Plus,
+  Trash2,
 } from "lucide-react";
 import React, { useState } from "react";
 import { useAppContext } from "../../context/AppContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   setQuizInReview: (quizData: QuizData | undefined) => void;
@@ -22,7 +34,6 @@ const QuizListing: React.FC<Props> = ({ setQuizInReview }) => {
   const reviewQuiz = async (quizId: number) => {
     try {
       const response = await window.ipcRenderer.quizFindById(quizId);
-
       if (response.success) {
         setQuizInReview(response.quizData);
         setQuizView("inReview");
@@ -123,10 +134,41 @@ const QuizListing: React.FC<Props> = ({ setQuizInReview }) => {
                     <div className="mt-4 border-t border-soma-light border-opacity-20 pt-4">
                       {quiz.questions && quiz.questions.length > 0 ? (
                         <div className="space-y-2">
-                          <h4 className="text-sm font-semibold text-soma-text-secondary uppercase tracking-wider mb-3">
-                            Questions
-                          </h4>
-                          {quiz.questions.map((question, index) => (
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold text-soma-text-secondary uppercase tracking-wider">
+                              Questions
+                            </h4>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button className="px-3 py-1.5 bg-soma-error/20 text-soma-error rounded-lg hover:bg-soma-error/30 transition-all flex items-center gap-2 text-sm font-medium">
+                                  <Trash2 size={16} />
+                                  Delete Quiz
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you absolutely sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will
+                                    permanently delete "{quiz.title}" and all
+                                    its questions.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    // add the delete quiz function here
+                                    className="bg-soma-error text-white hover:bg-soma-error/90"
+                                  >
+                                    Delete Quiz
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                          {quiz.questions.map((question, _index) => (
                             <div
                               key={question.id}
                               className="bg-soma-medium bg-opacity-50 p-4 rounded-lg hover:bg-soma-medium transition-colors"
@@ -135,7 +177,6 @@ const QuizListing: React.FC<Props> = ({ setQuizInReview }) => {
                                 <p className="text-soma-text-primary text-sm flex-1">
                                   {question.text}
                                 </p>
-
                                 <div className="flex-shrink-0">
                                   {question.scheduled ? (
                                     <div className="flex items-center gap-1.5 text-soma-success text-sm">

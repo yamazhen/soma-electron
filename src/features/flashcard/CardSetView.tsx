@@ -10,7 +10,20 @@ import {
   EyeOff,
   ArrowLeft,
   ArrowRight,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import Tippy from "@tippyjs/react";
 
 const CardSetView: React.FC = () => {
   const { deckInView, setCardView } = useAppContext();
@@ -41,6 +54,10 @@ const CardSetView: React.FC = () => {
   }
 
   const cards = deckInView.cards;
+
+  const deleteDeck = async () => {
+    // TODO: call ipc to delete the deck
+  };
 
   const handleCardClick = (idx: number) => {
     if (viewMode === "stack") {
@@ -86,7 +103,7 @@ const CardSetView: React.FC = () => {
     <section className="h-full w-full bg-soma-darkest overflow-auto">
       <div className="min-h-full p-6">
         <div className="max-w-6xl mx-auto">
-          {/* Header - same as before */}
+          {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <button
@@ -98,6 +115,40 @@ const CardSetView: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Tippy
+                      content="Delete deck"
+                      placement="bottom"
+                      arrow={true}
+                      delay={200}
+                      theme="custom"
+                    >
+                      <button className="p-2 bg-soma-error/20 text-soma-error rounded-lg hover:bg-soma-error/30 transition-all">
+                        <Trash2 size={20} />
+                      </button>
+                    </Tippy>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Card Set</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{deckInView.title}"?
+                        This will permanently remove all {cards.length} cards.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={deleteDeck}
+                        className="bg-soma-error text-white hover:bg-soma-error/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
                 <button
                   onClick={() => setViewMode("stack")}
                   className={`p-2 rounded-lg transition-all ${
@@ -131,10 +182,9 @@ const CardSetView: React.FC = () => {
             </div>
           </div>
 
-          {/* Stack View with improved navigation */}
+          {/* Stack View */}
           {viewMode === "stack" && (
             <div className="flex flex-col items-center">
-              {/* Progress Bar instead of dots */}
               <div className="w-full max-w-2xl mb-6">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-soma-text-secondary">
@@ -276,7 +326,7 @@ const CardSetView: React.FC = () => {
             </div>
           )}
 
-          {/* Grid View - same as before */}
+          {/* Grid View  */}
           {viewMode === "grid" && (
             <div>
               <div className="flex justify-end mb-4">

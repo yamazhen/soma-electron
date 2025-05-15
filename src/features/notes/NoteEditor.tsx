@@ -13,6 +13,8 @@ const NoteEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const editorRef = useRef<MarkdownEditorRef>(null);
+  const [canUndo, setCanUndo] = useState<boolean>(false);
+  const [canRedo, setCanRedo] = useState<boolean>(false);
 
   useNoteAutosave({
     selectedFile,
@@ -20,15 +22,24 @@ const NoteEditor: React.FC = () => {
     loading,
   });
 
+  const updateUndoRedoState = () => {
+    if (editorRef.current) {
+      setCanUndo(editorRef.current.canUndo());
+      setCanRedo(editorRef.current.canRedo());
+    }
+  };
+
   const handleUndo = () => {
     if (editorRef.current && isEditing) {
       editorRef.current.undo();
+      updateUndoRedoState();
     }
   };
 
   const handleRedo = () => {
     if (editorRef.current && isEditing) {
       editorRef.current.redo();
+      updateUndoRedoState();
     }
   };
 
@@ -38,6 +49,7 @@ const NoteEditor: React.FC = () => {
 
   const handleContentChange = (newContent: string) => {
     setNoteContent(newContent);
+    updateUndoRedoState();
   };
 
   useEffect(() => {
@@ -97,6 +109,8 @@ const NoteEditor: React.FC = () => {
         toggleEditing={toggleEditing}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
       <div className="editorArea flex-1 flex justify-center overflow-auto">
         <div className="w-full max-w-4xl py-13">

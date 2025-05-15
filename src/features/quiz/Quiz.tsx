@@ -15,7 +15,7 @@ const Quiz: React.FC = () => {
     case "listing":
       return <QuizListing setQuizInReview={setQuizInReview} />;
     case "review":
-      return <QuizReview />;
+      return <QuizReview setQuizInReview={setQuizInReview} />;
     case "create":
       return <QuizCreateForm />;
     case "inReview":

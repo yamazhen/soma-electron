@@ -1,0 +1,110 @@
+/* Modern Contextify Menu - Smaller version */
+.contexify.contexify_theme-my-custom-theme {
+  background-color: #1a1a1a !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px !important;
+  border-radius: 12px !important;
+  width: auto !important;
+  min-width: 180px !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* Menu items */
+.contexify.contexify_theme-my-custom-theme .contexify_item {
+  margin: 2px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.contexify.contexify_theme-my-custom-theme .contexify_itemContent {
+  color: #999999 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 6px 10px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover effects */
+.contexify.contexify_theme-my-custom-theme .contexify_item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.contexify.contexify_theme-my-custom-theme
+  .contexify_item:hover
+  > .contexify_itemContent {
+  color: #ffffff !important;
+  transform: translateX(2px);
+}
+
+/* Active state */
+.contexify.contexify_theme-my-custom-theme .contexify_item:active {
+  transform: scale(0.98);
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Separator */
+.contexify.contexify_theme-my-custom-theme .contexify_separator {
+  margin: 4px 8px !important;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1) 20%,
+    rgba(255, 255, 255, 0.1) 80%,
+    transparent
+  );
+}
+
+/* Delete item special styling */
+.contexify.contexify_theme-my-custom-theme .contexify_item:last-child:hover {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.contexify.contexify_theme-my-custom-theme
+  .contexify_item:last-child:hover
+  > .contexify_itemContent {
+  color: #ef4444 !important;
+}
+
+/* Ripple effect */
+.contexify.contexify_theme-my-custom-theme .contexify_item::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.5s,
+    height 0.5s;
+}
+
+.contexify.contexify_theme-my-custom-theme .contexify_item:active::before {
+  width: 200px;
+  height: 200px;
+}
+
+/* Icons */
+.contexify.contexify_theme-my-custom-theme svg {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contexify.contexify_theme-my-custom-theme .contexify_item:hover svg {
+  transform: scale(1.05);
+}
+
+/* Focus for accessibility */
+.contexify.contexify_theme-my-custom-theme .contexify_item:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.2);
+  outline-offset: -2px;
+}

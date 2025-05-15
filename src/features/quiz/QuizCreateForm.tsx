@@ -1,6 +1,12 @@
-import { CirclePlus, X } from "lucide-react";
+import {
+  CirclePlus,
+  X,
+  CheckCircle,
+  FileText,
+  ToggleLeft,
+  PenTool,
+} from "lucide-react";
 import React, { useState } from "react";
-import SideMenuButton from "../../components/ui/buttons/Button";
 import { useAppContext } from "../../context/AppContext";
 import { RadioGroup, Radio } from "@headlessui/react";
 
@@ -47,7 +53,7 @@ type Props = {};
 const QuizCreateForm: React.FC<Props> = () => {
   const [quizTitle, setQuizTitle] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
-  const { getMessage, setQuizView, fetchQuizzes } = useAppContext();
+  const { setQuizView, fetchQuizzes } = useAppContext();
 
   const addQuestion = (type: QuestionType) => {
     const newQuestionId = questions.length + 1;
@@ -362,29 +368,44 @@ const QuizCreateForm: React.FC<Props> = () => {
     });
   };
 
+  const getQuestionIcon = (type: QuestionType) => {
+    switch (type) {
+      case "multiple-choice":
+        return <CheckCircle className="text-soma-accent1" size={20} />;
+      case "fill-in-blank":
+        return <FileText className="text-soma-accent2" size={20} />;
+      case "true-false":
+        return <ToggleLeft className="text-soma-accent3" size={20} />;
+      case "short-answer":
+        return <PenTool className="text-soma-warning" size={20} />;
+    }
+  };
+
   const renderQuestionEditor = (question: Question) => {
     switch (question.type) {
       case "multiple-choice":
         return (
           <>
-            <div className="flex flex-col gap-2">
-              <p>Answer choices:</p>
+            <div className="flex flex-col gap-4">
+              <p className="text-soma-text-secondary font-medium">
+                Answer choices:
+              </p>
               <RadioGroup
                 by="id"
                 value={question.options.find((o) => o.isCorrect)}
                 onChange={(option) => setCorrectOption(question.id, option.id)}
-                className="space-y-2"
+                className="space-y-3"
               >
                 {question.options.map((option) => (
                   <div
                     key={option.id}
-                    className="flex items-center w-full gap-2"
+                    className="flex items-center w-full gap-3 group"
                   >
                     <Radio
                       value={option}
-                      className="group flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-soma-light data-[checked]:bg-soma-lightest data-[checked]:ring-soma-lightest"
+                      className="group flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-soma-light data-[checked]:bg-soma-accent1 data-[checked]:ring-soma-accent1 transition-all"
                     >
-                      <span className="h-2 w-2 rounded-full bg-soma-accent1 opacity-0 group-data-[checked]:opacity-100" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-soma-darkest opacity-0 group-data-[checked]:opacity-100" />
                     </Radio>
                     <input
                       type="text"
@@ -398,15 +419,15 @@ const QuizCreateForm: React.FC<Props> = () => {
                         }
                       }}
                       placeholder={`Option ${option.id}`}
-                      className="border border-soma-light rounded-md p-2 w-full"
+                      className="bg-soma-medium border border-soma-light rounded-xl p-3 w-full text-soma-text-primary placeholder:text-soma-lightest focus:border-soma-accent1 focus:outline-none transition-colors"
                     />
                     {question.options.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeOption(question.id, option.id)}
-                        className="hover:bg-soma-error p-1 rounded-full"
+                        className="bg-soma-error/20 hover:bg-soma-error/30 p-2 rounded-lg transition-colors"
                       >
-                        <X size={16} />
+                        <X size={16} className="text-soma-error" />
                       </button>
                     )}
                   </div>
@@ -416,15 +437,10 @@ const QuizCreateForm: React.FC<Props> = () => {
                 <button
                   type="button"
                   onClick={() => addOption(question.id)}
-                  className="bg-soma-light p-2 rounded-full hover:bg-soma-light/50 transition-colors duration-200"
+                  className="bg-soma-accent1/20 p-3 rounded-xl hover:bg-soma-accent1/30 transition-colors duration-200 flex items-center gap-2 text-soma-accent1 font-medium"
                 >
-                  <SideMenuButton
-                    tippyContent={getMessage("quiz.addOption")}
-                    tippyPlacement="bottom"
-                    className="!bg-transparent"
-                  >
-                    <CirclePlus size={18} />
-                  </SideMenuButton>
+                  <CirclePlus size={20} />
+                  Add Option
                 </button>
               </div>
             </div>
@@ -433,10 +449,12 @@ const QuizCreateForm: React.FC<Props> = () => {
 
       case "fill-in-blank":
         return (
-          <div className="flex flex-col gap-2">
-            <p>Acceptable answers:</p>
+          <div className="flex flex-col gap-4">
+            <p className="text-soma-text-secondary font-medium">
+              Acceptable answers:
+            </p>
             {question.answers.map((answer, index) => (
-              <div key={index} className="flex items-center w-full gap-2">
+              <div key={index} className="flex items-center w-full gap-3">
                 <input
                   type="text"
                   value={answer}
@@ -444,37 +462,32 @@ const QuizCreateForm: React.FC<Props> = () => {
                     updateBlankAnswer(question.id, index, e.target.value)
                   }
                   placeholder={`Acceptable answer ${index + 1}`}
-                  className="border border-soma-light rounded-md p-2 w-full"
+                  className="bg-soma-medium border border-soma-light rounded-xl p-3 w-full text-soma-text-primary placeholder:text-soma-lightest focus:border-soma-accent2 focus:outline-none transition-colors"
                 />
                 {question.answers.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeBlankAnswer(question.id, index)}
-                    className="hover:bg-soma-error p-1 rounded-full"
+                    className="bg-soma-error/20 hover:bg-soma-error/30 p-2 rounded-lg transition-colors"
                   >
-                    <X size={16} />
+                    <X size={16} className="text-soma-error" />
                   </button>
                 )}
               </div>
             ))}
-            <p className="font-mono text-[12px] w-full">
-              Tip: For fill-in-blank questions, include underscores (_____) in
-              your question text to indicate blank spaces.
+            <p className="text-sm text-soma-lightest bg-soma-medium p-3 rounded-lg">
+              💡 Tip: Include underscores (_____) in your question text to
+              indicate blank spaces.
             </p>
 
             <div className="flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => addBlankAnswer(question.id)}
-                className="bg-soma-light p-2 rounded-full hover:bg-soma-light/50 transition-colors duration-200"
+                className="bg-soma-accent2/20 p-3 rounded-xl hover:bg-soma-accent2/30 transition-colors duration-200 flex items-center gap-2 text-soma-accent2 font-medium"
               >
-                <SideMenuButton
-                  tippyContent={getMessage("quiz.addOption")}
-                  tippyPlacement="bottom"
-                  className="!bg-transparent"
-                >
-                  <CirclePlus size={18} />
-                </SideMenuButton>
+                <CirclePlus size={20} />
+                Add Answer
               </button>
             </div>
           </div>
@@ -482,32 +495,48 @@ const QuizCreateForm: React.FC<Props> = () => {
 
       case "true-false":
         return (
-          <div className="flex flex-col gap-2">
-            <p>Correct answer:</p>
+          <div className="flex flex-col gap-4">
+            <p className="text-soma-text-secondary font-medium">
+              Correct answer:
+            </p>
             <RadioGroup
               value={question.correctAnswer}
               onChange={(value) => setTrueFalseAnswer(question.id, value)}
-              className="space-y-2"
+              className="flex gap-4"
             >
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                  <Radio
-                    value={true}
-                    className="group flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-soma-light data-[checked]:bg-soma-lightest data-[checked]:ring-soma-lightest"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-soma-accent1 opacity-0 group-data-[checked]:opacity-100" />
-                  </Radio>
-                  <span>True</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Radio
-                    value={false}
-                    className="group flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-soma-light data-[checked]:bg-soma-lightest data-[checked]:ring-soma-lightest"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-soma-accent1 opacity-0 group-data-[checked]:opacity-100" />
-                  </Radio>
-                  <span>False</span>
-                </div>
+              <div className="flex-1">
+                <Radio
+                  value={true}
+                  className={`group flex w-full cursor-pointer items-center gap-3 bg-soma-medium p-4 rounded-xl transition-all hover:bg-soma-light ${
+                    question.correctAnswer === true
+                      ? "ring-2 ring-soma-accent3"
+                      : ""
+                  }`}
+                >
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-soma-light group-data-[checked]:bg-soma-accent3 group-data-[checked]:ring-soma-accent3 transition-all">
+                    <span className="h-2.5 w-2.5 rounded-full bg-soma-darkest opacity-0 group-data-[checked]:opacity-100" />
+                  </div>
+                  <span className="text-soma-text-primary font-medium">
+                    True
+                  </span>
+                </Radio>
+              </div>
+              <div className="flex-1">
+                <Radio
+                  value={false}
+                  className={`group flex w-full cursor-pointer items-center gap-3 bg-soma-medium p-4 rounded-xl transition-all hover:bg-soma-light ${
+                    question.correctAnswer === false
+                      ? "ring-2 ring-soma-accent3"
+                      : ""
+                  }`}
+                >
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-soma-light group-data-[checked]:bg-soma-accent3 group-data-[checked]:ring-soma-accent3 transition-all">
+                    <span className="h-2.5 w-2.5 rounded-full bg-soma-darkest opacity-0 group-data-[checked]:opacity-100" />
+                  </div>
+                  <span className="text-soma-text-primary font-medium">
+                    False
+                  </span>
+                </Radio>
               </div>
             </RadioGroup>
           </div>
@@ -515,10 +544,12 @@ const QuizCreateForm: React.FC<Props> = () => {
 
       case "short-answer":
         return (
-          <div className="flex flex-col gap-2">
-            <p>Acceptable answers:</p>
+          <div className="flex flex-col gap-4">
+            <p className="text-soma-text-secondary font-medium">
+              Acceptable answers:
+            </p>
             {question.possibleAnswers.map((answer, index) => (
-              <div key={index} className="flex items-center w-full gap-2">
+              <div key={index} className="flex items-center w-full gap-3">
                 <input
                   type="text"
                   value={answer}
@@ -526,15 +557,15 @@ const QuizCreateForm: React.FC<Props> = () => {
                     updatePossibleAnswer(question.id, index, e.target.value)
                   }
                   placeholder={`Possible answer ${index + 1}`}
-                  className="border border-soma-light rounded-md p-2 w-full"
+                  className="bg-soma-medium border border-soma-light rounded-xl p-3 w-full text-soma-text-primary placeholder:text-soma-lightest focus:border-soma-warning focus:outline-none transition-colors"
                 />
                 {question.possibleAnswers.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removePossibleAnswer(question.id, index)}
-                    className="hover:bg-soma-error p-1 rounded-full"
+                    className="bg-soma-error/20 hover:bg-soma-error/30 p-2 rounded-lg transition-colors"
                   >
-                    <X size={16} />
+                    <X size={16} className="text-soma-error" />
                   </button>
                 )}
               </div>
@@ -543,15 +574,10 @@ const QuizCreateForm: React.FC<Props> = () => {
               <button
                 type="button"
                 onClick={() => addPossibleAnswer(question.id)}
-                className="bg-soma-light p-2 rounded-full hover:bg-soma-light/50 transition-colors duration-200"
+                className="bg-soma-warning/20 p-3 rounded-xl hover:bg-soma-warning/30 transition-colors duration-200 flex items-center gap-2 text-soma-warning font-medium"
               >
-                <SideMenuButton
-                  tippyContent={getMessage("quiz.addOption")}
-                  tippyPlacement="bottom"
-                  className="!bg-transparent"
-                >
-                  <CirclePlus size={18} />
-                </SideMenuButton>
+                <CirclePlus size={20} />
+                Add Answer
               </button>
             </div>
           </div>
@@ -560,102 +586,155 @@ const QuizCreateForm: React.FC<Props> = () => {
   };
 
   return (
-    <section className="h-full w-full flex flex-col justify-center items-center">
-      <div className="flex flex-col gap-4 items-center p-4 overflow-auto w-full">
-        <h1 className="text-3xl">Create New Quiz</h1>
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex flex-col w-full gap-2">
-            <label htmlFor="quizTitle" className="text-xl">
-              Quiz Title
-            </label>
-            <input
-              type="text"
-              className="border border-soma-light rounded-md p-2 w-full"
-              id="quizTitle"
-              value={quizTitle}
-              onChange={(e) => setQuizTitle(e.target.value)}
-              placeholder="Enter quiz title"
-            />
-          </div>
+    <section className="w-full min-h-screen bg-soma-darkest overflow-auto p-10">
+      <div className="max-w-6xl mx-auto p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-soma-text-primary mb-3">
+            Create New Quiz
+          </h1>
+          <p className="text-soma-text-secondary">
+            Build an interactive quiz to test knowledge
+          </p>
+        </div>
 
-          <div className="w-full flex flex-col gap-2">
-            <h2 className="text-xl">Questions</h2>
-            <div className="flex gap-2 justify-between w-2xl">
-              <button
-                className="bg-soma-light p-2 rounded-md hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200 flex-1"
-                type="button"
-                onClick={() => addQuestion("multiple-choice")}
-              >
-                + Multiple Choice
-              </button>
-              <button
-                className="bg-soma-light p-2 rounded-md hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200 flex-1"
-                type="button"
-                onClick={() => addQuestion("fill-in-blank")}
-              >
-                + Fill in the Blank
-              </button>
-              <button
-                className="bg-soma-light p-2 rounded-md hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200 flex-1"
-                type="button"
-                onClick={() => addQuestion("true-false")}
-              >
-                + True/False
-              </button>
-              <button
-                className="bg-soma-light p-2 rounded-md hover:bg-soma-lightest hover:text-soma-dark transition-colors duration-200 flex-1"
-                type="button"
-                onClick={() => addQuestion("short-answer")}
-              >
-                + Short Answer
-              </button>
-            </div>
-          </div>
-          {questions.map((question) => (
-            <div
-              key={question.id}
-              className="flex flex-col gap-4 border border-soma-light p-6 w-2xl"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2 items-center">
-                  <h3 className="text-md uppercase">Question {question.id} </h3>
-                  <span className="bg-soma-light/50 border border-soma-lightest px-1 rounded-md">
-                    {question.type
-                      ? question.type.replace("-", " ")
-                      : "unknown"}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeQuestion(question.id)}
-                  className="bg-soma-error p-1 rounded-full hover:bg-soma-error/50 text-soma-darkest transition-colors duration-150"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+        {/* Quiz Title */}
+        <div className="bg-soma-dark rounded-2xl p-6 mb-8">
+          <label
+            htmlFor="quizTitle"
+            className="text-xl font-semibold text-soma-text-primary mb-4 block"
+          >
+            Quiz Title
+          </label>
+          <input
+            type="text"
+            className="bg-soma-medium border border-soma-light rounded-xl p-4 w-full text-soma-text-primary placeholder:text-soma-lightest focus:border-soma-accent1 focus:outline-none transition-colors"
+            id="quizTitle"
+            value={quizTitle}
+            onChange={(e) => setQuizTitle(e.target.value)}
+            placeholder="Enter an engaging quiz title"
+          />
+        </div>
 
-              <input
-                type="text"
-                value={question.text}
-                className="border border-soma-light rounded-md p-2 w-full"
-                onChange={(e) =>
-                  updateQuestionText(question.id, e.target.value)
-                }
-                placeholder="Enter your question"
-              />
-
-              {renderQuestionEditor(question)}
-            </div>
-          ))}
-          {questions.length > 0 && (
+        {/* Add Question Buttons */}
+        <div className="bg-soma-dark rounded-2xl p-6 mb-8">
+          <h2 className="text-xl font-semibold text-soma-text-primary mb-6">
+            Add Questions
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <button
-              className="bg-soma-accent2 text-soma-darkest py-2 px-12 rounded-md hover:bg-soma-accent2/75 hover:text-soma-light"
+              className="bg-soma-accent1/20 p-4 rounded-xl hover:bg-soma-accent1/30 transition-all flex flex-col items-center gap-3 group"
+              type="button"
+              onClick={() => addQuestion("multiple-choice")}
+            >
+              <CheckCircle
+                className="text-soma-accent1 group-hover:scale-110 transition-transform"
+                size={24}
+              />
+              <span className="text-soma-text-primary font-medium">
+                Multiple Choice
+              </span>
+            </button>
+            <button
+              className="bg-soma-accent2/20 p-4 rounded-xl hover:bg-soma-accent2/30 transition-all flex flex-col items-center gap-3 group"
+              type="button"
+              onClick={() => addQuestion("fill-in-blank")}
+            >
+              <FileText
+                className="text-soma-accent2 group-hover:scale-110 transition-transform"
+                size={24}
+              />
+              <span className="text-soma-text-primary font-medium">
+                Fill in Blank
+              </span>
+            </button>
+            <button
+              className="bg-soma-accent3/20 p-4 rounded-xl hover:bg-soma-accent3/30 transition-all flex flex-col items-center gap-3 group"
+              type="button"
+              onClick={() => addQuestion("true-false")}
+            >
+              <ToggleLeft
+                className="text-soma-accent3 group-hover:scale-110 transition-transform"
+                size={24}
+              />
+              <span className="text-soma-text-primary font-medium">
+                True/False
+              </span>
+            </button>
+            <button
+              className="bg-soma-warning/20 p-4 rounded-xl hover:bg-soma-warning/30 transition-all flex flex-col items-center gap-3 group"
+              type="button"
+              onClick={() => addQuestion("short-answer")}
+            >
+              <PenTool
+                className="text-soma-warning group-hover:scale-110 transition-transform"
+                size={24}
+              />
+              <span className="text-soma-text-primary font-medium">
+                Short Answer
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Questions List */}
+        {questions.length > 0 && (
+          <div className="space-y-6 mb-8">
+            {questions.map((question) => (
+              <div
+                key={question.id}
+                className="bg-soma-dark rounded-2xl p-6 hover:bg-soma-medium/50 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex gap-3 items-center">
+                    <div className="p-2 bg-soma-medium rounded-xl">
+                      {getQuestionIcon(question.type)}
+                    </div>
+                    <h3 className="text-lg font-semibold text-soma-text-primary">
+                      Question {question.id}
+                    </h3>
+                    <span className="bg-soma-medium px-3 py-1 rounded-lg text-sm text-soma-text-secondary">
+                      {question.type
+                        .replace("-", " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeQuestion(question.id)}
+                    className="bg-soma-error/20 p-2 rounded-xl hover:bg-soma-error/30 transition-colors"
+                  >
+                    <X size={20} className="text-soma-error" />
+                  </button>
+                </div>
+
+                <input
+                  type="text"
+                  value={question.text}
+                  className="bg-soma-medium border border-soma-light rounded-xl p-4 w-full mb-6 text-soma-text-primary placeholder:text-soma-lightest focus:border-soma-accent1 focus:outline-none transition-colors"
+                  onChange={(e) =>
+                    updateQuestionText(question.id, e.target.value)
+                  }
+                  placeholder="Enter your question"
+                />
+
+                {renderQuestionEditor(question)}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        {questions.length > 0 && (
+          <div className="flex justify-center mb-3">
+            <button
+              className="bg-soma-accent1/30 text-soma-accent1 py-4 px-12 rounded-xl hover:bg-soma-accent1/90 transition-all font-semibold text-lg hover:text-soma-darkest"
               onClick={submitQuiz}
             >
-              Submit
+              Create Quiz
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );

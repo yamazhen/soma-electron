@@ -19,6 +19,8 @@ import {
   historyKeymap,
   undo,
   redo,
+  undoDepth,
+  redoDepth,
 } from "@codemirror/commands";
 import { indentOnInput, foldKeymap, indentUnit } from "@codemirror/language";
 import { Table } from "@lezer/markdown";
@@ -34,6 +36,8 @@ interface EditorProps {
 export interface MarkdownEditorRef {
   undo: () => void;
   redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
 
 const MarkdownEditorComponent: ForwardRefRenderFunction<
@@ -53,6 +57,18 @@ const MarkdownEditorComponent: ForwardRefRenderFunction<
       if (viewRef.current) {
         redo(viewRef.current);
       }
+    },
+    canUndo: () => {
+      if (viewRef.current) {
+        return undoDepth(viewRef.current.state) > 0;
+      }
+      return false;
+    },
+    canRedo: () => {
+      if (viewRef.current) {
+        return redoDepth(viewRef.current.state) > 0;
+      }
+      return false;
     },
   }));
 

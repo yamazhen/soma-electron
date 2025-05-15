@@ -7,6 +7,11 @@ declare namespace NodeJS {
   }
 }
 
+interface WindowState {
+  isFullScreen: boolean;
+  isMacOS: boolean;
+}
+
 interface ElectronThemeColor {
   main: string;
   search: string;

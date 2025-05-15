@@ -17,6 +17,8 @@ type Props = {
   toggleEditing: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 };
 
 const generateDropdownItems = [
@@ -41,6 +43,8 @@ const EditorTopBar: React.FC<Props> = ({
   toggleEditing,
   onUndo,
   onRedo,
+  canUndo,
+  canRedo,
 }) => {
   const { fileName } = useAppContext();
 
@@ -52,15 +56,17 @@ const EditorTopBar: React.FC<Props> = ({
           <div className="flex items-center rounded-lg bg-soma-darkest/50 p-1 gap-1">
             <button
               onClick={onUndo}
-              className="px-3 py-1.5 rounded-md hover:bg-soma-light/10 text-soma-text-secondary hover:text-soma-text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-md hover:bg-soma-light/10 text-soma-text-secondary hover:text-soma-text-primary transition-all disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-soma-text-secondary"
               title="Undo"
+              disabled={!canUndo || !isEditing}
             >
               <ArrowLeft size={16} strokeWidth={2} />
             </button>
             <div className="w-px h-4 bg-soma-light/20" />
             <button
               onClick={onRedo}
-              className="px-3 py-1.5 rounded-md hover:bg-soma-light/10 text-soma-text-secondary hover:text-soma-text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!canRedo || !isEditing}
+              className="px-3 py-1.5 rounded-md hover:bg-soma-light/10 text-soma-text-secondary hover:text-soma-text-primary transition-all disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-soma-text-secondary"
               title="Redo"
             >
               <ArrowRight size={16} strokeWidth={2} />

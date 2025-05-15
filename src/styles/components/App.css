@@ -156,26 +156,6 @@
   max-width: 100%;
 }
 
-.contexify.contexify_theme-my-custom-theme {
-  @apply bg-soma-darkest shadow-none border-1 border-soma-medium !p-2 !rounded-md;
-  width: auto !important;
-  min-width: auto !important;
-}
-
-.contexify.contexify_theme-my-custom-theme .contexify_itemContent {
-  @apply !text-soma-lightest text-xs;
-}
-/* Hover states */
-.contexify.contexify_theme-my-custom-theme .contexify_itemContent:hover {
-  @apply !bg-soma-medium !text-soma-text-primary;
-}
-
-.contexify.contexify_theme-my-custom-theme
-  .contexify_item:hover
-  > .contexify_itemContent {
-  @apply text-soma-text-primary;
-}
-
 .dropDown {
   @apply z-10 bg-soma-darkest border-soma-medium border-1 rounded-md text-xs flex flex-col p-2 gap-2 w-auto;
 }
