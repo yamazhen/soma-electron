@@ -1,6 +1,6 @@
 import Markdoc from "@markdoc/markdoc";
 import React, { useEffect, useRef } from "react";
-import markdocConfig from "./markdoc";
+import markdocConfig, { processWikiLinks } from "./markdoc";
 import { useAppContext } from "../../context/AppContext";
 
 type Props = {
@@ -14,11 +14,14 @@ const MarkdownViewer: React.FC<Props> = ({ content, onWikiLinkClick }) => {
 
 	const handleWikiLinkClick = async (noteName: string) => {
 		try {
+			// Check if linksApi is available
+			if (!window.linksApi) {
+				console.warn("linksApi not available");
+				return;
+			}
+
 			// First try to resolve the link
-			const result = await window.ipcRenderer.invoke(
-				"links:resolve-target",
-				noteName,
-			);
+			const result = await window.linksApi.resolveTarget(noteName);
 
 			if (result.success && result.targetPath) {
 				setSelectedFile(result.targetPath);
@@ -44,46 +47,43 @@ const MarkdownViewer: React.FC<Props> = ({ content, onWikiLinkClick }) => {
 	useEffect(() => {
 		if (!container.current) return;
 
-		// Process content to convert @@note@@ syntax to Markdoc tags
-		const processedContent = content.replace(
-			/@@([^@\n]+)@@/g,
-			(_, noteName) => {
-				return `{% wikilink note="${noteName}" %}`;
-			},
-		);
+		try {
+			// Process wiki links first
+			const processedContent = processWikiLinks(content);
 
-		const ast = Markdoc.parse(processedContent);
-		const transformed = Markdoc.transform(ast, markdocConfig);
-		const html = Markdoc.renderers.html(transformed);
+			// Parse and transform
+			const ast = Markdoc.parse(processedContent);
+			const transformed = Markdoc.transform(ast, markdocConfig);
+			const html = Markdoc.renderers.html(transformed);
 
-		container.current.innerHTML = html;
+			container.current.innerHTML = html;
 
-		// Add click event listeners to wiki links
-		const wikiLinks = container.current.querySelectorAll(".cm-soma-wikilink");
-		wikiLinks.forEach((link) => {
-			link.addEventListener("click", async (e) => {
-				e.preventDefault();
-				const noteEl = e.currentTarget as HTMLElement;
-				const note =
-					noteEl.getAttribute("data-note") || noteEl.textContent || "";
+			// Add click event listeners to wiki links
+			const wikiLinks = container.current.querySelectorAll(".cm-soma-wikilink");
+			wikiLinks.forEach((link) => {
+				const handleClick = async (e: Event) => {
+					e.preventDefault();
+					const noteEl = e.currentTarget as HTMLElement;
+					const note =
+						noteEl.getAttribute("data-note") || noteEl.textContent || "";
 
-				if (onWikiLinkClick) {
-					onWikiLinkClick(note);
-				} else {
-					await handleWikiLinkClick(note);
-				}
+					if (onWikiLinkClick) {
+						onWikiLinkClick(note);
+					} else {
+						await handleWikiLinkClick(note);
+					}
+				};
+
+				link.addEventListener("click", handleClick);
 			});
-		});
+		} catch (error) {
+			console.error("Error processing markdown:", error);
+			// Fallback: just show the raw content
+			container.current.textContent = content;
+		}
 
 		return () => {
-			// Cleanup event listeners
-			if (container.current) {
-				const wikiLinks =
-					container.current.querySelectorAll(".cm-soma-wikilink");
-				wikiLinks.forEach((link) => {
-					link.removeEventListener("click", () => {});
-				});
-			}
+			// Cleanup is handled by the next render
 		};
 	}, [content, onWikiLinkClick, setSelectedFile, setNoteView]);
 

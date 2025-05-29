@@ -8,13 +8,6 @@ const WIKI_LINK_START_REGEX = /@@([^@\n]*)$/;
 
 export function createWikiLinkCompletion(
 	getAllNotesOnly: () => MarkdownItem[],
-	getLinkSuggestions?: (partial: string) => Promise<
-		Array<{
-			name: string;
-			title: string;
-			path: string;
-		}>
-	>,
 ) {
 	async function wikiLinkCompletionSource(
 		context: CompletionContext,
@@ -29,26 +22,29 @@ export function createWikiLinkCompletion(
 		const partialNote = match[1];
 		const startOfMatch = pos - partialNote.length - 2;
 
-		// Use enhanced suggestions if available
-		if (getLinkSuggestions && partialNote.length > 0) {
+		// Get link suggestions if available
+		if (window.linksApi && partialNote.length > 0) {
 			try {
-				const suggestions = await getLinkSuggestions(partialNote);
-				const options = suggestions.map((suggestion) => ({
-					label: suggestion.name,
-					detail:
-						suggestion.title !== suggestion.name ? suggestion.title : undefined,
-					apply: `${suggestion.name}@@`,
-					type: "text",
-					boost: suggestion.title
-						.toLowerCase()
-						.startsWith(partialNote.toLowerCase())
-						? 1
-						: 0,
-				}));
-				return { from: startOfMatch + 2, to: pos, options };
+				const result = await window.linksApi.getSuggestions(partialNote);
+				if (result?.success && result.suggestions) {
+					const options = result.suggestions.map((suggestion) => ({
+						label: suggestion.name,
+						detail:
+							suggestion.title !== suggestion.name
+								? suggestion.title
+								: undefined,
+						apply: `${suggestion.name}@@`,
+						type: "text",
+						boost: suggestion.title
+							.toLowerCase()
+							.startsWith(partialNote.toLowerCase())
+							? 1
+							: 0,
+					}));
+					return { from: startOfMatch + 2, to: pos, options };
+				}
 			} catch (error) {
 				console.error("Error getting link suggestions:", error);
-				// Fall through to basic completion
 			}
 		}
 
@@ -58,7 +54,7 @@ export function createWikiLinkCompletion(
 			? allNotes.filter((note) =>
 					note.toLowerCase().includes(partialNote.toLowerCase()),
 				)
-			: allNotes;
+			: allNotes.slice(0, 10); // Limit to 10 results
 
 		return {
 			from: startOfMatch + 2,

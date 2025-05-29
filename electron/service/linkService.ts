@@ -84,7 +84,6 @@ export class LinkService extends BaseDAL {
 		return !result || result.content_hash !== currentHash;
 	}
 
-	// Update links for a note
 	async updateNoteLinks(sourcePath: string, content: string): Promise<void> {
 		// Only update if content has changed
 		if (!(await this.hasContentChanged(sourcePath, content))) {
@@ -94,21 +93,35 @@ export class LinkService extends BaseDAL {
 		return this.transaction(() => {
 			// Remove existing links for this note
 			const deleteStmt = this.db.prepare(`
-        DELETE FROM note_links WHERE source_path = ?
-      `);
+      DELETE FROM note_links WHERE source_path = ?
+    `);
 			deleteStmt.run(sourcePath);
 
 			// Parse and insert new links
 			const links = this.parseLinks(content);
-			if (links.length === 0) return;
+			if (links.length === 0) {
+				// Update metadata even if no links
+				this.updateNoteMeta(sourcePath, content);
+				return;
+			}
 
 			const insertStmt = this.db.prepare(`
-        INSERT INTO note_links 
-        (source_path, target_note_name, link_text, position_start, position_end)
-        VALUES (?, ?, ?, ?, ?)
-      `);
+      INSERT INTO note_links 
+      (source_path, target_note_name, link_text, position_start, position_end)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+			const sourceNoteName = path.basename(sourcePath, ".md");
 
 			for (const link of links) {
+				// Skip self-links
+				if (link.targetName === sourceNoteName) {
+					console.warn(
+						`Skipping self-link in ${sourcePath} to ${link.targetName}`,
+					);
+					continue;
+				}
+
 				insertStmt.run(
 					sourcePath,
 					link.targetName,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { useAppContext } from "../../context/AppContext";
 import * as d3 from "d3-force";
@@ -44,7 +44,7 @@ function MindMap() {
 	const { files, setSelectedFile, setNoteView } = useAppContext();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const graphRef = useRef<any>(null);
-	const [dimensions, setDimensions] = useState({ width: 300, height: 300 });
+	const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 	const [hoverNode, setHoverNode] = useState<GraphNode | null>(null);
 	const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
@@ -55,16 +55,14 @@ function MindMap() {
 		links: [],
 	});
 
-	// Build graph data with relationships
 	const buildGraphData = async (): Promise<GraphData> => {
 		const nodes: GraphNode[] = [];
 		const links: GraphLink[] = [];
 		const nodeMap = new Map<string, GraphNode>();
-		const linkCounts = new Map<string, number>();
+		const linkSet = new Set<string>();
 
-		// First pass: create all nodes
 		const processFiles = (items: FileItem[]) => {
-			items.forEach((item) => {
+			for (const item of items) {
 				if (!item.isDirectory) {
 					const node: GraphNode = {
 						id: item.path,
@@ -75,67 +73,67 @@ function MindMap() {
 					};
 					nodes.push(node);
 					nodeMap.set(item.path, node);
-					nodeMap.set(item.name, node); // Also map by name for lookup
-					linkCounts.set(item.path, 0);
+					nodeMap.set(item.name, node);
 				} else if (item.children) {
 					processFiles(item.children);
 				}
-			});
+			}
 		};
 
 		processFiles(files);
 
-		// Second pass: get link relationships for each note
-		for (const node of nodes) {
-			try {
-				const result = await window.linksApi?.getOutgoingLinks(node.path);
-				if (result?.success && result.links) {
-					for (const link of result.links) {
-						if (link.resolved && link.targetPath) {
-							const targetNode = nodeMap.get(link.targetPath);
-							if (targetNode) {
-								// Create link
-								const existingLink = links.find(
-									(l) =>
-										(l.source === node.id && l.target === targetNode.id) ||
-										(l.source === targetNode.id && l.target === node.id),
-								);
+		if (nodes.length === 0 || !window.linksApi) {
+			return { nodes, links };
+		}
 
-								if (existingLink) {
-									existingLink.value += 1;
-								} else {
-									links.push({
-										source: node.id,
-										target: targetNode.id,
-										value: 1,
-									});
-								}
+		try {
+			const linkPromises = nodes.map((node) =>
+				window.linksApi.getOutgoingLinks(node.path),
+			);
 
-								// Update link counts
-								linkCounts.set(node.path, (linkCounts.get(node.path) || 0) + 1);
-								linkCounts.set(
-									targetNode.path,
-									(linkCounts.get(targetNode.path) || 0) + 1,
-								);
+			const results = await Promise.allSettled(linkPromises);
+
+			results.forEach((result, index) => {
+				if (
+					result.status === "fulfilled" &&
+					result.value?.success &&
+					result.value.links
+				) {
+					const sourceNode = nodes[index];
+
+					for (const link of result.value.links) {
+						const targetNode =
+							nodeMap.get(link.targetName) ||
+							(link.targetPath ? nodeMap.get(link.targetPath) : null);
+
+						if (targetNode && targetNode.id !== sourceNode.id) {
+							const linkKey = [sourceNode.id, targetNode.id].sort().join("->");
+
+							if (!linkSet.has(linkKey)) {
+								linkSet.add(linkKey);
+								links.push({
+									source: sourceNode.id,
+									target: targetNode.id,
+									value: 1,
+								});
+								sourceNode.linkCount++;
+								targetNode.linkCount++;
 							}
 						}
 					}
 				}
-			} catch (error) {
-				console.error(`Error getting links for ${node.name}:`, error);
-			}
+			});
+		} catch (error) {
+			console.error("Error building graph links:", error);
 		}
 
-		// Update node link counts and mark orphans
-		nodes.forEach((node) => {
-			node.linkCount = linkCounts.get(node.path) || 0;
+		for (const node of nodes) {
 			node.nodeType = node.linkCount === 0 ? "orphan" : "note";
-		});
+		}
 
 		return { nodes, links };
 	};
 
-	// Load graph data
 	const loadGraphData = async () => {
 		setLoading(true);
 		try {
@@ -143,106 +141,153 @@ function MindMap() {
 			setGraphData(data);
 		} catch (error) {
 			console.error("Error building graph data:", error);
+			setGraphData({ nodes: [], links: [] });
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	useEffect(() => {
-		loadGraphData();
+		if (files.length > 0) {
+			loadGraphData();
+		}
 	}, [files]);
 
 	useEffect(() => {
+		let timeoutId: NodeJS.Timeout;
+
 		const resize = () => {
 			if (containerRef.current) {
-				setDimensions({
-					width: containerRef.current.offsetWidth,
-					height: containerRef.current.offsetHeight,
+				const rect = containerRef.current.getBoundingClientRect();
+				const newWidth = Math.floor(rect.width);
+				const newHeight = Math.floor(rect.height);
+
+				setDimensions((prev) => {
+					if (prev.width !== newWidth || prev.height !== newHeight) {
+						return { width: newWidth, height: newHeight };
+					}
+					return prev;
 				});
 			}
 		};
-		resize();
-		window.addEventListener("resize", resize);
-		return () => window.removeEventListener("resize", resize);
+
+		const debouncedResize = () => {
+			clearTimeout(timeoutId);
+			timeoutId = setTimeout(resize, 16);
+		};
+
+		const initialResize = () => {
+			requestAnimationFrame(() => {
+				requestAnimationFrame(resize);
+			});
+		};
+
+		initialResize();
+
+		const resizeObserver = new ResizeObserver(debouncedResize);
+		if (containerRef.current) {
+			resizeObserver.observe(containerRef.current);
+		}
+
+		window.addEventListener("resize", debouncedResize);
+
+		return () => {
+			clearTimeout(timeoutId);
+			resizeObserver.disconnect();
+			window.removeEventListener("resize", debouncedResize);
+		};
 	}, []);
 
 	useEffect(() => {
-		if (graphRef.current) {
-			// Center nodes with connected nodes having stronger attraction
-			graphRef.current.d3Force("x", d3.forceX(0).strength(0.1));
-			graphRef.current.d3Force("y", d3.forceY(0).strength(0.1));
+		if (!graphRef.current || graphData.nodes.length === 0) return;
 
-			// Collision detection with variable radius based on connections
-			graphRef.current.d3Force(
-				"collide",
-				d3
-					.forceCollide()
-					.radius((d: any) => {
-						const baseRadius = 25;
-						const linkBonus = Math.min(d.linkCount * 3, 15);
-						if (selectedNode?.id === d.id) return baseRadius + linkBonus + 10;
-						if (hoverNode?.id === d.id) return baseRadius + linkBonus + 5;
-						return baseRadius + linkBonus;
-					})
-					.strength(0.8)
-					.iterations(2),
-			);
+		const setupForces = () => {
+			try {
+				const graph = graphRef.current;
 
-			// Charge force - connected nodes repel less
-			graphRef.current.d3Force(
-				"charge",
-				d3
-					.forceManyBody()
-					.strength((d: any) => {
-						const baseStrength = -100;
-						const linkReduction = Math.min(d.linkCount * 10, 50);
-						if (selectedNode?.id === d.id) return baseStrength - 50;
-						return baseStrength + linkReduction;
-					})
-					.distanceMin(20)
-					.distanceMax(400),
-			);
+				graph.d3Force("x", d3.forceX(0).strength(0.2));
+				graph.d3Force("y", d3.forceY(0).strength(0.2));
 
-			// Link force
-			graphRef.current.d3Force(
-				"link",
-				d3
-					.forceLink(graphData.links)
-					.id((d: any) => d.id)
-					.distance(80)
-					.strength(0.3),
-			);
+				graph.d3Force(
+					"collide",
+					d3
+						.forceCollide()
+						.radius((d: any) => {
+							const baseRadius = 25;
+							const linkBonus = Math.min(d.linkCount * 3, 15);
+							if (selectedNode?.id === d.id) return baseRadius + linkBonus + 10;
+							if (hoverNode?.id === d.id) return baseRadius + linkBonus + 5;
+							return baseRadius + linkBonus;
+						})
+						.strength(0.8)
+						.iterations(2),
+				);
 
-			const simulation = graphRef.current.d3Force();
-			if (simulation) {
-				simulation.alphaDecay(0.015);
-				simulation.velocityDecay(0.4);
+				graph.d3Force(
+					"charge",
+					d3
+						.forceManyBody()
+						.strength((d: any) => {
+							const baseStrength = -100;
+							const linkReduction = Math.min(d.linkCount * 10, 50);
+							if (selectedNode?.id === d.id) return baseStrength - 50;
+							return baseStrength + linkReduction;
+						})
+						.distanceMin(20)
+						.distanceMax(400),
+				);
+
+				if (graphData.links.length > 0) {
+					graph.d3Force(
+						"link",
+						d3
+							.forceLink(graphData.links)
+							.id((d: any) => d.id)
+							.distance(80)
+							.strength(0.3),
+					);
+				}
+
+				const simulation = graph.d3Force();
+				if (simulation && graphData.nodes.length > 0) {
+					simulation.alphaDecay(0.015).velocityDecay(0.4).restart();
+				}
+			} catch (error) {
+				console.error("Error setting up D3 forces:", error);
 			}
-		}
-	}, [graphData, dimensions, selectedNode, hoverNode]);
+		};
 
-	const getNodeColor = (node: GraphNode) => {
-		if (selectedNode?.id === node.id) return "#0071e3";
-		if (hoverNode?.id === node.id) return "#bf5af2";
-		if (
-			searchTerm &&
-			node.name.toLowerCase().includes(searchTerm.toLowerCase())
-		) {
-			return "#50bb50";
-		}
-		if (node.nodeType === "orphan") return "#ff453a";
-		if (node.linkCount > 5) return "#ff9f0a";
-		if (node.linkCount > 2) return "#30d158";
-		return "#48484a";
-	};
+		requestAnimationFrame(setupForces);
+	}, [graphData, selectedNode, hoverNode, dimensions]);
 
-	const getNodeSize = (node: GraphNode) => {
-		const baseSize = 4;
-		const linkBonus = Math.min(node.linkCount * 0.8, 4);
-		if (selectedNode?.id === node.id) return baseSize + linkBonus + 3;
-		if (hoverNode?.id === node.id) return baseSize + linkBonus + 2;
-		return baseSize + linkBonus;
-	};
+	const getNodeColor = useMemo(
+		() => (node: GraphNode) => {
+			if (selectedNode?.id === node.id) return "#0071e3";
+			if (hoverNode?.id === node.id) return "#bf5af2";
+			if (
+				searchTerm &&
+				node.name.toLowerCase().includes(searchTerm.toLowerCase())
+			) {
+				return "#50bb50";
+			}
+			if (node.nodeType === "orphan") return "#ff453a";
+			if (node.linkCount > 5) return "#ff9f0a";
+			if (node.linkCount > 2) return "#30d158";
+			return "#48484a";
+		},
+		[selectedNode, hoverNode, searchTerm],
+	);
+
+	const getNodeSize = useMemo(
+		() => (node: GraphNode) => {
+			const baseSize = 4;
+			const linkBonus = Math.min(node.linkCount * 0.8, 4);
+			if (selectedNode?.id === node.id) return baseSize + linkBonus + 3;
+			if (hoverNode?.id === node.id) return baseSize + linkBonus + 2;
+			return baseSize + linkBonus;
+		},
+		[selectedNode, hoverNode],
+	);
 
 	const handleZoomIn = () => {
 		if (graphRef.current) {
@@ -272,22 +317,56 @@ function MindMap() {
 		loadGraphData();
 	};
 
-	const filteredData = {
-		nodes: graphData.nodes.filter(
-			(node) =>
-				!searchTerm ||
-				node.name.toLowerCase().includes(searchTerm.toLowerCase()),
-		),
-		links: graphData.links.filter((link) => {
-			if (!searchTerm) return true;
-			const sourceNode = graphData.nodes.find((n) => n.id === link.source);
-			const targetNode = graphData.nodes.find((n) => n.id === link.target);
-			return (
-				sourceNode?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				targetNode?.name.toLowerCase().includes(searchTerm.toLowerCase())
-			);
-		}),
-	};
+	const filteredData = useMemo(() => {
+		if (!searchTerm) return graphData;
+
+		const searchLower = searchTerm.toLowerCase();
+		const filteredNodes = graphData.nodes.filter((node) =>
+			node.name.toLowerCase().includes(searchLower),
+		);
+
+		const nodeIds = new Set(filteredNodes.map((n) => n.id));
+
+		const filteredLinks = graphData.links.filter(
+			(link) =>
+				nodeIds.has(
+					typeof link.source === "string" ? link.source : link.source.id,
+				) &&
+				nodeIds.has(
+					typeof link.target === "string" ? link.target : link.target.id,
+				),
+		);
+
+		return { nodes: filteredNodes, links: filteredLinks };
+	}, [graphData, searchTerm]);
+
+	if (loading) {
+		return (
+			<div className="h-full w-full bg-soma-darkest flex items-center justify-center">
+				<div className="text-center">
+					<RefreshCw
+						className="animate-spin text-soma-accent1 mx-auto mb-4"
+						size={48}
+					/>
+					<p className="text-soma-text-primary">Loading mind map...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (graphData.nodes.length === 0) {
+		return (
+			<div className="h-full w-full bg-soma-darkest flex items-center justify-center">
+				<div className="text-center">
+					<Brain className="text-soma-text-secondary mx-auto mb-4" size={48} />
+					<p className="text-soma-text-primary mb-2">No notes found</p>
+					<p className="text-soma-text-secondary">
+						Create some notes to see your mind map
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div
@@ -306,12 +385,6 @@ function MindMap() {
 							{graphData.nodes.length} notes • {graphData.links.length}{" "}
 							connections
 						</span>
-						{loading && (
-							<div className="flex items-center gap-2 text-sm text-soma-accent1">
-								<RefreshCw className="animate-spin" size={16} />
-								Loading relationships...
-							</div>
-						)}
 					</div>
 
 					{/* Search and Controls */}
@@ -326,12 +399,12 @@ function MindMap() {
 								placeholder="Search notes..."
 								value={searchTerm}
 								onChange={(e) => setSearchTerm(e.target.value)}
-								className="pl-9 pr-4 py-2 bg-soma-darkest border border-soma-light/20 rounded-lg text-sm text-soma-text-primary placeholder:text-soma-text-secondary focus:outline-none focus:ring-2 focus:ring-soma-accent1 focus:border-transparent"
+								className="pl-9 pr-4 py-2 bg-soma-darkest border border-soma-light/20 rounded-lg text-sm text-soma-text-primary placeholder:text-soma-text-secondary focus:outline-none focus:ring-2 focus:ring-soma-accent1 focus:border-transparent no-drag"
 							/>
 						</div>
 
 						{/* Controls */}
-						<div className="flex items-center gap-1">
+						<div className="flex items-center gap-1 no-drag">
 							<Tippy
 								content="Refresh Links"
 								placement="bottom"
@@ -340,6 +413,7 @@ function MindMap() {
 								delay={200}
 							>
 								<button
+									type="button"
 									onClick={handleRefresh}
 									disabled={loading}
 									className="p-2 hover:bg-soma-light/30 rounded-lg transition-colors disabled:opacity-50"
@@ -358,6 +432,7 @@ function MindMap() {
 								delay={200}
 							>
 								<button
+									type="button"
 									onClick={handleZoomIn}
 									className="p-2 hover:bg-soma-light/30 rounded-lg transition-colors"
 								>
@@ -372,6 +447,7 @@ function MindMap() {
 								delay={200}
 							>
 								<button
+									type="button"
 									onClick={handleZoomOut}
 									className="p-2 hover:bg-soma-light/30 rounded-lg transition-colors"
 								>
@@ -386,6 +462,7 @@ function MindMap() {
 								delay={200}
 							>
 								<button
+									type="button"
 									onClick={handleCenter}
 									className="p-2 hover:bg-soma-light/30 rounded-lg transition-colors"
 								>
@@ -393,6 +470,7 @@ function MindMap() {
 								</button>
 							</Tippy>
 							<button
+								type="button"
 								onClick={toggleFullscreen}
 								className="p-2 hover:bg-soma-light/30 rounded-lg transition-colors"
 								title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
@@ -412,19 +490,19 @@ function MindMap() {
 			<div className="bg-soma-dark/50 px-6 py-2 border-b border-soma-light/10">
 				<div className="flex items-center gap-6 text-xs text-soma-text-secondary">
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 rounded-full bg-[#ff453a]"></div>
+						<div className="w-3 h-3 rounded-full bg-[#ff453a]" />
 						<span>Orphaned (no links)</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 rounded-full bg-[#48484a]"></div>
+						<div className="w-3 h-3 rounded-full bg-[#48484a]" />
 						<span>Few connections</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 rounded-full bg-[#30d158]"></div>
+						<div className="w-3 h-3 rounded-full bg-[#30d158]" />
 						<span>Well connected</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 rounded-full bg-[#ff9f0a]"></div>
+						<div className="w-3 h-3 rounded-full bg-[#ff9f0a]" />
 						<span>Hub (many links)</span>
 					</div>
 				</div>
@@ -432,84 +510,81 @@ function MindMap() {
 
 			{/* Graph Container */}
 			<div className="flex-1 relative" ref={containerRef}>
-				<ForceGraph2D
-					ref={graphRef}
-					width={dimensions.width}
-					height={dimensions.height}
-					graphData={filteredData}
-					backgroundColor="transparent"
-					nodeColor={getNodeColor}
-					nodeVal={getNodeSize}
-					nodeLabel={() => ""}
-					linkColor={() => "rgba(255, 255, 255, 0.1)"}
-					linkWidth={(link: any) => Math.sqrt(link.value)}
-					linkDirectionalParticles={2}
-					linkDirectionalParticleSpeed={0.002}
-					linkDirectionalParticleWidth={2}
-					linkDirectionalParticleColor={() => "rgba(191, 90, 242, 0.6)"}
-					nodeCanvasObjectMode={() => "after"}
-					onNodeHover={(node: GraphNode | null) => {
-						setHoverNode(node);
-						document.body.style.cursor = node ? "pointer" : "default";
-					}}
-					onNodeClick={(node: GraphNode) => {
-						if (selectedNode?.id === node.id) {
-							// Double click - open note
-							setSelectedFile(node.path);
-							setNoteView("note");
-						} else {
-							setSelectedNode(node);
-						}
-					}}
-					onBackgroundClick={() => {
-						setSelectedNode(null);
-					}}
-					nodeCanvasObject={(
-						node: any,
-						ctx: CanvasRenderingContext2D,
-						globalScale: number,
-					) => {
-						const label = node.name;
-						const fontSize = 12 / globalScale;
-						ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-						ctx.textAlign = "center";
-						ctx.textBaseline = "top";
-						const textWidth = ctx.measureText(label).width;
-						const padding = 4 / globalScale;
-						const x = node.x || 0;
-						const y = node.y || 0;
+				{filteredData.nodes.length > 0 &&
+					dimensions.width > 50 &&
+					dimensions.height > 50 && (
+						<ForceGraph2D
+							ref={graphRef}
+							width={dimensions.width}
+							height={dimensions.height}
+							graphData={filteredData}
+							backgroundColor="transparent"
+							nodeColor={getNodeColor}
+							nodeVal={getNodeSize}
+							nodeLabel={() => ""}
+							linkColor={() => "rgba(191, 90, 242, 0.6)"}
+							linkWidth={(link: any) => Math.max(1, Math.sqrt(link.value) * 2)}
+							linkDirectionalArrowLength={3.5}
+							linkDirectionalArrowRelPos={1}
+							linkDirectionalArrowColor={() => "rgba(191, 90, 242, 0.8)"}
+							linkDirectionalParticles={1}
+							linkDirectionalParticleSpeed={0.006}
+							linkDirectionalParticleWidth={4}
+							linkDirectionalParticleColor={() => "rgba(191, 90, 242, 0.9)"}
+							nodeCanvasObjectMode={() => "after"}
+							onNodeHover={(node: GraphNode | null) => {
+								setHoverNode(node);
+								document.body.style.cursor = node ? "pointer" : "default";
+							}}
+							onNodeClick={(node: GraphNode) => {
+								if (selectedNode?.id === node.id) {
+									setSelectedNode(null);
+								} else {
+									setSelectedNode(node);
+								}
+							}}
+							onBackgroundClick={() => {
+								setSelectedNode(null);
+							}}
+							nodeCanvasObject={(
+								node: any,
+								ctx: CanvasRenderingContext2D,
+								globalScale: number,
+							) => {
+								const label = node.name;
+								const fontSize = Math.max(8, 12 / globalScale);
+								const x = node.x || 0;
+								const y = node.y || 0;
 
-						let textOffset = 8;
-						if (selectedNode?.id === node.id) {
-							textOffset = 12;
-							ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-						} else if (hoverNode?.id === node.id) {
-							textOffset = 10;
-						}
+								const baseSize = 4;
+								const linkBonus = Math.min(node.linkCount * 0.8, 4);
+								let nodeRadius = baseSize + linkBonus;
 
-						// Draw background for text
-						ctx.fillStyle = "rgba(28, 28, 30, 0.8)";
-						ctx.fillRect(
-							x - textWidth / 2 - padding,
-							y + textOffset,
-							textWidth + padding * 2,
-							fontSize + padding * 2,
-						);
+								if (selectedNode?.id === node.id) {
+									nodeRadius = baseSize + linkBonus + 3;
+								} else if (hoverNode?.id === node.id) {
+									nodeRadius = baseSize + linkBonus + 2;
+								}
 
-						// Draw text
-						ctx.fillStyle = getNodeColor(node);
-						ctx.fillText(label, x, y + textOffset + padding);
+								let textOffset = nodeRadius + 6;
+								let fontWeight = "normal";
 
-						// Draw link count if node has connections
-						if (node.linkCount > 0) {
-							const countText = node.linkCount.toString();
-							const countFontSize = 8 / globalScale;
-							ctx.font = `${countFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-							ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-							ctx.fillText(countText, x, y - textOffset);
-						}
-					}}
-				/>
+								if (selectedNode?.id === node.id) {
+									textOffset = nodeRadius + 8;
+									fontWeight = "bold";
+								} else if (hoverNode?.id === node.id) {
+									textOffset = nodeRadius + 7;
+								}
+
+								ctx.font = `${fontWeight} ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+								ctx.textAlign = "center";
+								ctx.textBaseline = "top";
+								ctx.fillStyle = getNodeColor(node);
+
+								ctx.fillText(label, x, y + textOffset + 4 / globalScale);
+							}}
+						/>
+					)}
 
 				{/* Selected Node Info */}
 				{selectedNode && (
@@ -540,9 +615,7 @@ function MindMap() {
 								{selectedNode.nodeType === "orphan" ? "Orphaned" : "Connected"}
 							</span>
 						</div>
-						<p className="text-xs text-soma-accent1 mt-2">
-							Click to open • Double-click node to open
-						</p>
+						<p className="text-xs text-soma-accent1 mt-2">Click to open</p>
 					</div>
 				)}
 			</div>
