@@ -4,32 +4,34 @@ import { themeManager } from "../themeManager";
 import { createMainWindow } from "../windows/mainWindow";
 import { windowManager } from "../windows/windowManager";
 
-export function setupAppHandlers(app: Electron.App) {
-	app.on("window-all-closed", () => {
-		if (process.platform !== "darwin") {
-			app.quit();
-		}
-	});
+export function setupAppHandlers(electronApp: Electron.App): Promise<void> {
+	return new Promise((resolve) => {
+		electronApp.on("window-all-closed", () => {
+			if (process.platform !== "darwin") {
+				electronApp.quit();
+			}
+		});
 
-	app.on("open-url", (event, url) => {
-		event.preventDefault();
-		handleAuthUrl(url);
-	});
+		electronApp.on("open-url", (event, url) => {
+			event.preventDefault();
+			handleAuthUrl(url);
+		});
 
-	app.on("activate", () => {
-		if (BrowserWindow.getAllWindows().length === 0) {
-			const mainWindow = createMainWindow(null, themeManager.getCurrentTheme());
-			windowManager.setWindow("main", mainWindow);
-		}
-	});
+		electronApp.on("activate", () => {
+			if (BrowserWindow.getAllWindows().length === 0) {
+				const mainWindow = createMainWindow(
+					null,
+					themeManager.getCurrentTheme(),
+				);
+				windowManager.setWindow("main", mainWindow);
+			}
+		});
 
-	app.on("will-quit", () => {
-		closeDatabase();
-	});
+		electronApp.on("will-quit", () => {
+			closeDatabase();
+		});
 
-	app.on("open-url", (event, url) => {
-		event.preventDefault();
-		handleAuthUrl(url);
+		resolve();
 	});
 }
 
@@ -58,7 +60,7 @@ function handleAuthUrl(url: string) {
 			try {
 				const data = JSON.parse(decodeURIComponent(dataStr));
 
-				targetWindows.forEach((window) => {
+				for (const window of targetWindows) {
 					if (window.webContents.isLoading()) {
 						window.webContents.once("did-finish-load", () => {
 							window.webContents.send("auth-callback-success", data);
@@ -66,7 +68,7 @@ function handleAuthUrl(url: string) {
 					} else {
 						window.webContents.send("auth-callback-success", data);
 					}
-				});
+				}
 			} catch (jsonError) {
 				console.error(
 					"Error parsing JSON data:",
@@ -74,24 +76,24 @@ function handleAuthUrl(url: string) {
 					"Raw data:",
 					dataStr,
 				);
-				targetWindows.forEach((window) => {
+				for (const window of targetWindows) {
 					window.webContents.send("auth-callback-error", "Invalid data format");
-				});
+				}
 			}
 		} else if (searchParams.has("error")) {
 			const error = searchParams.get("error");
 			console.error("Auth callback error:", error);
-			targetWindows.forEach((window) => {
+			for (const window of targetWindows) {
 				window.webContents.send("auth-callback-error", error);
-			});
+			}
 		} else {
 			console.warn("Auth callback with no data or error parameters");
-			targetWindows.forEach((window) => {
+			for (const window of targetWindows) {
 				window.webContents.send(
 					"auth-callback-error",
 					"No data or error in callback",
 				);
-			});
+			}
 		}
 	} catch (error) {
 		console.error("Error handling auth URL:", error);

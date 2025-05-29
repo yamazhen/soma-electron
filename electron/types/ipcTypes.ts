@@ -2,6 +2,35 @@ interface Window {
 	appConfig: {
 		notesDir: string;
 	};
+	fileSystem: {
+		onFileSystemChanged: (callback: () => void) => () => void;
+		createMarkdownFile: (
+			customFileName?: string,
+		) => Promise<MarkdownItem | null>;
+		loadExistingNotes: (
+			sortMethod: SortMethod,
+			folderCheck?: boolean,
+		) => Promise<DirectoryContents>;
+		createFolder: () => Promise<DirectoryItem | null>;
+		readMarkdownFile: (path: string) => Promise<MarkdownItem | null>;
+		writeMarkdownFile: (path: string, content: string) => Promise<boolean>;
+		updateFileOrders: (
+			orders: Array<{ path: string; parentPath: string; index: number }>,
+		) => Promise<void>;
+		getFileOrder: (parentPath: string) => Promise<number[]>;
+		moveFile: (
+			oldPath: string,
+			newPath: string,
+		) => Promise<{ success: boolean; newPath?: string }>;
+		getNotesDir: () => Promise<string>;
+		renameFileOrFolder: (
+			oldPath: string,
+			newName: string,
+		) => Promise<{ success: boolean; newPath?: string }>;
+		deleteFileOrFolder: (path: string) => Promise<{ success: boolean }>;
+		onSearchOpenNote: (cb: (filePath: string) => void) => void;
+		offSearchOpenNote: (cb: (filePath: string) => void) => void;
+	};
 	oauthIpc: {
 		initGoogleLogin: (options: {
 			apiUrl: string;
@@ -76,32 +105,6 @@ interface Window {
 		minimize: () => void;
 		close: () => void;
 
-		// File operations
-		createMarkdownFile: (
-			customFileName?: string,
-		) => Promise<MarkdownItem | null>;
-		loadExistingNotes: (
-			sortMethod: SortMethod,
-			folderCheck?: boolean,
-		) => Promise<DirectoryContents>;
-		createFolder: () => Promise<DirectoryItem | null>;
-		readMarkdownFile: (path: string) => Promise<MarkdownItem | null>;
-		writeMarkdownFile: (path: string, content: string) => Promise<boolean>;
-		getFileOrder: (parentPath: string) => Promise<number[]>;
-		onFileSystemChanged: (callback: () => void) => () => void;
-		updateFileOrders: (
-			orders: Array<{ path: string; parentPath: string; index: number }>,
-		) => Promise<void>;
-		moveFile: (
-			oldPath: string,
-			newPath: string,
-		) => Promise<{ success: boolean; newPath?: string }>;
-		getNotesDir: () => Promise<string>;
-		renameFileOrFolder: (
-			oldPath: string,
-			newName: string,
-		) => Promise<{ success: boolean; newPath?: string }>;
-		deleteFileOrFolder: (path: string) => Promise<{ success: boolean }>;
 		getLanguage: () => Promise<string>;
 		setLanguage: (language: string) => Promise<void>;
 		getTranslations: (language: string) => Promise<any>;
@@ -122,8 +125,6 @@ interface Window {
 		openSearchPopup: () => Promise<void>;
 		hideSearchPopup: () => Promise<void>;
 		expandSearchPopup: (expand: boolean) => Promise<void>;
-		onSearchOpenNote: (cb: (filePath: string) => void) => void;
-		offSearchOpenNote: (cb: (filePath: string) => void) => void;
 		changeTheme: (theme: string) => Promise<void>;
 		getTheme: () => Promise<string>;
 		openSettings: () => Promise<void>;
