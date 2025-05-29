@@ -16,7 +16,7 @@ const VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 export const env = {
 	serviceName: SERVICE_NAME,
-	preload: path.join(__dirname, "..", "preload", "index.mjs"),
+	preload: path.join(MAIN_DIST, "preload.js"),
 	appRoot: APP_ROOT,
 	public: VITE_PUBLIC,
 	mainDist: MAIN_DIST,

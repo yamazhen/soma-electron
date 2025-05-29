@@ -64,12 +64,14 @@ export const windowApi = {
 	onWindowStateChange: (
 		callback: (state: { isFullScreen: boolean; isMacOS: boolean }) => void,
 	) => {
-		ipcRenderer.on(
-			"window-state-change",
-			(
-				_event: Electron.IpcRendererEvent,
-				state: { isFullScreen: boolean; isMacOS: boolean },
-			) => callback(state),
-		);
+		const handler = (
+			_: Electron.IpcRendererEvent,
+			state: { isFullScreen: boolean; isMacOS: boolean },
+		) => callback(state);
+		ipcRenderer.on("window-state-changed", handler);
+
+		return () => {
+			ipcRenderer.removeListener("window-state-changed", handler);
+		};
 	},
 };
