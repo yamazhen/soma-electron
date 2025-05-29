@@ -1,5 +1,4 @@
 import React, { useRef, useState } from "react";
-import SideMenuButton from "../buttons/Button";
 import {
   ArrowDownNarrowWideIcon,
   ArrowUpDownIcon,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import FileTree from "./FileTree";
 import { useAppContext } from "../../../context/AppContext";
+import SideMenuButton from "../buttons/Button";
 
 type Props = {
   explorerExpanded: boolean;
@@ -49,7 +49,6 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
       sortTippyMessage = getMessage("notes.sortCustom");
       break;
   }
-
   const cycleSortMethod = () => {
     const methods = ["asc", "desc", "custom"] as const;
     const currentIndex = methods.indexOf(
@@ -77,13 +76,10 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
 
   return (
     <section
-      className={`
-        explorerContainer h-full bg-soma-darkest/90 transition-all duration-300
-        ${explorerExpanded ? "expanded w-64" : "collapsed w-0"}
-      `}
+      className={`explorerContainer ${explorerExpanded ? "expanded border-r-1 border-soma-medium" : "collapsed border-0"}`}
     >
-      <div className="explorer h-full flex flex-col">
-        <div className="explorerActionBar p-2 border-b border-soma-light/10 bg-soma-dark/50 flex items-center gap-1">
+      <div className="explorer">
+        <div className="explorerActionBar border-b border-soma-light/20">
           <SideMenuButton
             tippyPlacement="bottom"
             tippyContent={getMessage("notes.newNote")}
@@ -135,24 +131,17 @@ const Explorer: React.FC<Props> = ({ explorerExpanded }) => {
             </SideMenuButton>
           )}
         </div>
-
-        {/* File Tree Content */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {files.length > 0 ? (
-            <FileTree treeData={treeData} ref={fileTreeRef} />
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center text-muted p-8 opacity-70 h-full">
-              <NotepadTextDashed
-                size={48}
-                className="mb-2 text-soma-lightest"
-              />
-              <p className="text-lg text-soma-text-primary">No notes yet</p>
-              <p className="text-sm text-soma-text-secondary">
-                Start by creating a new one
-              </p>
-            </div>
-          )}
-        </div>
+        {files.length > 0 ? (
+          <FileTree treeData={treeData} ref={fileTreeRef} />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center text-muted p-8 opacity-70">
+            <NotepadTextDashed size={48} className="mb-2" />
+            <p className="text-lg">No notes yet</p>
+            <p className="text-sm text-muted-foreground">
+              Start by creating a new one
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

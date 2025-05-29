@@ -3,37 +3,22 @@ import Search from "./features/notes/search/Search";
 import MainWindow from "./components/layout/MainWindow";
 import Settings from "./components/layout/settings/Settings";
 import { setInitialTheme, useThemeListener } from "./hooks/themeHooks";
+import Auth from "./components/layout/auth/Auth";
 
 function App() {
-  setInitialTheme();
-  useThemeListener();
+	setInitialTheme();
+	useThemeListener();
 
-  window.addEventListener(
-    "click",
-    (e) => {
-      const anchor = (e.target as HTMLElement).closest("a[href]");
-      if (!anchor) return;
-
-      e.preventDefault();
-
-      let href = anchor.getAttribute("href")!;
-      if (!href.match(/^[a-z]+:/i)) {
-        href = "https://" + href;
-      }
-      window.ipcRenderer.openExternalLink(href);
-    },
-    { capture: true },
-  );
-
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<MainWindow />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
-    </HashRouter>
-  );
+	return (
+		<HashRouter>
+			<Routes>
+				<Route path="/" element={<MainWindow />} />
+				<Route path="/search" element={<Search />} />
+				<Route path="/settings" element={<Settings />} />
+				<Route path="/auth" element={<Auth />} />
+			</Routes>
+		</HashRouter>
+	);
 }
 
 export default App;

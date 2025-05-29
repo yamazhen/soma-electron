@@ -50,7 +50,7 @@
 }
 
 .explorer {
-  @apply bg-soma-dark text-soma-lightest text-nowrap w-full h-full overflow-hidden;
+  @apply bg-soma-dark text-soma-lightest text-nowrap w-full h-full;
 }
 
 .explorerActionBar {
@@ -59,7 +59,6 @@
 
 .treeContainer {
   height: calc(100% - 54px);
-  @apply w-full overflow-hidden;
 }
 
 @keyframes tippyBounce {

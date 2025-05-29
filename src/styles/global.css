@@ -91,7 +91,7 @@ body {
 }
 
 input::selection {
-  @apply bg-soma-accent2 text-soma-darkest;
+  @apply bg-soma-accent1 text-soma-darkest;
 }
 
 main {

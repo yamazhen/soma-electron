@@ -11,16 +11,30 @@ export default defineConfig({
     electron({
       main: {
         entry: "electron/main.ts",
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ["keytar", "better-sqlite3"],
+            },
+          },
+        },
       },
       preload: {
         input: path.join(__dirname, "electron/preload.ts"),
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ["keytar", "better-sqlite3"],
+            },
+          },
+        },
       },
-      renderer: process.env.NODE_ENV === "test" ? undefined : {},
+      renderer: process.env.NODE_ENV === "development" ? undefined : {},
     }),
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 });

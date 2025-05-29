@@ -3,11 +3,10 @@ import { useAppContext } from "../../context/AppContext";
 import { CircleHelp, Timer, CheckCircle, XCircle } from "lucide-react";
 
 type Props = {
-  quiz: QuizData;
-  onComplete?: (review: QuizReview) => void;
+  quiz: QuizDetails;
 };
 
-const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
+const QuizInReview: React.FC<Props> = ({ quiz }) => {
   const [index, setIndex] = useState(0);
   const [time, setTime] = useState(10);
   const [userAnswer, setUserAnswer] = useState<string | null>(null);
@@ -24,32 +23,44 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
   const question = quiz?.questions?.[index];
 
   useEffect(() => {
-    if (!quiz?.questions?.length) {
-      setError("Invalid quiz data: missing questions");
-    } else {
-      setError(null);
-    }
-  }, [quiz]);
-
-  useEffect(() => {
     if (!question || error) return;
 
     setTime(30);
     setUserAnswer(null);
     setFeedback(false);
 
+    let timeoutIds: ReturnType<typeof setTimeout>[] = [];
+
     const timer = setInterval(() => {
-      setTime((t) => {
-        if (t <= 1) {
+      setTime((prevTime) => {
+        if (prevTime <= 1) {
           clearInterval(timer);
-          endTimer();
+
+          setFeedback(true);
+
+          setAnswers((prev) => {
+            if (prev.some((a) => a.questionId === question.id)) {
+              return prev;
+            }
+
+            return [...prev, { questionId: question.id, answer: "TIMEOUT" }];
+          });
+
+          const nextQuestionTimeout = setTimeout(() => {
+            setIndex(index + 1);
+          }, 2000);
+
+          timeoutIds.push(nextQuestionTimeout);
           return 0;
         }
-        return t - 1;
+        return prevTime - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      timeoutIds.forEach((id) => clearTimeout(id));
+    };
   }, [index, question, error]);
 
   useEffect(() => {
@@ -58,47 +69,60 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
     }
   }, [answers]);
 
-  const endTimer = () => {
-    setFeedback(true);
-    setTimeout(() => setIndex((i) => i + 1), 2000);
-  };
-
-  const checkCorrect = (q: QuizQuestion | null, a: string): boolean => {
+  const checkCorrect = (q: QuestionWithDetails | null, a: string): boolean => {
     if (!q) return false;
 
+    if (a === "TIMEOUT") return false;
+
     if (q.type === "true-false") {
-      return (a === "true") === q.correctAnswer;
+      return (a === "true") === !!q.boolean_answer;
     }
 
-    if (q.type === "multiple-choice") {
-      const correct = q.options?.find((opt) => opt?.isCorrect);
-      return a === correct?.text || a === correct?.id?.toString();
+    if (q.type === "multiple-choice" && q.options) {
+      const correct = q.options.find((opt) => opt.is_correct);
+      return a === correct?.text;
     }
 
-    const answers = q.type === "fill-in-blank" ? q.answers : q.possibleAnswers;
-    return (
-      answers?.some((ans) => {
-        const norm = (s: string) =>
-          s
-            .toLowerCase()
-            .replace(/[^\w\s]|_/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-        return norm(a) === norm(ans);
-      }) || false
-    );
+    if (q.type === "text-answer" && q.answers) {
+      const normalizedAnswer = normalizeText(a);
+      return q.answers.some(
+        (ans) => normalizeText(ans.text) === normalizedAnswer,
+      );
+    }
+
+    return false;
+  };
+
+  const normalizeText = (text: string): string => {
+    return String(text)
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/[^\w\s]/g, "");
   };
 
   const handleSelect = (a: string) => {
-    if (time === 0 || userAnswer !== null || !question) return;
+    if (time === 0 || userAnswer !== null || !question || feedback) return;
 
     setUserAnswer(a);
     setFeedback(true);
 
-    setAnswers((prev) => [...prev, { questionId: question.id!, answer: a }]);
-    if (checkCorrect(question, a)) setScore((s) => s + 1);
+    setAnswers((prev) => {
+      const exists = prev.some((a) => a.questionId === question.id);
+      if (exists) {
+        return prev;
+      }
 
-    setTimeout(() => setIndex((i) => i + 1), 2000);
+      return [...prev, { questionId: question.id, answer: a }];
+    });
+
+    if (checkCorrect(question, a)) {
+      setScore((s) => s + 1);
+    }
+
+    setTimeout(() => {
+      setIndex(index + 1);
+    }, 2000);
   };
 
   const handleSubmit = async () => {
@@ -106,14 +130,13 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
     setSubmitting(true);
 
     try {
-      const result = await window.ipcRenderer.reviewSubmit({
+      const result = await window.quizIpc.submitAttempt({
         quizId: quiz.id,
         answers,
       });
 
       if (result.success && result.review) {
         setReview(result.review);
-        onComplete?.(result.review);
       } else {
         setError(`Failed to submit review: ${result.error || "Unknown error"}`);
       }
@@ -131,26 +154,24 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
     if (question.type === "multiple-choice") {
       return (
         <div className="flex flex-col space-y-3">
-          {question.options?.map((opt) =>
-            opt ? (
-              <button
-                key={opt.id}
-                className={`p-4 rounded-xl text-left transition-all ${
-                  feedback
-                    ? opt.isCorrect
-                      ? "bg-soma-success/20 border-2 border-soma-success text-soma-text-primary"
-                      : userAnswer === opt.text
-                        ? "bg-soma-error/20 border-2 border-soma-error text-soma-text-primary"
-                        : "bg-soma-dark/50 text-soma-text-secondary opacity-50"
-                    : "bg-soma-dark hover:bg-soma-medium text-soma-text-primary cursor-pointer"
-                }`}
-                onClick={() => handleSelect(opt.text || "")}
-                disabled={feedback}
-              >
-                {opt.text || "No text"}
-              </button>
-            ) : null,
-          )}
+          {question.options?.map((opt) => (
+            <button
+              key={opt.id}
+              className={`p-4 rounded-xl text-left transition-all ${
+                feedback
+                  ? opt.is_correct
+                    ? "bg-soma-success/20 border-2 border-soma-success text-soma-text-primary"
+                    : userAnswer === opt.text
+                      ? "bg-soma-error/20 border-2 border-soma-error text-soma-text-primary"
+                      : "bg-soma-dark/50 text-soma-text-secondary opacity-50"
+                  : "bg-soma-dark hover:bg-soma-medium text-soma-text-primary cursor-pointer"
+              }`}
+              onClick={() => handleSelect(opt.text)}
+              disabled={feedback}
+            >
+              {opt.text || "No text"}
+            </button>
+          ))}
         </div>
       );
     }
@@ -163,7 +184,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
               key={val}
               className={`p-4 rounded-xl text-left transition-all ${
                 feedback
-                  ? val === String(question.correctAnswer)
+                  ? val === String(!!question.boolean_answer)
                     ? "bg-soma-success/20 border-2 border-soma-success text-soma-text-primary"
                     : userAnswer === val
                       ? "bg-soma-error/20 border-2 border-soma-error text-soma-text-primary"
@@ -180,7 +201,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
       );
     }
 
-    if (["fill-in-blank", "short-answer"].includes(question.type)) {
+    if (question.type === "text-answer") {
       return (
         <div className="space-y-3">
           <input
@@ -210,8 +231,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
             <div className="p-4 rounded-xl bg-soma-dark">
               <p className="text-soma-text-primary">
                 <span className="font-semibold">Correct answers:</span>{" "}
-                {(question.answers || question.possibleAnswers)?.join(", ") ||
-                  "None"}
+                {question.answers?.map((a) => a.text).join(", ") || "None"}
               </p>
             </div>
           )}
@@ -229,8 +249,8 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
           <h2 className="text-2xl font-bold text-soma-error mb-4">Error</h2>
           <p className="text-soma-text-primary mb-6">{error}</p>
           <button
-            className="w-full p-3 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all"
-            onClick={() => window.history.back()}
+            className="w-full p-3 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all cursor-pointer"
+            onClick={() => setQuizView("listing")}
           >
             Back to Quizzes
           </button>
@@ -294,7 +314,7 @@ const QuizInReview: React.FC<Props> = ({ quiz, onComplete }) => {
               fetchQuizzes();
               setQuizView("listing");
             }}
-            className="w-full p-3 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all"
+            className="w-full p-3 rounded-xl bg-soma-accent1 text-white hover:bg-opacity-90 transition-all cursor-pointer"
           >
             Back to Quizzes
           </button>

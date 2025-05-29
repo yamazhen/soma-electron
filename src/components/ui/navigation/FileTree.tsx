@@ -435,7 +435,7 @@ function FileTree(
   const { ref: resizeRef, height = 0 } = useResizeObserver();
   return (
     <>
-      <div ref={resizeRef} className="treeContainer">
+      <div ref={resizeRef} className="treeContainer px-2">
         {height > 0 && (
           <Tree<TreeNode>
             ref={treeRef}

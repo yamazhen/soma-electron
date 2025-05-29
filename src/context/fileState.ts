@@ -18,18 +18,21 @@ export const useFileState = (onFileSelected?: (filePath: string) => void) => {
     loadNotes();
   };
 
-  // listening to open note requests from search window
-  useEffect(() => {
-    const handleOpen = (filePath: string) => {
+  const handleOpen = useCallback(
+    (filePath: string) => {
       setSelectedFile(filePath);
       onFileSelected?.(filePath);
-    };
+    },
+    [setSelectedFile, onFileSelected],
+  );
 
+  // listening to open note requests from search window
+  useEffect(() => {
     window.ipcRenderer.onSearchOpenNote(handleOpen);
     return () => {
       window.ipcRenderer.offSearchOpenNote(handleOpen);
     };
-  }, [setSelectedFile, onFileSelected]);
+  }, [handleOpen]);
 
   // function to check if the file still exists
   const fileExists = (notes: DirectoryContents, filePath: string): boolean => {

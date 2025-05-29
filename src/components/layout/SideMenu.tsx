@@ -9,7 +9,6 @@ import {
   FileSearch,
   GraduationCap,
   LayoutGrid,
-  Plus,
   PlusCircle,
   Settings,
   SquareAsterisk,
@@ -85,7 +84,7 @@ const SideMenu: React.FC = () => {
               icon={GraduationCap}
               onClick={() => setQuizView("review")}
               variant="secondary"
-              isActive={quizView === "review"}
+              isActive={quizView === "review" || quizView === "inReview"}
             />
             <SidebarButton
               tippyContent="Create Quiz Set"

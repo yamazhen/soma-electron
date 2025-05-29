@@ -1,33 +1,33 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export const useQuizState = () => {
-  const [quizView, setQuizView] = useState<
-    "listing" | "review" | "create" | "inReview"
-  >("listing");
-  const [quizzes, setQuizzes] = useState<QuizData[] | undefined>([]);
+	const [quizView, setQuizView] = useState<
+		"listing" | "review" | "create" | "inReview"
+	>("listing");
+	const [quizzes, setQuizzes] = useState<QuizDetails[] | undefined>([]);
 
-  const fetchQuizzes = async () => {
-    try {
-      const response = await window.ipcRenderer.quizFindAll();
-      if (response.success) {
-        setQuizzes(response.quizData);
-      } else {
-        console.error("Error fetching quizzes:", response.error);
-      }
-    } catch (e) {
-      console.error("Error fetching quizzes:", e);
-    }
-  };
+	const fetchQuizzes = useCallback(async () => {
+		try {
+			const response = await window.quizIpc.getAll();
+			if (response.success) {
+				setQuizzes(response.quizzes);
+			} else {
+				console.error("Error fetching quizzes:", response.error);
+			}
+		} catch (e) {
+			console.error("Error fetching quizzes:", e);
+		}
+	}, []);
 
-  useEffect(() => {
-    fetchQuizzes();
-  }, []);
+	useEffect(() => {
+		fetchQuizzes();
+	}, [fetchQuizzes]);
 
-  return {
-    setQuizView,
-    quizView,
-    quizzes,
-    setQuizzes,
-    fetchQuizzes,
-  };
+	return {
+		setQuizView,
+		quizView,
+		quizzes,
+		setQuizzes,
+		fetchQuizzes,
+	};
 };
