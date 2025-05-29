@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 import type { BrowserWindow } from "electron";
-import { FileSystemService } from "../service/fileSystemService";
+import { FileSystemService } from "../service";
 import { watch } from "node:fs";
 
 let fileWatcher: ReturnType<typeof watch> | null = null;

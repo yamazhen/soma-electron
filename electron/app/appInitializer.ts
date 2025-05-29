@@ -1,8 +1,8 @@
 import { initDatabase } from "../database/database";
 import { createMainWindow } from "../windows/mainWindow";
 import { windowManager } from "../windows/windowManager";
-import { themeManager } from "../themeManager";
-import { setupAllHandlers } from "../ipc";
+import { themeManager } from "../config/themeManager";
+import { setupAllHandlers } from "../handlers";
 
 export async function initializeApp(): Promise<void> {
 	try {

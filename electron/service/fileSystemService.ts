@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { FileOrderDAL } from "../database/dal/FileOrderDAL";
+import { FileOrderDAL } from "../database/dal";
 
 export class FileSystemService {
 	private fileOrderDAL = new FileOrderDAL();

@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { QuizService } from "../service/quizService";
+import { QuizService } from "../service";
 
 export function registerQuizHandlers() {
 	const quizService = new QuizService();

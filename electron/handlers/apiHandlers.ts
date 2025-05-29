@@ -1,7 +1,7 @@
 import { ipcMain } from "electron";
 import axios, { AxiosError } from "axios";
 import type { AxiosResponse } from "axios";
-import { env } from "../config";
+import { env } from "../config/config";
 
 const handleApiResponse = async <T>(
 	axiosPromise: Promise<

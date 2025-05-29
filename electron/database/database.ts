@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { unlink } from "fs/promises";
 import BetterSqlite3 from "better-sqlite3";
-import { env } from "../config";
+import { env } from "../config/config";
 
 const CURRENT_SCHEMA_VERSION = 1;
 

@@ -1,6 +1,6 @@
 import { app } from "electron";
-import "./config";
-import { initializeApp } from "./app/appInitializer.js";
+import "./config/config";
+import { initializeApp } from "./app/appInitializer";
 
 app.setAsDefaultProtocolClient("soma");
 

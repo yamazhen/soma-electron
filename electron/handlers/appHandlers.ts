@@ -1,6 +1,6 @@
 import { closeDatabase } from "../database/database";
 import { BrowserWindow } from "electron";
-import { themeManager } from "../themeManager";
+import { themeManager } from "../config/themeManager";
 import { createMainWindow } from "../windows/mainWindow";
 import { windowManager } from "../windows/windowManager";
 

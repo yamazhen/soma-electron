@@ -1,8 +1,8 @@
 import axios from "axios";
 import { ipcMain } from "electron";
 import { getDatabase } from "../database/database";
-import { env } from "../config";
-import { SecureStoreService } from "../service/secureStoreService";
+import { env } from "../config/config";
+import { SecureStoreService } from "../service";
 
 const storeUserQuery = `
 INSERT OR REPLACE INTO users

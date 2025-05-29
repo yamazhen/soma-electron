@@ -1,4 +1,5 @@
-import { BrowserWindow, ipcMain } from "electron";
+import { ipcMain } from "electron";
+import type { BrowserWindow } from "electron";
 
 export function setupIpcHandlers(mainWindow?: BrowserWindow) {
 	if (!mainWindow) {
