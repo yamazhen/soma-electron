@@ -84,6 +84,45 @@ export class LinkService extends BaseDAL {
 		return !result || result.content_hash !== currentHash;
 	}
 
+	// Update links for a note
+	async updateNoteLinks(sourcePath: string, content: string): Promise<void> {
+		// Only update if content has changed
+		if (!(await this.hasContentChanged(sourcePath, content))) {
+			return;
+		}
+
+		return this.transaction(() => {
+			// Remove existing links for this note
+			const deleteStmt = this.db.prepare(`
+        DELETE FROM note_links WHERE source_path = ?
+      `);
+			deleteStmt.run(sourcePath);
+
+			// Parse and insert new links
+			const links = this.parseLinks(content);
+			if (links.length === 0) return;
+
+			const insertStmt = this.db.prepare(`
+        INSERT INTO note_links 
+        (source_path, target_note_name, link_text, position_start, position_end)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+			for (const link of links) {
+				insertStmt.run(
+					sourcePath,
+					link.targetName,
+					link.text,
+					link.start,
+					link.end,
+				);
+			}
+
+			// Update note metadata
+			this.updateNoteMeta(sourcePath, content);
+		});
+	}
+
 	// Resolve link target path
 	async resolveLinkTarget(targetName: string): Promise<string | null> {
 		const stmt = this.db.prepare(`
@@ -101,74 +140,6 @@ export class LinkService extends BaseDAL {
 		return result?.path || null;
 	}
 
-	// Update target paths for all links
-	private async updateLinkTargetPaths(): Promise<void> {
-		// Get all links that need resolution
-		const linksStmt = this.db.prepare(`
-      SELECT DISTINCT target_note_name FROM note_links
-    `);
-
-		const targetNames = linksStmt.all() as Array<{ target_note_name: string }>;
-
-		for (const { target_note_name } of targetNames) {
-			const targetPath = await this.resolveLinkTarget(target_note_name);
-
-			const updateStmt = this.db.prepare(`
-        UPDATE note_links 
-        SET target_path = ?, updated_at = datetime('now')
-        WHERE target_note_name = ?
-      `);
-
-			updateStmt.run(targetPath, target_note_name);
-		}
-	}
-
-	// Update links for a note
-	async updateNoteLinks(sourcePath: string, content: string): Promise<void> {
-		return this.transaction(async () => {
-			// Update note metadata first
-			await this.updateNoteMeta(sourcePath, content);
-
-			// Only update links if content has changed
-			if (!(await this.hasContentChanged(sourcePath, content))) {
-				// Still update target paths in case other notes were renamed
-				await this.updateLinkTargetPaths();
-				return;
-			}
-
-			// Remove existing links for this note
-			const deleteStmt = this.db.prepare(`
-        DELETE FROM note_links WHERE source_path = ?
-      `);
-			deleteStmt.run(sourcePath);
-
-			// Parse and insert new links
-			const links = this.parseLinks(content);
-			if (links.length > 0) {
-				const insertStmt = this.db.prepare(`
-          INSERT INTO note_links 
-          (source_path, target_note_name, target_path, link_text, position_start, position_end)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `);
-
-				for (const link of links) {
-					const targetPath = await this.resolveLinkTarget(link.targetName);
-					insertStmt.run(
-						sourcePath,
-						link.targetName,
-						targetPath,
-						link.text,
-						link.start,
-						link.end,
-					);
-				}
-			}
-
-			// Update all target paths to catch any changes
-			await this.updateLinkTargetPaths();
-		});
-	}
-
 	// Get backlinks for a note
 	async getBacklinks(notePath: string): Promise<
 		Array<{
@@ -178,7 +149,6 @@ export class LinkService extends BaseDAL {
 			context?: string;
 		}>
 	> {
-		// Get by both path and name
 		const noteName = path.basename(notePath, ".md");
 
 		const stmt = this.db.prepare(`
@@ -188,11 +158,11 @@ export class LinkService extends BaseDAL {
         nm.title as source_title
       FROM note_links nl
       LEFT JOIN note_metadata nm ON nl.source_path = nm.path
-      WHERE nl.target_path = ? OR nl.target_note_name = ?
+      WHERE nl.target_note_name = ?
       ORDER BY nm.last_modified DESC
     `);
 
-		return stmt.all(notePath, noteName) as Array<{
+		return stmt.all(noteName) as Array<{
 			sourcePath: string;
 			sourceTitle: string;
 			linkText: string;
@@ -211,17 +181,18 @@ export class LinkService extends BaseDAL {
 		const stmt = this.db.prepare(`
       SELECT 
         nl.target_note_name,
-        nl.target_path,
-        nl.link_text
+        nl.link_text,
+        nm.path as target_path
       FROM note_links nl
+      LEFT JOIN note_metadata nm ON nl.target_note_name = nm.name
       WHERE nl.source_path = ?
       ORDER BY nl.position_start
     `);
 
 		const links = stmt.all(sourcePath) as Array<{
 			target_note_name: string;
-			target_path?: string;
 			link_text: string;
+			target_path?: string;
 		}>;
 
 		return links.map((link) => ({
@@ -229,38 +200,6 @@ export class LinkService extends BaseDAL {
 			targetPath: link.target_path,
 			linkText: link.link_text,
 			resolved: !!link.target_path,
-		}));
-	}
-
-	// Get all bidirectional links for graph visualization
-	async getAllLinks(): Promise<
-		Array<{
-			source: string;
-			target: string;
-			value: number;
-		}>
-	> {
-		const stmt = this.db.prepare(`
-      SELECT 
-        source_path,
-        target_path,
-        COUNT(*) as link_count
-      FROM note_links 
-      WHERE target_path IS NOT NULL
-      GROUP BY source_path, target_path
-      ORDER BY link_count DESC
-    `);
-
-		const results = stmt.all() as Array<{
-			source_path: string;
-			target_path: string;
-			link_count: number;
-		}>;
-
-		return results.map((result) => ({
-			source: result.source_path,
-			target: result.target_path,
-			value: result.link_count,
 		}));
 	}
 

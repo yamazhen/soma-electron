@@ -1,5 +1,5 @@
-import { autocompletion } from "@codemirror/autocomplete";
-import type {
+import {
+	autocompletion,
 	CompletionContext,
 	CompletionResult,
 } from "@codemirror/autocomplete";

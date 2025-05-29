@@ -51,17 +51,6 @@ export function setupLinkHandlers() {
 		}
 	});
 
-	// Get all links for graph visualization
-	ipcMain.handle("links:get-all-links", async () => {
-		try {
-			const links = await linkService.getAllLinks();
-			return { success: true, links };
-		} catch (error) {
-			console.error("Error getting all links:", error);
-			return { success: false, error: error.message };
-		}
-	});
-
 	// Get link suggestions for autocomplete
 	ipcMain.handle(
 		"links:get-suggestions",

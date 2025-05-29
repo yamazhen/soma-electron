@@ -1,6 +1,5 @@
 import Markdoc from "@markdoc/markdoc";
-import type React from "react";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import markdocConfig from "./markdoc";
 import { useAppContext } from "../../context/AppContext";
 
@@ -61,7 +60,7 @@ const MarkdownViewer: React.FC<Props> = ({ content, onWikiLinkClick }) => {
 
 		// Add click event listeners to wiki links
 		const wikiLinks = container.current.querySelectorAll(".cm-soma-wikilink");
-		for (const link of wikiLinks) {
+		wikiLinks.forEach((link) => {
 			link.addEventListener("click", async (e) => {
 				e.preventDefault();
 				const noteEl = e.currentTarget as HTMLElement;
@@ -74,21 +73,21 @@ const MarkdownViewer: React.FC<Props> = ({ content, onWikiLinkClick }) => {
 					await handleWikiLinkClick(note);
 				}
 			});
-		}
+		});
 
 		return () => {
 			// Cleanup event listeners
 			if (container.current) {
 				const wikiLinks =
 					container.current.querySelectorAll(".cm-soma-wikilink");
-				for (const link of wikiLinks) {
+				wikiLinks.forEach((link) => {
 					link.removeEventListener("click", () => {});
-				}
+				});
 			}
 		};
 	}, [content, onWikiLinkClick, setSelectedFile, setNoteView]);
 
-	return <div ref={container} className="markdownViewer pb-6" />;
+	return <div ref={container} className="markdownViewer pb-6"></div>;
 };
 
 export default MarkdownViewer;

@@ -13,8 +13,6 @@ export const linksApi = {
 	getOutgoingLinks: (sourcePath: string) =>
 		ipcRenderer.invoke("links:get-outgoing-links", sourcePath),
 
-	getAllLinks: () => ipcRenderer.invoke("links:get-all-links"),
-
 	getSuggestions: (partialText: string, limit?: number) =>
 		ipcRenderer.invoke("links:get-suggestions", partialText, limit),
 

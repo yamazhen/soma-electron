@@ -16,8 +16,10 @@ export const useNoteAutosave = ({
 
 		const saveTimeout = setTimeout(async () => {
 			try {
+				// Save the file
 				await window.fileSystem.writeMarkdownFile(selectedFile, noteContent);
 
+				// Update link relationships
 				await window.ipcRenderer.invoke(
 					"links:update-note-links",
 					selectedFile,
