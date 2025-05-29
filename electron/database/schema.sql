@@ -5,6 +5,34 @@ CREATE TABLE IF NOT EXISTS file_orders (
   order_index integer
 );
 
+CREATE TABLE IF NOT EXISTS note_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_path TEXT NOT NULL,
+  target_note_name TEXT NOT NULL,
+  target_path TEXT,
+  link_text TEXT NOT NULL,
+  position_start INTEGER NOT NULL,
+  position_end INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_links_source ON note_links (source_path);
+
+CREATE INDEX IF NOT EXISTS idx_note_links_target_name ON note_links (target_note_name);
+
+CREATE INDEX IF NOT EXISTS idx_note_links_target_path ON note_links (target_path);
+
+CREATE TABLE IF NOT EXISTS note_metadata (
+  path TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  title TEXT,
+  last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  content_hash TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_metadata_name ON note_metadata (name);
+
 /*
  * QUIZ SCHEMA 
  * QUIZ SCHEMA

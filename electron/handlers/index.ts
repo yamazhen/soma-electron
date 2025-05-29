@@ -11,6 +11,7 @@ import { setupIpcHandlers } from "./ipcHandlers";
 import { setupFileSystemHandlers } from "./fileSystemHandlers";
 import { setupLanguageHandlers } from "./languageHandlers";
 import { setupDeckHandlers } from "./deckHandlers";
+import { setupLinkHandlers } from "./linkHandlers";
 
 export async function setupAllHandlers(
 	mainWindow: BrowserWindow,
@@ -24,6 +25,7 @@ export async function setupAllHandlers(
 		setupUserHandlers(),
 		registerQuizHandlers(),
 		setupOAuthHandlers(),
+		setupLinkHandlers(),
 	]);
 
 	await Promise.all([
