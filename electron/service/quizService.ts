@@ -112,13 +112,20 @@ export class QuizService {
 
   scheduleTopFailedQuestions(): boolean {
     const topThirtyFailedQuestions = this.attemptDAL.getTopFailedQuestionIds();
+    console.log(
+      `Found ${topThirtyFailedQuestions.length} failed questions to schedule`,
+    );
 
     if (topThirtyFailedQuestions.length === 0) return false;
 
-    this.questionDAL.unscheduleAll();
+    // Don't unschedule all - just schedule the failed ones
     for (const questionId of topThirtyFailedQuestions) {
       this.questionDAL.updateScheduled(questionId, true);
     }
+
+    console.log(
+      `Scheduled ${topThirtyFailedQuestions.length} top failed questions`,
+    );
     return true;
   }
 
@@ -317,7 +324,26 @@ export class QuizService {
   }
 
   getMixedReviewQuestions(limit: number = 20): QuestionWithDetails[] {
-    return this.questionDAL.getDueQuestions(limit);
+    console.log(`Getting mixed review questions with limit: ${limit}`);
+
+    const dueQuestions = this.questionDAL.getDueQuestions(limit);
+    console.log(`Found ${dueQuestions.length} due questions for mixed review`);
+
+    if (dueQuestions.length === 0) {
+      // If no due questions, check if there are any scheduled questions at all
+      const allScheduled = this.questionDAL.getScheduledQuestions();
+      console.log(
+        `No due questions found. Total scheduled questions: ${allScheduled.length}`,
+      );
+
+      if (allScheduled.length === 0) {
+        console.log(
+          "No scheduled questions at all. User needs to schedule questions first.",
+        );
+      }
+    }
+
+    return dueQuestions;
   }
 
   getQuizScheduledQuestions(quizId: number): QuestionWithDetails[] {

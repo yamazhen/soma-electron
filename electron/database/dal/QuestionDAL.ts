@@ -246,6 +246,10 @@ export class QuestionDAL extends BaseDAL {
       now.getDate() + 1,
     ).toISOString();
 
+    console.log(
+      `Checking due questions for today: ${today}, tomorrow: ${tomorrow}`,
+    );
+
     const todayCount =
       this.db
         .prepare(
@@ -280,8 +284,24 @@ export class QuestionDAL extends BaseDAL {
         )
         .get(tomorrow)?.count || 0;
 
+    // Also count questions that are due right now (next_review_date IS NULL or <= now)
+    const dueNowCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM questions 
+      WHERE scheduled = 1 
+      AND (next_review_date IS NULL OR next_review_date <= ?)
+    `,
+        )
+        .get(now.toISOString())?.count || 0;
+
+    console.log(
+      `Due questions - Today: ${todayCount}, Overdue: ${overdueCount}, Upcoming: ${upcomingCount}, Due now: ${dueNowCount}`,
+    );
+
     return {
-      today: todayCount,
+      today: todayCount + dueNowCount, // Include immediately due questions
       overdue: overdueCount,
       upcoming: upcomingCount,
     };
@@ -328,18 +348,38 @@ export class QuestionDAL extends BaseDAL {
 
   scheduleExistingQuestions(): boolean {
     return this.transaction(() => {
+      // First, get all unscheduled questions
+      const unscheduledQuestions = this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM questions 
+      WHERE scheduled = 0 OR scheduled IS NULL
+    `,
+        )
+        .get() as { count: number };
+
+      console.log(
+        `Scheduling ${unscheduledQuestions.count} unscheduled questions`,
+      );
+
+      if (unscheduledQuestions.count === 0) {
+        return false; // No questions to schedule
+      }
+
       const stmt = this.db.prepare(`
       UPDATE questions 
       SET 
         scheduled = 1,
-        next_review_date = datetime('now', '+1 day'),
+        next_review_date = datetime('now'),
         review_interval = 1,
         ease_factor = 2.5,
-        consecutive_correct = 0
+        consecutive_correct = 0,
+        last_reviewed = NULL
       WHERE scheduled = 0 OR scheduled IS NULL
     `);
 
       const result = stmt.run();
+      console.log(`Scheduled ${result.changes} questions`);
       return result.changes > 0;
     });
   }
@@ -378,10 +418,14 @@ export class QuestionDAL extends BaseDAL {
     if (limit) {
       query += ` LIMIT ?`;
       const questions = this.db.prepare(query).all(now, limit);
+      console.log(
+        `Found ${questions.length} due questions with limit ${limit}`,
+      );
       return questions.map((q) => this.loadDetails(q));
     }
 
     const questions = this.db.prepare(query).all(now);
+    console.log(`Found ${questions.length} total due questions`);
     return questions.map((q) => this.loadDetails(q));
   }
 

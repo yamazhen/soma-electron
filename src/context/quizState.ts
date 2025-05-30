@@ -7,6 +7,7 @@ export const useQuizState = () => {
   const [quizzes, setQuizzes] = useState<QuizDetails[] | undefined>([]);
   const [analytics, setAnalytics] = useState<QuizAnalytics | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [lastScheduleUpdate, setLastScheduleUpdate] = useState(Date.now());
 
   const fetchQuizzes = useCallback(async () => {
     try {
@@ -37,10 +38,14 @@ export const useQuizState = () => {
     }
   }, []);
 
+  const triggerScheduleUpdate = useCallback(() => {
+    setLastScheduleUpdate(Date.now());
+  }, []);
+
   useEffect(() => {
     fetchQuizzes();
     fetchAnalytics();
-  }, [fetchQuizzes, fetchAnalytics]);
+  }, [fetchQuizzes, fetchAnalytics, lastScheduleUpdate]);
 
   return {
     setQuizView,
@@ -51,5 +56,7 @@ export const useQuizState = () => {
     analytics,
     loadingAnalytics,
     fetchAnalytics,
+    triggerScheduleUpdate,
+    lastScheduleUpdate,
   };
 };
