@@ -1,4 +1,4 @@
-import markdoc from "@markdoc/markdoc";
+import markdoc, { nodes } from "@markdoc/markdoc";
 import type { Config } from "@markdoc/markdoc";
 
 markdoc.transformer.findSchema = (node, config) => {
@@ -9,20 +9,21 @@ markdoc.transformer.findSchema = (node, config) => {
 
 export default {
 	nodes: {
+		...nodes,
 		softbreak: {
 			render: "br",
 		},
 		hardbreak: {
 			render: "br",
 		},
-		paragraph: {
-			render: "p",
-		},
-		text: {
-			render: "span",
-		},
-		document: {
-			render: "div",
+		heading: {
+			...nodes.heading,
+			transform(node, config) {
+				const level = node.attributes.level || 1;
+				const tagName = `h${Math.min(Math.max(level, 1), 6)}`;
+				const children = node.transformChildren(config);
+				return new markdoc.Tag(tagName, node.attributes, children);
+			},
 		},
 	},
 	tags: {
@@ -53,14 +54,38 @@ export default {
 		wikilink: {
 			attributes: {
 				note: { type: String, required: true },
+				standalone: { type: Boolean, default: false },
 			},
-			transform(node, config) {
+			transform(node, _config) {
 				const note = node.attributes.note;
+				const isStandalone = node.attributes.standalone;
+
+				if (isStandalone) {
+					return new markdoc.Tag(
+						"div",
+						{
+							class: "cm-soma-wikilink-block",
+							style: "margin: 0.2em 0;",
+						},
+						[
+							new markdoc.Tag(
+								"a",
+								{
+									class: "cm-soma-wikilink",
+									"data-note": note,
+									href: "#",
+								},
+								[note],
+							),
+						],
+					);
+				}
 				return new markdoc.Tag(
 					"a",
 					{
 						class: "cm-soma-wikilink",
 						"data-note": note,
+						href: "#",
 					},
 					[note],
 				);
@@ -69,14 +94,25 @@ export default {
 	},
 } as Config;
 
-// Keep the processWikiLinks function but make it more robust
 export function processWikiLinks(content: string): string {
-	// Split content by lines to preserve line breaks
 	const lines = content.split("\n");
 	const processedLines = lines.map((line) => {
+		const trimmedLine = line.trim();
+
+		// Check if this line contains only a wikilink
+		const standaloneWikiLinkMatch = trimmedLine.match(/^@@([^@\n]+)@@$/);
+		if (standaloneWikiLinkMatch) {
+			const cleanNoteName = standaloneWikiLinkMatch[1].trim();
+			// Mark as standalone to render as block element
+			return `{% wikilink note="${cleanNoteName}" standalone=true /%}`;
+		}
+
+		// For lines with inline wikilinks, process normally
 		return line.replace(/@@([^@\n]+)@@/g, (_, noteName) => {
-			return `{% wikilink note="${noteName}" %}`;
+			const cleanNoteName = noteName.trim();
+			return `{% wikilink note="${cleanNoteName}" /%}`;
 		});
 	});
+
 	return processedLines.join("\n");
 }
