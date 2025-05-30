@@ -131,6 +131,12 @@ CREATE TABLE IF NOT EXISTS cards (
   deck_id integer not null,
   front text not null,
   back text not null,
+  scheduled boolean default 0,
+  next_review_date text default null,
+  review_interval integer default 1,
+  ease_factor real default 2.5,
+  consecutive_correct integer default 0,
+  last_reviewed text default null,
   foreign key (deck_id) references decks (id)
 );
 

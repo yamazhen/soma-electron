@@ -64,13 +64,11 @@ const CardReview: React.FC = () => {
   const filteredDecks = filterDecks();
 
   const startGeneralReview = () => {
-    // This would combine cards from all decks based on their due dates
-    setCardView("generalReview");
+    setCardView("inReview");
   };
 
   const startWeakCardsReview = () => {
-    // This would review cards with low accuracy across all decks
-    setCardView("weakReview");
+    setCardView("inReview");
   };
 
   const startReview = (deckId: number) => {

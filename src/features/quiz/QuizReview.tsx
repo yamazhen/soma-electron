@@ -1,6 +1,5 @@
 import {
   Lightbulb,
-  Calendar,
   TrendingUp,
   BarChart3,
   Target,
@@ -13,6 +12,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { toast } from "sonner";
 
 type ReviewFilter = "all" | "due-today" | "overdue" | "upcoming";
 
@@ -21,7 +21,7 @@ interface Props {
 }
 
 const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
-  const { quizzes, setQuizView, analytics, loadingAnalytics } = useAppContext();
+  const { quizzes, setQuizView, loadingAnalytics } = useAppContext();
   const [filter, setFilter] = useState<ReviewFilter>("all");
   const [schedulingData, setSchedulingData] = useState({
     dueCounts: { today: 0, overdue: 0, upcoming: 0 },
@@ -33,17 +33,14 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
     try {
       setLoading(true);
 
-      // Get due questions count
       const countsResult = await window.quizIpc.getDueQuestionsCount();
       const dueCounts = countsResult.success
         ? countsResult.counts!
         : { today: 0, overdue: 0, upcoming: 0 };
 
-      // Create scheduled quizzes with real review data
       const scheduledQuizzes = await Promise.all(
         (quizzes || []).map(async (quiz) => {
           try {
-            // Get questions for this quiz that are scheduled
             const questionsResult = await window.quizIpc.get(quiz.id!);
             if (!questionsResult.success) return null;
 
@@ -52,7 +49,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
             );
             if (scheduledQuestions.length === 0) return null;
 
-            // Calculate next review date (earliest among scheduled questions)
             const nextReviewDates = scheduledQuestions
               .map((q) => q.next_review_date)
               .filter((date) => date)
@@ -61,9 +57,8 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
             const nextReviewDate =
               nextReviewDates.length > 0
                 ? new Date(nextReviewDates[0])
-                : new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow as default
+                : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-            // Calculate accuracy from recent attempts
             const historyResult = await window.quizIpc.getAttemptHistory(
               quiz.id!,
             );
@@ -75,7 +70,7 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                       0,
                     ) / historyResult.history.length,
                   )
-                : 75; // Default
+                : 75;
 
             return {
               ...quiz,
@@ -87,10 +82,9 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                   .map((q) => q.last_reviewed)
                   .filter((date) => date)
                   .sort()
-                  .pop() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Week ago as default
+                  .pop() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             };
           } catch (error) {
-            console.error("Error processing quiz for scheduling:", error);
             return null;
           }
         }),
@@ -101,7 +95,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
         scheduledQuizzes: scheduledQuizzes.filter((quiz) => quiz !== null),
       });
     } catch (error) {
-      console.error("Error loading scheduling data:", error);
     } finally {
       setLoading(false);
     }
@@ -141,7 +134,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
 
   const startGeneralReview = async () => {
     try {
-      // Force refresh the scheduling data first
       await loadSchedulingData();
 
       const result = await window.quizIpc.getMixedReview(30);
@@ -156,43 +148,38 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
         setQuizInReview(generalQuiz);
         setQuizView("inReview");
       } else {
-        // Check if there are any scheduled questions at all
         const dueCountResult = await window.quizIpc.getDueQuestionsCount();
         if (dueCountResult.success && dueCountResult.counts) {
           const totalDue =
             dueCountResult.counts.today + dueCountResult.counts.overdue;
           if (totalDue === 0) {
-            alert(
+            toast.error(
               "No questions are scheduled for review. Please schedule some questions first!",
             );
           } else {
-            alert(
+            toast.error(
               `Found ${totalDue} due questions but unable to start review. Please try again.`,
             );
           }
         } else {
-          alert("No questions are due for review right now!");
+          toast.error("No questions are due for review right now!");
         }
       }
     } catch (error) {
-      console.error("Error starting general review:", error);
-      alert("Failed to start general review");
+      toast.error("Failed to start general review");
     }
   };
 
   const startWeakQuestionsReview = async () => {
     try {
-      // Schedule top failed questions first
       const scheduleResult = await window.quizIpc.scheduleTopFailedQuestions();
       if (!scheduleResult.success) {
-        alert("No questions need extra practice!");
+        toast.error("No questions need extra practice right now!");
         return;
       }
 
-      // Refresh scheduling data after scheduling weak questions
       await loadSchedulingData();
 
-      // Get the scheduled weak questions
       const result = await window.quizIpc.getMixedReview(20);
       if (result.success && result.questions && result.questions.length > 0) {
         const weakQuestionsQuiz: QuizDetails = {
@@ -205,11 +192,10 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
         setQuizInReview(weakQuestionsQuiz);
         setQuizView("inReview");
       } else {
-        alert("No weak questions found! Great job!");
+        toast.error("No weak questions found for review!");
       }
     } catch (error) {
-      console.error("Error starting weak questions review:", error);
-      alert("Failed to start weak questions review");
+      toast.error("Failed to start weak questions review");
     }
   };
 
@@ -218,23 +204,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
     if (quiz) {
       setQuizInReview(quiz);
       setQuizView("inReview");
-    }
-  };
-
-  const scheduleAllQuestions = async () => {
-    try {
-      const result = await window.quizIpc.scheduleAllQuestions();
-      if (result.success) {
-        alert("All questions have been scheduled for review!");
-        // Trigger a refresh of quiz data and scheduling data
-        triggerScheduleUpdate();
-        await loadSchedulingData();
-      } else {
-        alert("Failed to schedule questions");
-      }
-    } catch (error) {
-      console.error("Error scheduling questions:", error);
-      alert("Error scheduling questions");
     }
   };
 
@@ -518,7 +487,7 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                     <button
                       type="button"
                       onClick={() => quiz.id && startReview(quiz.id)}
-                      className="px-4 py-2.5 bg-soma-accent1 text-white rounded-lg hover:bg-soma-accent1/90 transition-all flex items-center gap-2 font-medium"
+                      className="px-4 py-2.5 bg-soma-accent1 text-white rounded-lg hover:bg-soma-accent1/90 transition-all flex items-center gap-2 font-medium cursor-pointer"
                     >
                       <Play size={18} />
                       Start Review

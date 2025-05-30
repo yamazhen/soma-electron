@@ -4,6 +4,7 @@ import CardListing from "./CardListing";
 import CardReview from "./CardReview";
 import CardSetView from "./CardSetView";
 import CardCreateForm from "./CardCreateForm";
+import CardInReview from "./CardInReview";
 
 const Flashcard: React.FC = () => {
   const { cardView } = useAppContext();
@@ -17,6 +18,8 @@ const Flashcard: React.FC = () => {
       return <CardSetView />;
     case "create":
       return <CardCreateForm />;
+    case "inReview":
+      return <CardInReview />;
     default:
       return <CardListing />;
   }

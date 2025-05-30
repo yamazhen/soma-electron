@@ -316,7 +316,7 @@ export class QuestionDAL extends BaseDAL {
     );
 
     return {
-      today: todayCount + dueNowCount, // Include immediately due questions
+      today: dueNowCount, // Include immediately due questions
       overdue: overdueCount,
       upcoming: upcomingCount,
     };

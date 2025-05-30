@@ -124,4 +124,67 @@ export class DeckService {
       return { cardCount };
     }, "Failed to retrieve deck statistics");
   }
+
+  async getDueCards(limit?: number): Promise<IpcResponseData<any[]>> {
+    return await handleServiceCall(() => {
+      return this.deckDAL.getDueCards(limit);
+    }, "Failed to get due cards");
+  }
+
+  async updateCardScheduling(
+    cardId: number,
+    isCorrect: boolean,
+    responseTime: number,
+  ): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
+      if (!cardId || cardId <= 0) {
+        throw new Error("Invalid card ID");
+      }
+
+      const success = this.deckDAL.updateCardScheduling(
+        cardId,
+        isCorrect,
+        responseTime,
+      );
+      if (!success) {
+        throw new Error("Failed to update card scheduling");
+      }
+    }, "Failed to update card scheduling");
+  }
+
+  async scheduleCard(
+    cardId: number,
+    scheduled: boolean = true,
+  ): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
+      if (!cardId || cardId <= 0) {
+        throw new Error("Invalid card ID");
+      }
+
+      const success = this.deckDAL.scheduleCard(cardId, scheduled);
+      if (!success) {
+        throw new Error("Failed to schedule card");
+      }
+    }, "Failed to schedule card");
+  }
+
+  async submitCardReview(data: {
+    cardId: number;
+    isCorrect: boolean;
+    responseTime: number;
+  }): Promise<IpcResponseData<{ success: boolean }>> {
+    return await handleServiceCall(async () => {
+      const updateResult = await this.updateCardScheduling(
+        data.cardId,
+        data.isCorrect,
+        data.responseTime,
+      );
+
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || "Failed to update scheduling");
+      }
+
+      return { success: true };
+    }, "Failed to submit card review");
+  }
 }
