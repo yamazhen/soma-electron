@@ -44,10 +44,9 @@ class ThemeManager {
 					/--color-soma-light:\s*(#[0-9a-fA-F]{6});/,
 				);
 
-				if (darkMainMatch && darkMainMatch[1])
-					this.themeColors.main = darkMainMatch[1];
-				if (darkSearchMatch && darkSearchMatch[1])
-					this.themeColors.search = darkSearchMatch[1];
+				this.themeColors.main = darkMainMatch?.[1] ?? this.themeColors.main;
+				this.themeColors.search =
+					darkSearchMatch?.[1] ?? this.themeColors.search;
 			} else {
 				const lightMainMatch = cssContent.match(
 					/\[data-theme="light"\][^}]*--color-soma-dark:\s*(#[0-9a-fA-F]{6});/,
@@ -56,10 +55,9 @@ class ThemeManager {
 					/\[data-theme="light"\][^}]*--color-soma-light:\s*(#[0-9a-fA-F]{6});/,
 				);
 
-				if (lightMainMatch && lightMainMatch[1])
-					this.themeColors.main = lightMainMatch[1];
-				if (lightSearchMatch && lightSearchMatch[1])
-					this.themeColors.search = lightSearchMatch[1];
+				this.themeColors.main = lightMainMatch?.[1] ?? this.themeColors.main;
+				this.themeColors.search =
+					lightSearchMatch?.[1] ?? this.themeColors.search;
 			}
 
 			return this.themeColors;

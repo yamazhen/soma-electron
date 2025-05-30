@@ -27,7 +27,7 @@ export function setupUserHandlers() {
 				new Date().toISOString(),
 			);
 		} catch (error) {
-			throw error;
+			throw new Error("Failed to store user data");
 		}
 	});
 	ipcMain.handle("user:load-offline", async (_) => {
@@ -38,7 +38,7 @@ export function setupUserHandlers() {
 
 			return user || null;
 		} catch (error) {
-			throw error;
+			throw new Error("Failed to load user data");
 		}
 	});
 	ipcMain.handle("user:logout", async (_) => {
@@ -49,7 +49,7 @@ export function setupUserHandlers() {
 			await secureStoreService.delete("accessToken");
 			await secureStoreService.delete("refreshToken");
 		} catch (error) {
-			throw error;
+			throw new Error("Failed to logout user");
 		}
 	});
 	ipcMain.handle("user:load-online", async (_) => {
@@ -86,7 +86,7 @@ export function setupUserHandlers() {
 			}
 			return null;
 		} catch (error) {
-			throw error;
+			throw new Error("Failed to load user data from server");
 		}
 	});
 }

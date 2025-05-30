@@ -1,7 +1,7 @@
 import { app } from "electron";
-import fs from "fs";
-import path from "path";
-import { unlink } from "fs/promises";
+import fs from "node:fs";
+import path from "node:path";
+import { unlink } from "node:fs/promises";
 import BetterSqlite3 from "better-sqlite3";
 import { env } from "../config/config";
 
@@ -20,7 +20,7 @@ export async function resetDatabase() {
 		await unlink(dbPath);
 		console.log("Database reset successfully.");
 	} catch (error) {
-		throw error;
+		throw new Error("Failed to reset database");
 	}
 }
 
@@ -120,7 +120,7 @@ async function applyMigrations(db: Database): Promise<void> {
 		const versionMatch = migrationFile.match(/v(\d+)_/);
 		if (!versionMatch) continue;
 
-		const migrationVersion = parseInt(versionMatch[1], 10);
+		const migrationVersion = Number.parseInt(versionMatch[1], 10);
 
 		if (migrationVersion <= dbVersion) continue;
 

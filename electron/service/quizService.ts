@@ -261,10 +261,6 @@ export class QuizService {
 		};
 	}
 
-	getAnalytics(): QuizAnalytics {
-		const quizzes = this.quizDAL.getAll();
-	}
-
 	private checkAnswer(question: QuestionWithDetails, answer: string): boolean {
 		if (answer === "TIMEOUT") return false;
 

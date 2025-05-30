@@ -1,5 +1,5 @@
 import { BrowserWindow, shell } from "electron";
-import path from "path";
+import path from "node:path";
 import { env } from "../config/config";
 
 export function createMainWindow(

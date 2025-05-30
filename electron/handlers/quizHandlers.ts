@@ -1,7 +1,7 @@
 import { ipcMain } from "electron";
 import { QuizService } from "../service";
 
-export function registerQuizHandlers() {
+export function setupQuizHandlers() {
 	const quizService = new QuizService();
 
 	ipcMain.handle("quiz:getAll", () => {

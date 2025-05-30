@@ -5,7 +5,7 @@ import { setupSecureStoreHandlers } from "./secureStoreHandlers";
 import { setupApiHandlers } from "./apiHandlers";
 import { setupWindowHandlers } from "./windowHandlers";
 import { setupUserHandlers } from "./userHandlers";
-import { registerQuizHandlers } from "./quizHandlers";
+import { setupQuizHandlers } from "./quizHandlers";
 import { setupOAuthHandlers } from "./oauthHandlers";
 import { setupIpcHandlers } from "./ipcHandlers";
 import { setupFileSystemHandlers } from "./fileSystemHandlers";
@@ -23,7 +23,7 @@ export async function setupAllHandlers(
 		setupApiHandlers(),
 		setupWindowHandlers(),
 		setupUserHandlers(),
-		registerQuizHandlers(),
+		setupQuizHandlers(),
 		setupOAuthHandlers(),
 		setupLinkHandlers(),
 	]);

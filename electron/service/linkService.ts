@@ -30,12 +30,10 @@ interface NoteMeta {
 export class LinkService extends BaseDAL {
 	private static readonly LINK_REGEX = /@@([^@\n]+)@@/g;
 
-	// Parse links from content
 	parseLinks(content: string): ParsedLink[] {
 		const links: ParsedLink[] = [];
 		let match;
 
-		// Reset regex lastIndex
 		LinkService.LINK_REGEX.lastIndex = 0;
 
 		while ((match = LinkService.LINK_REGEX.exec(content)) !== null) {
@@ -50,17 +48,14 @@ export class LinkService extends BaseDAL {
 		return links;
 	}
 
-	// Generate content hash for change detection
 	private generateContentHash(content: string): string {
 		return crypto.createHash("md5").update(content).digest("hex");
 	}
 
-	// Update note metadata
 	async updateNoteMeta(notePath: string, content: string): Promise<void> {
 		const name = path.basename(notePath, ".md");
 		const contentHash = this.generateContentHash(content);
 
-		// Extract title from content (first heading)
 		const titleMatch = content.match(/^#\s+(.+)$/m);
 		const title = titleMatch ? titleMatch[1].trim() : name;
 
@@ -73,7 +68,6 @@ export class LinkService extends BaseDAL {
 		stmt.run(notePath, name, title, contentHash);
 	}
 
-	// Check if content has changed
 	async hasContentChanged(notePath: string, content: string): Promise<boolean> {
 		const currentHash = this.generateContentHash(content);
 		const stmt = this.db.prepare(`
@@ -85,22 +79,18 @@ export class LinkService extends BaseDAL {
 	}
 
 	async updateNoteLinks(sourcePath: string, content: string): Promise<void> {
-		// Only update if content has changed
 		if (!(await this.hasContentChanged(sourcePath, content))) {
 			return;
 		}
 
 		return this.transaction(() => {
-			// Remove existing links for this note
 			const deleteStmt = this.db.prepare(`
       DELETE FROM note_links WHERE source_path = ?
     `);
 			deleteStmt.run(sourcePath);
 
-			// Parse and insert new links
 			const links = this.parseLinks(content);
 			if (links.length === 0) {
-				// Update metadata even if no links
 				this.updateNoteMeta(sourcePath, content);
 				return;
 			}
@@ -114,11 +104,7 @@ export class LinkService extends BaseDAL {
 			const sourceNoteName = path.basename(sourcePath, ".md");
 
 			for (const link of links) {
-				// Skip self-links
 				if (link.targetName === sourceNoteName) {
-					console.warn(
-						`Skipping self-link in ${sourcePath} to ${link.targetName}`,
-					);
 					continue;
 				}
 
@@ -131,12 +117,10 @@ export class LinkService extends BaseDAL {
 				);
 			}
 
-			// Update note metadata
 			this.updateNoteMeta(sourcePath, content);
 		});
 	}
 
-	// Resolve link target path
 	async resolveLinkTarget(targetName: string): Promise<string | null> {
 		const stmt = this.db.prepare(`
       SELECT path FROM note_metadata 
@@ -153,7 +137,6 @@ export class LinkService extends BaseDAL {
 		return result?.path || null;
 	}
 
-	// Get backlinks for a note
 	async getBacklinks(notePath: string): Promise<
 		Array<{
 			sourcePath: string;
@@ -182,7 +165,6 @@ export class LinkService extends BaseDAL {
 		}>;
 	}
 
-	// Get outgoing links for a note
 	async getOutgoingLinks(sourcePath: string): Promise<
 		Array<{
 			targetName: string;
@@ -216,7 +198,6 @@ export class LinkService extends BaseDAL {
 		}));
 	}
 
-	// Get all notes for autocomplete
 	async getAllNoteNames(): Promise<string[]> {
 		const stmt = this.db.prepare(`
       SELECT name FROM note_metadata 
@@ -226,7 +207,6 @@ export class LinkService extends BaseDAL {
 		return (stmt.all() as Array<{ name: string }>).map((row) => row.name);
 	}
 
-	// Get link suggestions based on partial text
 	async getLinkSuggestions(
 		partialText: string,
 		limit: number = 10,

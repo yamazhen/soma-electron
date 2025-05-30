@@ -11,12 +11,12 @@ export function setupLanguageHandlers(mainWindow: BrowserWindow) {
 		return languageService.getCurrentLanguage();
 	});
 
-	ipcMain.handle("set-language", (_event: any, language: string) => {
+	ipcMain.handle("set-language", (_: any, language: string) => {
 		languageService.changeLanguage(language);
 		return currentLanguage;
 	});
 
-	ipcMain.handle("get-translations", (_event: any, language: string) => {
+	ipcMain.handle("get-translations", (_: any, language: string) => {
 		return languageService.getTranslation(language);
 	});
 
