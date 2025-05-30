@@ -59,4 +59,24 @@ export function setupDeckHandlers() {
       return deckService.scheduleCard(cardId, scheduled);
     },
   );
+
+  ipcMain.handle("deck:getDueCardsCount", async () => {
+    return deckService.getDueCardsCount();
+  });
+
+  ipcMain.handle("deck:getWeakCards", async (_, limit?: number) => {
+    return deckService.getWeakCards(limit);
+  });
+
+  ipcMain.handle("deck:scheduleAllCards", async () => {
+    return deckService.scheduleAllCards();
+  });
+
+  ipcMain.handle("deck:getMixedReview", async (_, limit?: number) => {
+    return deckService.getMixedReviewCards(limit);
+  });
+
+  ipcMain.handle("deck:getAnalytics", async () => {
+    return deckService.getCardAnalytics();
+  });
 }

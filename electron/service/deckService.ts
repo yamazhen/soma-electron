@@ -168,20 +168,58 @@ export class DeckService {
     }, "Failed to schedule card");
   }
 
+  async getDueCardsCount(): Promise<
+    IpcResponseData<{ today: number; overdue: number; upcoming: number }>
+  > {
+    return await handleServiceCall(() => {
+      return this.deckDAL.getDueCardsCount();
+    }, "Failed to get due cards count");
+  }
+
+  async getWeakCards(limit?: number): Promise<IpcResponseData<any[]>> {
+    return await handleServiceCall(() => {
+      return this.deckDAL.getWeakCards(limit || 30);
+    }, "Failed to get weak cards");
+  }
+
+  async scheduleAllCards(): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
+      return this.deckDAL.scheduleAllCards();
+    }, "Failed to schedule all cards");
+  }
+
+  async getMixedReviewCards(
+    limit: number = 20,
+  ): Promise<IpcResponseData<any[]>> {
+    return await handleServiceCall(() => {
+      return this.deckDAL.getDueCards(limit);
+    }, "Failed to get mixed review cards");
+  }
+
+  async getCardAnalytics(): Promise<IpcResponseData<any>> {
+    return await handleServiceCall(() => {
+      return this.deckDAL.getCardAnalytics();
+    }, "Failed to get card analytics");
+  }
+
   async submitCardReview(data: {
     cardId: number;
     isCorrect: boolean;
     responseTime: number;
   }): Promise<IpcResponseData<{ success: boolean }>> {
-    return await handleServiceCall(async () => {
-      const updateResult = await this.updateCardScheduling(
+    return await handleServiceCall(() => {
+      if (!data.cardId || data.cardId <= 0) {
+        throw new Error("Invalid card ID");
+      }
+
+      const success = this.deckDAL.logCardResponse(
         data.cardId,
         data.isCorrect,
         data.responseTime,
       );
 
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || "Failed to update scheduling");
+      if (!success) {
+        throw new Error("Failed to log card response and update scheduling");
       }
 
       return { success: true };

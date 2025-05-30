@@ -14,31 +14,72 @@ import {
   Sparkles,
   AlertCircle,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { toast } from "sonner";
 
 type ReviewFilter = "all" | "due-today" | "overdue" | "upcoming";
 
 const CardReview: React.FC = () => {
   const { getMessage, decks, setCardView, setDeckInView } = useAppContext();
   const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [analytics, setAnalytics] = useState({
+    totalCards: 0,
+    scheduledCards: 0,
+    masteredCards: 0,
+    learningCards: 0,
+    dueToday: 0,
+    overdue: 0,
+    upcoming: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const analytics = {
-    totalReviews: 567,
-    streakDays: 21,
-    accuracy: 91,
-    cardsToday: 35,
-    cardsDue: 18,
-    cardsOverdue: 5,
-    masteredCards: 234,
-    learningCards: 89,
-    weakCards: 12,
+  const loadAnalytics = async () => {
+    try {
+      setLoading(true);
+
+      // Get card analytics
+      const analyticsResult = await window.deckIpc.getAnalytics();
+      const cardAnalytics = analyticsResult.success
+        ? analyticsResult.data
+        : {
+            totalCards: 0,
+            scheduledCards: 0,
+            masteredCards: 0,
+            learningCards: 0,
+          };
+
+      // Get due cards count
+      const dueCountResult = await window.deckIpc.getDueCardsCount();
+      const dueCounts = dueCountResult.success
+        ? dueCountResult.data
+        : {
+            today: 0,
+            overdue: 0,
+            upcoming: 0,
+          };
+
+      setAnalytics({
+        ...cardAnalytics,
+        dueToday: dueCounts.today,
+        overdue: dueCounts.overdue,
+        upcoming: dueCounts.upcoming,
+      });
+    } catch (error) {
+      console.error("Error loading analytics:", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
 
   const scheduledDecks =
     decks?.map((deck) => ({
       ...deck,
-      dueCards: Math.floor(Math.random() * 15) + 1,
+      dueCards: Math.floor(Math.random() * 15) + 1, // TODO: Get real due cards per deck
       overdueCards: Math.floor(Math.random() * 5),
       newCards: Math.floor(Math.random() * 10),
       lastReviewed: new Date(
@@ -63,21 +104,57 @@ const CardReview: React.FC = () => {
 
   const filteredDecks = filterDecks();
 
-  const startGeneralReview = () => {
-    setCardView("inReview");
+  const startGeneralReview = async () => {
+    try {
+      const result = await window.deckIpc.getMixedReview(30);
+      if (result.success && result.data && result.data.length > 0) {
+        setCardView("inReview");
+      } else {
+        if (analytics.dueToday === 0 && analytics.overdue === 0) {
+          toast.error(
+            "No cards are scheduled for review. Please schedule some cards first!",
+          );
+        } else {
+          toast.error("No cards are due for review right now!");
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to start general review");
+    }
   };
 
-  const startWeakCardsReview = () => {
-    setCardView("inReview");
+  const startWeakCardsReview = async () => {
+    try {
+      const result = await window.deckIpc.getWeakCards(20);
+      if (result.success && result.data && result.data.length > 0) {
+        // Schedule weak cards for immediate review
+        await window.deckIpc.scheduleAllCards();
+        setCardView("inReview");
+      } else {
+        toast.error("No weak cards found for review!");
+      }
+    } catch (error) {
+      toast.error("Failed to start weak cards review");
+    }
   };
 
   const startReview = (deckId: number) => {
     const deck = decks?.find((d) => d.id === deckId);
     if (deck) {
       setDeckInView(deck);
-      setCardView("review");
+      setCardView("inReview"); // Use the mixed review for individual decks too
     }
   };
+
+  if (loading) {
+    return (
+      <section className="w-full min-h-screen bg-soma-darkest overflow-auto p-10">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soma-accent3"></div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full min-h-screen bg-soma-darkest overflow-auto p-10">
@@ -104,7 +181,7 @@ const CardReview: React.FC = () => {
           </p>
         </div>
 
-        {/* Quick Actions - NEW SECTION */}
+        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div
             className="bg-soma-dark rounded-2xl p-6 hover:bg-soma-medium transition-all group cursor-pointer"
@@ -133,13 +210,13 @@ const CardReview: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Clock size={16} className="text-soma-lightest" />
                 <span className="text-soma-text-secondary">
-                  {analytics.cardsToday} due today
+                  {analytics.dueToday} due today
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <AlertCircle size={16} className="text-soma-error" />
                 <span className="text-soma-text-secondary">
-                  {analytics.cardsOverdue} overdue
+                  {analytics.overdue} overdue
                 </span>
               </div>
             </div>
@@ -172,20 +249,14 @@ const CardReview: React.FC = () => {
               <div className="flex items-center gap-2">
                 <AlertCircle size={16} className="text-soma-warning" />
                 <span className="text-soma-text-secondary">
-                  {analytics.weakCards} weak cards
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Target size={16} className="text-soma-lightest" />
-                <span className="text-soma-text-secondary">
-                  Below 70% accuracy
+                  Based on performance
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Enhanced Analytics Cards */}
+        {/* Analytics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
             <div className="flex items-center gap-3 mb-4">
@@ -193,13 +264,13 @@ const CardReview: React.FC = () => {
                 <Calendar className="text-soma-warning" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Study Streak
+                Due Today
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
-              {analytics.streakDays} days
+              {analytics.dueToday}
             </p>
-            <p className="text-sm text-soma-lightest mt-2">Personal best!</p>
+            <p className="text-sm text-soma-lightest mt-2">Ready for review</p>
           </div>
 
           <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
@@ -208,18 +279,15 @@ const CardReview: React.FC = () => {
                 <Target className="text-soma-accent1" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Accuracy Rate
+                Total Cards
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
-              {analytics.accuracy}%
+              {analytics.totalCards}
             </p>
-            <div className="w-full bg-soma-medium rounded-full h-2 mt-3">
-              <div
-                className="bg-soma-accent1 rounded-full h-2 transition-all duration-500"
-                style={{ width: `${analytics.accuracy}%` }}
-              />
-            </div>
+            <p className="text-sm text-soma-lightest mt-2">
+              In your collection
+            </p>
           </div>
 
           <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
@@ -243,28 +311,28 @@ const CardReview: React.FC = () => {
                 <Brain className="text-soma-accent2" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Total Reviews
+                Learning
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
-              {analytics.totalReviews}
+              {analytics.learningCards}
             </p>
-            <p className="text-sm text-soma-lightest mt-2">Keep going!</p>
+            <p className="text-sm text-soma-lightest mt-2">In progress</p>
           </div>
         </div>
 
-        {/* Daily Progress */}
+        {/* Today's Progress */}
         <div className="bg-soma-dark rounded-2xl p-6 mb-8">
           <h2 className="text-xl font-semibold text-soma-text-primary mb-4 flex items-center gap-3">
             <Clock className="text-soma-accent2" size={24} />
             Today's Progress
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-soma-medium/50 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-soma-text-secondary">Due Today</span>
                 <span className="px-2 py-1 bg-soma-accent1/20 text-soma-accent1 rounded-lg text-sm font-medium">
-                  {analytics.cardsToday}
+                  {analytics.dueToday}
                 </span>
               </div>
               <p className="text-sm text-soma-lightest">
@@ -275,7 +343,7 @@ const CardReview: React.FC = () => {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-soma-text-secondary">Overdue</span>
                 <span className="px-2 py-1 bg-soma-error/20 text-soma-error rounded-lg text-sm font-medium">
-                  {analytics.cardsOverdue}
+                  {analytics.overdue}
                 </span>
               </div>
               <p className="text-sm text-soma-lightest">
@@ -284,21 +352,12 @@ const CardReview: React.FC = () => {
             </div>
             <div className="bg-soma-medium/50 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-soma-text-secondary">Completed</span>
+                <span className="text-soma-text-secondary">Upcoming</span>
                 <span className="px-2 py-1 bg-soma-success/20 text-soma-success rounded-lg text-sm font-medium">
-                  {analytics.cardsDue}
+                  {analytics.upcoming}
                 </span>
               </div>
-              <p className="text-sm text-soma-lightest">Reviews done today</p>
-            </div>
-            <div className="bg-soma-medium/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-soma-text-secondary">Learning</span>
-                <span className="px-2 py-1 bg-soma-accent3/20 text-soma-accent3 rounded-lg text-sm font-medium">
-                  {analytics.learningCards}
-                </span>
-              </div>
-              <p className="text-sm text-soma-lightest">Cards in progress</p>
+              <p className="text-sm text-soma-lightest">Future reviews</p>
             </div>
           </div>
         </div>

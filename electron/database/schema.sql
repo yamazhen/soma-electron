@@ -140,6 +140,21 @@ CREATE TABLE IF NOT EXISTS cards (
   foreign key (deck_id) references decks (id)
 );
 
+CREATE TABLE IF NOT EXISTS card_responses (
+  id integer primary key,
+  card_id integer not null,
+  is_correct boolean not null,
+  response_time integer,
+  created_at timestamp default current_timestamp,
+  foreign key (card_id) references cards (id) on delete cascade
+);
+
+CREATE INDEX IF NOT EXISTS idx_card_responses_card_id ON card_responses (card_id);
+
+CREATE INDEX IF NOT EXISTS idx_card_responses_correct ON card_responses (is_correct);
+
+CREATE INDEX IF NOT EXISTS idx_card_responses_created_at ON card_responses (created_at);
+
 CREATE TABLE IF NOT EXISTS users (
   id integer primary key check (id = 1),
   username text,

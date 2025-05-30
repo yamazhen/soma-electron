@@ -283,16 +283,16 @@ export class DeckDAL extends BaseDAL {
 
       // Update card in database
       const stmt = this.db.prepare(`
-      UPDATE cards 
-      SET 
-        scheduled = 1,
-        review_interval = ?,
-        ease_factor = ?,
-        consecutive_correct = ?,
-        last_reviewed = ?,
-        next_review_date = ?
-      WHERE id = ?
-    `);
+        UPDATE cards 
+        SET 
+          scheduled = 1,
+          review_interval = ?,
+          ease_factor = ?,
+          consecutive_correct = ?,
+          last_reviewed = ?,
+          next_review_date = ?
+        WHERE id = ?
+      `);
 
       const result = stmt.run(
         newInterval,
@@ -340,5 +340,174 @@ export class DeckDAL extends BaseDAL {
       cardId,
     );
     return result.changes > 0;
+  }
+
+  getDueCardsCount(): { today: number; overdue: number; upcoming: number } {
+    const now = new Date();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString();
+    const tomorrow = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    ).toISOString();
+
+    const overdueCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM cards 
+      WHERE scheduled = 1 
+      AND next_review_date < ?
+    `,
+        )
+        .get(today)?.count || 0;
+
+    const upcomingCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM cards 
+      WHERE scheduled = 1 
+      AND next_review_date >= ?
+    `,
+        )
+        .get(tomorrow)?.count || 0;
+
+    // Count cards that are due right now
+    const dueNowCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM cards 
+      WHERE scheduled = 1 
+      AND (next_review_date IS NULL OR next_review_date <= ?)
+    `,
+        )
+        .get(now.toISOString())?.count || 0;
+
+    return {
+      today: dueNowCount,
+      overdue: overdueCount,
+      upcoming: upcomingCount,
+    };
+  }
+
+  logCardResponse(
+    cardId: number,
+    isCorrect: boolean,
+    responseTime: number,
+  ): boolean {
+    return this.transaction(() => {
+      // Log the response
+      const logStmt = this.db.prepare(`
+        INSERT INTO card_responses (card_id, is_correct, response_time)
+        VALUES (?, ?, ?)
+      `);
+      logStmt.run(cardId, isCorrect ? 1 : 0, responseTime);
+
+      // Update scheduling
+      const success = this.updateCardScheduling(
+        cardId,
+        isCorrect,
+        responseTime,
+      );
+      return success;
+    });
+  }
+
+  getWeakCards(limit: number = 30): any[] {
+    const query = `
+      SELECT c.*, d.title as deck_title,
+             COALESCE(incorrect_responses.incorrect_count, 0) as incorrect_count,
+             COALESCE(total_responses.total_count, 0) as total_count,
+             CASE 
+               WHEN COALESCE(total_responses.total_count, 0) = 0 THEN 0
+               ELSE (COALESCE(correct_responses.correct_count, 0) * 1.0 / total_responses.total_count)
+             END as accuracy
+      FROM cards c
+      JOIN decks d ON c.deck_id = d.id
+      LEFT JOIN (
+        SELECT card_id, COUNT(*) as incorrect_count 
+        FROM card_responses 
+        WHERE is_correct = 0 
+        GROUP BY card_id
+      ) incorrect_responses ON c.id = incorrect_responses.card_id
+      LEFT JOIN (
+        SELECT card_id, COUNT(*) as total_count 
+        FROM card_responses 
+        GROUP BY card_id
+      ) total_responses ON c.id = total_responses.card_id
+      LEFT JOIN (
+        SELECT card_id, COUNT(*) as correct_count 
+        FROM card_responses 
+        WHERE is_correct = 1 
+        GROUP BY card_id
+      ) correct_responses ON c.id = correct_responses.card_id
+      WHERE c.scheduled = 1 
+      AND (accuracy < 0.7 OR c.consecutive_correct < 3 OR total_count = 0)
+      ORDER BY accuracy ASC, c.consecutive_correct ASC, c.id ASC
+      LIMIT ?
+    `;
+
+    return this.db.prepare(query).all(limit);
+  }
+
+  scheduleAllCards(): boolean {
+    return this.transaction(() => {
+      const stmt = this.db.prepare(`
+        UPDATE cards 
+        SET 
+          scheduled = 1,
+          next_review_date = datetime('now'),
+          review_interval = 1,
+          ease_factor = 2.5,
+          consecutive_correct = 0
+        WHERE scheduled = 0 OR scheduled IS NULL
+      `);
+
+      const result = stmt.run();
+      return result.changes > 0;
+    });
+  }
+
+  // Add analytics for dashboard
+  getCardAnalytics(): {
+    totalCards: number;
+    scheduledCards: number;
+    masteredCards: number;
+    learningCards: number;
+  } {
+    const totalCards =
+      this.db.prepare("SELECT COUNT(*) as count FROM cards").get()?.count || 0;
+
+    const scheduledCards =
+      this.db
+        .prepare("SELECT COUNT(*) as count FROM cards WHERE scheduled = 1")
+        .get()?.count || 0;
+
+    const masteredCards =
+      this.db
+        .prepare(
+          "SELECT COUNT(*) as count FROM cards WHERE consecutive_correct >= 5",
+        )
+        .get()?.count || 0;
+
+    const learningCards =
+      this.db
+        .prepare(
+          "SELECT COUNT(*) as count FROM cards WHERE scheduled = 1 AND consecutive_correct < 5",
+        )
+        .get()?.count || 0;
+
+    return {
+      totalCards,
+      scheduledCards,
+      masteredCards,
+      learningCards,
+    };
   }
 }

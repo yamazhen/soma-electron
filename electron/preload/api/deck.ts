@@ -7,6 +7,13 @@ export const deckApi = {
   deckFindAll: () => ipcRenderer.invoke("deck-find-all"),
   getDueCards: (limit?: number) =>
     ipcRenderer.invoke("deck:getDueCards", limit),
+  getDueCardsCount: () => ipcRenderer.invoke("deck:getDueCardsCount"),
+  getWeakCards: (limit?: number) =>
+    ipcRenderer.invoke("deck:getWeakCards", limit),
+  scheduleAllCards: () => ipcRenderer.invoke("deck:scheduleAllCards"),
+  getMixedReview: (limit?: number) =>
+    ipcRenderer.invoke("deck:getMixedReview", limit),
+  getAnalytics: () => ipcRenderer.invoke("deck:getAnalytics"),
   submitReview: (data: {
     cardId: number;
     isCorrect: boolean;
