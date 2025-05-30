@@ -16,6 +16,10 @@ export const quizApi = {
 		ipcRenderer.invoke("quiz:getAttemptHistory", quizId),
 	getAttemptDetails: (attemptId: number) =>
 		ipcRenderer.invoke("quiz:getAttemptDetails", attemptId),
+
+	getAnalytics: () => ipcRenderer.invoke("quiz:getAnalytics"),
+	getDailyActivity: () => ipcRenderer.invoke("quiz:getDailyActivity"),
+	getSubjectPerformance: () => ipcRenderer.invoke("quiz:getSubjectPerformance"),
 };
 
 export const questionApi = {

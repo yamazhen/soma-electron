@@ -12,6 +12,7 @@ import { setupFileSystemHandlers } from "./fileSystemHandlers";
 import { setupLanguageHandlers } from "./languageHandlers";
 import { setupDeckHandlers } from "./deckHandlers";
 import { setupLinkHandlers } from "./linkHandlers";
+import { setupDashboardHandlers } from "./dashboardHandlers";
 
 export async function setupAllHandlers(
 	mainWindow: BrowserWindow,
@@ -26,6 +27,7 @@ export async function setupAllHandlers(
 		setupQuizHandlers(),
 		setupOAuthHandlers(),
 		setupLinkHandlers(),
+		setupDashboardHandlers(),
 	]);
 
 	await Promise.all([

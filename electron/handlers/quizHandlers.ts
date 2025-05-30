@@ -168,4 +168,34 @@ export function setupQuizHandlers() {
 			return { success: false, error: error.message };
 		}
 	});
+
+	ipcMain.handle("quiz:getAnalytics", () => {
+		try {
+			const analytics = quizService.getAnalytics();
+			return { success: true, analytics };
+		} catch (error: any) {
+			console.error("Error getting analytics:", error);
+			return { success: false, error: error.message };
+		}
+	});
+
+	ipcMain.handle("quiz:getDailyActivity", () => {
+		try {
+			const activity = quizService.getDailyActivity();
+			return { success: true, activity };
+		} catch (error: any) {
+			console.error("Error getting daily activity:", error);
+			return { success: false, error: error.message };
+		}
+	});
+
+	ipcMain.handle("quiz:getSubjectPerformance", () => {
+		try {
+			const performance = quizService.getSubjectPerformance();
+			return { success: true, performance };
+		} catch (error: any) {
+			console.error("Error getting subject performance:", error);
+			return { success: false, error: error.message };
+		}
+	});
 }

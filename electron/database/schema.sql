@@ -91,6 +91,10 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
   foreign key (quiz_id) references quiz (id)
 );
 
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_date ON quiz_attempts (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_question_responses_correct ON question_responses (is_correct);
+
 -- for storing individual question responses
 CREATE TABLE IF NOT EXISTS question_responses (
   id integer primary key,

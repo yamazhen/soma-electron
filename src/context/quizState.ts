@@ -1,3 +1,5 @@
+// src/context/quizState.ts - Add analytics state
+
 import { useCallback, useEffect, useState } from "react";
 
 export const useQuizState = () => {
@@ -5,6 +7,8 @@ export const useQuizState = () => {
 		"listing" | "review" | "create" | "inReview"
 	>("listing");
 	const [quizzes, setQuizzes] = useState<QuizDetails[] | undefined>([]);
+	const [analytics, setAnalytics] = useState<QuizAnalytics | null>(null);
+	const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
 	const fetchQuizzes = useCallback(async () => {
 		try {
@@ -19,9 +23,26 @@ export const useQuizState = () => {
 		}
 	}, []);
 
+	const fetchAnalytics = useCallback(async () => {
+		try {
+			setLoadingAnalytics(true);
+			const response = await window.quizIpc.getAnalytics();
+			if (response.success) {
+				setAnalytics(response.analytics);
+			} else {
+				console.error("Error fetching analytics:", response.error);
+			}
+		} catch (e) {
+			console.error("Error fetching analytics:", e);
+		} finally {
+			setLoadingAnalytics(false);
+		}
+	}, []);
+
 	useEffect(() => {
 		fetchQuizzes();
-	}, [fetchQuizzes]);
+		fetchAnalytics();
+	}, [fetchQuizzes, fetchAnalytics]);
 
 	return {
 		setQuizView,
@@ -29,5 +50,8 @@ export const useQuizState = () => {
 		quizzes,
 		setQuizzes,
 		fetchQuizzes,
+		analytics,
+		loadingAnalytics,
+		fetchAnalytics,
 	};
 };

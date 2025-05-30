@@ -8,6 +8,7 @@ import { userDataApi } from "./api/userData";
 import { serverApi } from "./api/serverApi";
 import { windowApi } from "./api/window";
 import { linksApi } from "./api/links";
+import { dashboardApi } from "./api/dashboard";
 
 contextBridge.exposeInMainWorld("fileSystem", fileSystemApi);
 
@@ -27,3 +28,5 @@ contextBridge.exposeInMainWorld("serverApi", serverApi);
 contextBridge.exposeInMainWorld("ipcRenderer", windowApi);
 
 contextBridge.exposeInMainWorld("linksApi", linksApi);
+
+contextBridge.exposeInMainWorld("dashboardApi", dashboardApi);

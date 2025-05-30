@@ -291,4 +291,16 @@ export class QuizService {
 			.replace(/\s+/g, " ")
 			.replace(/[^\w\s]/g, "");
 	}
+
+	getAnalytics(): QuizAnalytics {
+		return this.attemptDAL.getAnalytics();
+	}
+
+	getDailyActivity(): DailyActivity[] {
+		return this.attemptDAL.getDailyActivity();
+	}
+
+	getSubjectPerformance(): SubjectPerformance[] {
+		return this.attemptDAL.getSubjectPerformance();
+	}
 }
