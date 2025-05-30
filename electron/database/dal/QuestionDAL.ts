@@ -409,4 +409,22 @@ export class QuestionDAL extends BaseDAL {
       return result.changes > 0;
     });
   }
+
+  scheduleAllExistingQuestions(): boolean {
+    return this.transaction(() => {
+      const stmt = this.db.prepare(`
+      UPDATE questions 
+      SET 
+        scheduled = 1,
+        next_review_date = datetime('now', '+1 day'),
+        review_interval = 1,
+        ease_factor = 2.5,
+        consecutive_correct = 0
+      WHERE scheduled = 0 OR scheduled IS NULL
+    `);
+
+      const result = stmt.run();
+      return result.changes > 0;
+    });
+  }
 }

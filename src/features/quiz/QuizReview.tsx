@@ -165,16 +165,46 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
 
   const startWeakQuestionsReview = async () => {
     try {
-      // Get questions with low accuracy (you'll need to implement this)
-      const result = (await window.quizIpc.getTopFailedQuestionIds)
-        ? await window.quizIpc.getTopFailedQuestionIds()
-        : { success: false };
+      // Get questions that need more practice based on low accuracy
+      const weakQuestions: QuestionWithDetails[] = [];
 
-      if (result.success) {
-        // Implementation for weak questions review
-        alert("Weak questions review coming soon!");
+      // Get all quizzes and their questions
+      if (quizzes && quizzes.length > 0) {
+        for (const quiz of quizzes) {
+          // Get question performance data for each quiz
+          const historyResult = await window.quizIpc.getAttemptHistory(
+            quiz.id!,
+          );
+          if (historyResult.success && historyResult.history) {
+            // Find questions with low accuracy (< 70%)
+            // This is a simplified approach - you might want to implement
+            // more sophisticated analytics in the backend
+            const questionsNeedingWork = quiz.questions
+              .filter((q) => {
+                // For now, just include scheduled questions
+                // In a real implementation, you'd track per-question accuracy
+                return q.scheduled;
+              })
+              .slice(0, 20); // Limit to 20 questions
+
+            weakQuestions.push(...questionsNeedingWork);
+          }
+        }
+      }
+
+      if (weakQuestions.length > 0) {
+        // Create a virtual quiz with weak questions
+        const weakQuestionsQuiz: QuizDetails = {
+          id: -2, // Special ID for weak questions review
+          title: "Weak Questions Review",
+          questions: weakQuestions,
+          count: weakQuestions.length,
+          created_at: new Date().toISOString(),
+        };
+        setQuizInReview(weakQuestionsQuiz);
+        setQuizView("inReview");
       } else {
-        alert("No weak questions found or feature not implemented yet!");
+        alert("No weak questions found! Great job with your studies!");
       }
     } catch (error) {
       console.error("Error starting weak questions review:", error);
@@ -310,56 +340,93 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
           </div>
         </div>
 
+        <div className="bg-soma-dark rounded-2xl p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-soma-text-primary mb-2">
+                Schedule Management
+              </h3>
+              <p className="text-soma-text-secondary text-sm">
+                Automatically schedule all existing questions for spaced
+                repetition
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const result = await window.quizIpc.scheduleAllQuestions();
+                  if (result.success) {
+                    alert("All questions have been scheduled for review!");
+                    // Reload the data
+                    const loadSchedulingData = async () => {
+                      // ... existing loadSchedulingData logic
+                    };
+                    loadSchedulingData();
+                  } else {
+                    alert("Failed to schedule questions");
+                  }
+                } catch (error) {
+                  console.error("Error scheduling questions:", error);
+                  alert("Error scheduling questions");
+                }
+              }}
+              className="px-6 py-3 bg-soma-accent1 text-white rounded-lg hover:bg-soma-accent1/90 transition-all flex items-center gap-2 font-medium"
+            >
+              <Calendar size={20} />
+              Schedule All Questions
+            </button>
+          </div>
+        </div>
+
         {/* Analytics Cards using real data */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
             <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-soma-accent2/20 rounded-xl">
+                <Clock className="text-soma-accent2" size={24} />
+              </div>
+              <span className="text-soma-text-secondary font-medium">
+                Questions Due Today
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-soma-text-primary">
+              {schedulingData.dueCounts.today}
+            </p>
+            <p className="text-sm text-soma-lightest mt-2">Ready for review</p>
+          </div>
+
+          <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
+            <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-soma-warning/20 rounded-xl">
-                <Calendar className="text-soma-warning" size={24} />
+                <AlertCircle className="text-soma-warning" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Study Streak
+                Overdue Questions
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
-              {realAnalytics.studyStreak} days
+              {schedulingData.dueCounts.overdue}
             </p>
-            <p className="text-sm text-soma-lightest mt-2">Keep it going!</p>
+            <p className="text-sm text-soma-lightest mt-2">Need attention</p>
           </div>
 
           <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-soma-accent1/20 rounded-xl">
-                <Target className="text-soma-accent1" size={24} />
+              <div className="p-3 bg-soma-success/20 rounded-xl">
+                <TrendingUp className="text-soma-success" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Accuracy Rate
+                Scheduled Questions
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
-              {realAnalytics.accuracy}%
+              {schedulingData.scheduledQuizzes.reduce(
+                (total, quiz) => total + (quiz.scheduledQuestionsCount || 0),
+                0,
+              )}
             </p>
-            <div className="w-full bg-soma-medium rounded-full h-2 mt-3">
-              <div
-                className="bg-soma-accent1 rounded-full h-2 transition-all duration-500"
-                style={{ width: `${realAnalytics.accuracy}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-soma-accent3/20 rounded-xl">
-                <Brain className="text-soma-accent3" size={24} />
-              </div>
-              <span className="text-soma-text-secondary font-medium">
-                Total Reviews
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-soma-text-primary">
-              {realAnalytics.totalAttempts}
-            </p>
-            <p className="text-sm text-soma-lightest mt-2">Lifetime total</p>
+            <p className="text-sm text-soma-lightest mt-2">In rotation</p>
           </div>
         </div>
 

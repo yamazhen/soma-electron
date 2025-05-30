@@ -32,6 +32,7 @@ export const quizApi = {
 
   getQuestionsByScheduleStatus: (status: string) =>
     ipcRenderer.invoke("quiz:getQuestionsByScheduleStatus", status),
+  scheduleAllQuestions: () => ipcRenderer.invoke("quiz:scheduleAllQuestions"),
 };
 
 export const questionApi = {

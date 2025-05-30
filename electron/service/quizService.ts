@@ -407,4 +407,8 @@ export class QuizService {
   getQuestionsByScheduleStatus(status: "due-today" | "overdue" | "upcoming") {
     return this.questionDAL.getQuestionsByScheduleStatus(status);
   }
+
+  scheduleAllExistingQuestions(): boolean {
+    return this.questionDAL.scheduleExistingQuestions();
+  }
 }
