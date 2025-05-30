@@ -58,14 +58,24 @@ export class QuestionDAL extends BaseDAL {
         text,
         type,
         boolean_answer = null,
-        scheduled = false,
+        scheduled = true, // Default to scheduled
         options = [],
         answers = [],
       } = data;
 
-      const insertQuestion = this.db.prepare(
-        "INSERT INTO questions (quiz_id, text, type, boolean_answer, scheduled) VALUES (?, ?, ?, ?, ?)",
-      );
+      const insertQuestion = this.db.prepare(`
+      INSERT INTO questions (
+        quiz_id, text, type, boolean_answer, scheduled,
+        next_review_date, review_interval, ease_factor, consecutive_correct
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+      // Set initial scheduling values for new questions
+      const now = new Date().toISOString();
+      const nextReviewDate = scheduled ? now : null; // Available for review immediately if scheduled
+      const initialInterval = 1;
+      const initialEaseFactor = 2.5;
+      const initialConsecutiveCorrect = 0;
 
       const result = insertQuestion.run(
         quiz_id,
@@ -73,10 +83,15 @@ export class QuestionDAL extends BaseDAL {
         type,
         boolean_answer === null ? null : boolean_answer ? 1 : 0,
         scheduled ? 1 : 0,
+        nextReviewDate,
+        initialInterval,
+        initialEaseFactor,
+        initialConsecutiveCorrect,
       );
 
       const questionId = result.lastInsertRowid as number;
 
+      // Rest of the method remains the same...
       if (type === "multiple-choice" && options.length > 0) {
         const insertOption = this.db.prepare(
           "INSERT INTO options (question_id, text, is_correct) VALUES (?, ?, ?)",

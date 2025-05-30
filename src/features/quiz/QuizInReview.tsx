@@ -131,13 +131,13 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
   };
 
   const handleSubmit = async () => {
-    if (!quiz.id || !answers.length || submitting) return;
+    if (!answers.length || submitting) return;
     setSubmitting(true);
 
     try {
       // Use the new scheduling-aware submission method
       const result = await window.quizIpc.submitAttemptWithScheduling({
-        quizId: quiz.id,
+        quizId: quiz.id || -1, // Handle undefined quiz.id
         answers: answers.map((answer) => ({
           ...answer,
           responseTime: 30 - time, // Calculate response time based on remaining time
@@ -151,7 +151,7 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
         recordActivity("quiz", {
           title: quiz.title,
           quizTitle: quiz.title,
-          entityId: quiz.id.toString(),
+          entityId: quiz.id?.toString() || "mixed-review",
           score: Number(result.review.percentage.toFixed(2)),
           questionsCount: quiz.questions.length,
         });

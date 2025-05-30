@@ -49,7 +49,7 @@ export class QuizService {
         text: question.text,
         type: question.type,
         boolean_answer: question.boolean_answer,
-        scheduled: question.scheduled,
+        scheduled: question.scheduled !== undefined ? question.scheduled : true, // Auto-schedule by default
         options: question.options,
         answers: question.answers,
       });
@@ -82,10 +82,14 @@ export class QuizService {
       throw new Error("Quiz not found");
     }
 
-    return this.questionDAL.create({
+    // Auto-schedule questions by default
+    const questionData = {
       quiz_id: quizId,
       ...question,
-    });
+      scheduled: question.scheduled !== undefined ? question.scheduled : true, // Default to scheduled
+    };
+
+    return this.questionDAL.create(questionData);
   }
 
   updateQuestion(
@@ -354,7 +358,66 @@ export class QuizService {
     quizId: number,
     answers: { questionId: number; answer: string; responseTime?: number }[],
   ): QuizReview {
+    // Handle special quiz IDs (mixed review sessions)
+    if (quizId === -1 || quizId === -2) {
+      // For mixed review sessions, we don't need the quiz object
+      // Just get the questions directly
+      const questionIds = answers.map((a) => a.questionId);
+      const questions = questionIds
+        .map((id) => this.questionDAL.getById(id))
+        .filter(Boolean);
+
+      if (questions.length === 0) {
+        throw new Error("No questions found");
+      }
+
+      let score = 0;
+      const responses: {
+        question_id: number;
+        user_answer: string;
+        is_correct: boolean;
+      }[] = [];
+
+      for (const answer of answers) {
+        const question = questions.find((q) => q.id === answer.questionId);
+        if (!question) continue;
+
+        const isCorrect = this.checkAnswer(question, answer.answer);
+        if (isCorrect) score++;
+
+        responses.push({
+          question_id: answer.questionId,
+          user_answer: answer.answer,
+          is_correct: isCorrect,
+        });
+
+        // Update the scheduling for spaced repetition
+        this.questionDAL.updateScheduling(
+          answer.questionId,
+          isCorrect,
+          answer.responseTime || 30,
+        );
+      }
+
+      // Don't create an attempt record for mixed reviews
+      return {
+        id: -1,
+        score: score,
+        percentage: Math.round((score / questions.length) * 100),
+        correct_questions: responses
+          .filter((r) => r.is_correct)
+          .map((r) => r.question_id),
+        wrong_questions: responses
+          .filter((r) => !r.is_correct)
+          .map((r) => r.question_id),
+      };
+    }
+
+    // Regular quiz submission logic (existing code)
     const quiz = this.quizDAL.getById(quizId);
+    if (!quiz) {
+      throw new Error("Quiz not found");
+    }
     if (!quiz) {
       throw new Error("Quiz not found");
     }

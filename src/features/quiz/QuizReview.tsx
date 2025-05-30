@@ -268,8 +268,8 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
           </div>
           <p className="text-soma-text-primary text-sm leading-relaxed">
             Soma Review uses spaced repetition to help you learn and retain
-            information effectively. Questions will appear based on how well you
-            know them.
+            information effectively. New questions are automatically scheduled
+            for review when created.
           </p>
         </div>
 
@@ -345,28 +345,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-soma-dark rounded-2xl p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-soma-text-primary mb-2">
-                Schedule Management
-              </h3>
-              <p className="text-soma-text-secondary text-sm">
-                Automatically schedule all existing questions for spaced
-                repetition
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={scheduleAllQuestions}
-              className="px-6 py-3 bg-soma-accent1 text-white rounded-lg hover:bg-soma-accent1/90 transition-all flex items-center gap-2 font-medium"
-            >
-              <Calendar size={20} />
-              Schedule All Questions
-            </button>
           </div>
         </div>
 
