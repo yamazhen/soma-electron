@@ -4,9 +4,63 @@ import { QuizAttemptDAL, DeckDAL, ActivityDAL } from "../database/dal";
 export class DashboardService {
 	private quizAttemptDAL = new QuizAttemptDAL();
 	private deckDAL = new DeckDAL();
-	private activityDAL = new ActivityDAL(); // Add this
+	private activityDAL = new ActivityDAL();
 
-	// Remove the old getRecentActivity method and replace with:
+	getAnalytics(): DashboardAnalytics {
+		try {
+			const quizAnalytics = this.quizAttemptDAL.getAnalytics();
+			const allDecks = this.deckDAL.findAll();
+
+			// Get notes count from file system
+			const totalNotes = this.getAllNotesCount();
+
+			// Calculate recent activity counts
+			const recentActivities = this.activityDAL.getRecentActivities(50);
+			const oneWeekAgo = new Date();
+			oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+			const weeklyActivities = recentActivities.filter(
+				(activity) => new Date(activity.timestamp) >= oneWeekAgo,
+			);
+
+			const quizzesCompletedThisWeek = weeklyActivities.filter(
+				(a) => a.type === "quiz",
+			).length;
+			const flashcardsReviewedThisWeek = weeklyActivities.filter(
+				(a) => a.type === "flashcard",
+			).length;
+			const notesCreatedThisWeek = weeklyActivities.filter(
+				(a) => a.type === "note",
+			).length;
+
+			return {
+				studyStreak: quizAnalytics.studyStreak,
+				totalNotes,
+				totalQuizzes: this.quizAttemptDAL.getAll().length,
+				totalFlashcards: allDecks.reduce(
+					(total, deck) => total + deck.cards.length,
+					0,
+				),
+				quizzesCompletedThisWeek,
+				flashcardsReviewedThisWeek,
+				averageQuizScore: quizAnalytics.averageScore,
+				notesCreatedThisWeek,
+			};
+		} catch (error) {
+			console.error("Error getting dashboard analytics:", error);
+			return {
+				studyStreak: 0,
+				totalNotes: 0,
+				totalQuizzes: 0,
+				totalFlashcards: 0,
+				quizzesCompletedThisWeek: 0,
+				flashcardsReviewedThisWeek: 0,
+				averageQuizScore: 0,
+				notesCreatedThisWeek: 0,
+			};
+		}
+	}
+
 	getRecentActivity(): RecentActivity[] {
 		try {
 			const activities = this.activityDAL.getRecentActivities(8);
@@ -16,13 +70,24 @@ export class DashboardService {
 				type: activity.type,
 				title: activity.title,
 				subtitle: activity.subtitle || "No description",
-				timestamp: new Date(activity.timestamp), // Proper Date conversion
+				timestamp: new Date(activity.timestamp),
 				icon: this.getIconForType(activity.type),
 				color: this.getColorForType(activity.type),
 			}));
 		} catch (error) {
 			console.error("Error getting recent activity:", error);
 			return [];
+		}
+	}
+
+	private getAllNotesCount(): number {
+		try {
+			// This would need to be implemented to get actual notes count
+			// For now, return a placeholder
+			return 0;
+		} catch (error) {
+			console.error("Error getting notes count:", error);
+			return 0;
 		}
 	}
 
@@ -52,7 +117,6 @@ export class DashboardService {
 		}
 	}
 
-	// Add method to log activities
 	logActivity(
 		type: "note" | "quiz" | "flashcard",
 		title: string,

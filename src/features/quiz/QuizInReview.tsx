@@ -142,8 +142,12 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
 
 			if (result.success && result.review) {
 				setReview(result.review);
+
+				// Log the activity
 				recordActivity("quiz", {
+					title: quiz.title,
 					quizTitle: quiz.title,
+					entityId: quiz.id.toString(),
 					score: result.review.percentage,
 					questionsCount: quiz.questions.length,
 				});

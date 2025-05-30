@@ -1,19 +1,10 @@
+// src/context/studyState.ts
 import { useRef, useState, useEffect } from "react";
 
 interface StudySession {
 	type: "quiz" | "flashcard" | "note";
 	title: string;
 	startTime: number;
-}
-
-interface RecentActivity {
-	id: string;
-	type: "note" | "quiz" | "flashcard";
-	title: string;
-	subtitle: string;
-	timestamp: Date;
-	icon: string;
-	color: string;
 }
 
 export const useStudyTracking = () => {
@@ -54,6 +45,9 @@ export const useStudyTracking = () => {
 			});
 		}
 	};
+
+	// Alias for compatibility with existing code
+	const trackStudyActivity = startStudySession;
 
 	const endStudySession = () => {
 		if (isStudying && studyStartTime.current) {
@@ -107,6 +101,7 @@ export const useStudyTracking = () => {
 		isStudying,
 		currentSession,
 		startStudySession,
+		trackStudyActivity, // Add this alias
 		endStudySession,
 		getTodayStudyTime,
 	};

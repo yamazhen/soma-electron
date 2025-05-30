@@ -5,18 +5,38 @@ export const useActivityState = () => {
 	const [lastActivityUpdate, setLastActivityUpdate] = useState(Date.now());
 
 	const recordActivity = useCallback(
-		async (type: "quiz" | "note" | "flashcard", details: any) => {
+		async (
+			type: "quiz" | "note" | "flashcard",
+			details: {
+				title: string;
+				entityId?: string;
+				score?: number;
+				cardCount?: number;
+				questionsCount?: number;
+				deckTitle?: string;
+				quizTitle?: string;
+			},
+		) => {
 			try {
-				// Use the new dashboard API instead of localStorage
-				await window.dashboardApi.logActivity(
+				const entityId = details.entityId || `${type}-${Date.now()}`;
+				const title =
+					details.title ||
+					details.quizTitle ||
+					details.deckTitle ||
+					`${type} activity`;
+
+				// Log the activity
+				const result = await window.dashboardApi.logActivity(
 					type,
-					details.title || `${type} activity`,
-					details.entityId || `${type}-${Date.now()}`,
+					title,
+					entityId,
 					details,
 				);
 
-				// Trigger dashboard refresh
-				setLastActivityUpdate(Date.now());
+				if (result?.success) {
+					// Trigger dashboard refresh
+					setLastActivityUpdate(Date.now());
+				}
 			} catch (error) {
 				console.error("Error recording activity:", error);
 			}
