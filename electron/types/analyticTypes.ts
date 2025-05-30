@@ -33,7 +33,7 @@ interface DashboardAnalytics {
 
 interface RecentActivity {
 	id: string;
-	type: "note" | "quiz" | "flashcard";
+	type: "note" | "quiz" | "flashcard" | "note-edit";
 	title: string;
 	subtitle: string;
 	timestamp: Date;

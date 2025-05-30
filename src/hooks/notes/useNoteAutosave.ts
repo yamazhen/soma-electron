@@ -53,7 +53,7 @@ export const useNoteAutosave = ({
 
 					// Use the dashboard API to log the activity
 					await window.dashboardApi.logActivity(
-						"note",
+						"note-edit",
 						fileName,
 						selectedFile,
 						{

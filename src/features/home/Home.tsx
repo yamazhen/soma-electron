@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	Brain,
 	Calendar,
@@ -25,72 +25,14 @@ const Home: React.FC = () => {
 		setCardView,
 		handleCreateNote,
 		lastActivityUpdate,
+		getTodayStudyTime,
 	} = useAppContext();
 
 	const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
 	const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [studyMinutes, setStudyMinutes] = useState(0);
-	const [isStudying, setIsStudying] = useState(false);
-	const studyStartTime = useRef<number | null>(null);
 
-	// Track real study activities
-	useEffect(() => {
-		// Load saved study time for today
-		const savedTime = localStorage.getItem("todayStudyTime");
-		const lastSaveDate = localStorage.getItem("lastSaveDate");
-		const today = new Date().toDateString();
-
-		if (lastSaveDate === today && savedTime) {
-			setStudyMinutes(parseInt(savedTime));
-		} else {
-			setStudyMinutes(0);
-			localStorage.setItem("lastSaveDate", today);
-			localStorage.setItem("todayStudyTime", "0");
-		}
-	}, []);
-
-	// End study session and add time
-	const endStudySession = () => {
-		if (isStudying && studyStartTime.current) {
-			const sessionTime = Math.floor(
-				(Date.now() - studyStartTime.current) / 60000,
-			); // minutes
-			setStudyMinutes((prev) => {
-				const newTime = prev + sessionTime;
-				localStorage.setItem("todayStudyTime", newTime.toString());
-				return newTime;
-			});
-			setIsStudying(false);
-			studyStartTime.current = null;
-		}
-	};
-
-	// Auto-end session after inactivity
-	useEffect(() => {
-		let inactivityTimer: NodeJS.Timeout;
-
-		const handleActivity = () => {
-			if (isStudying) {
-				clearTimeout(inactivityTimer);
-				inactivityTimer = setTimeout(endStudySession, 5 * 60 * 1000); // 5 min inactivity
-			}
-		};
-
-		if (isStudying) {
-			window.addEventListener("mousemove", handleActivity);
-			window.addEventListener("keypress", handleActivity);
-			handleActivity(); // Start the timer
-		}
-
-		return () => {
-			window.removeEventListener("mousemove", handleActivity);
-			window.removeEventListener("keypress", handleActivity);
-			clearTimeout(inactivityTimer);
-		};
-	}, [isStudying]);
-
-	// Load real analytics data
+	// Load real analytics data - KEEP ONLY THIS ONE
 	useEffect(() => {
 		const loadAnalytics = async () => {
 			try {
@@ -107,19 +49,6 @@ const Home: React.FC = () => {
 				if (activityResult.success) {
 					setRecentActivity(activityResult.activity);
 				}
-
-				// Calculate study time from localStorage
-				const savedTime = localStorage.getItem("todayStudyTime");
-				const lastSaveDate = localStorage.getItem("lastSaveDate");
-				const today = new Date().toDateString();
-
-				if (lastSaveDate === today && savedTime) {
-					setStudyMinutes(parseInt(savedTime));
-				} else {
-					setStudyMinutes(0);
-					localStorage.setItem("lastSaveDate", today);
-					localStorage.setItem("todayStudyTime", "0");
-				}
 			} catch (error) {
 				console.error("Error loading analytics:", error);
 			} finally {
@@ -130,27 +59,13 @@ const Home: React.FC = () => {
 		loadAnalytics();
 	}, [lastActivityUpdate]);
 
-	// Update study time periodically (only when app is active)
-	useEffect(() => {
-		const interval = setInterval(() => {
-			if (!document.hidden) {
-				setStudyMinutes((prev) => {
-					const newTime = prev + 1;
-					localStorage.setItem("todayStudyTime", newTime.toString());
-					return newTime;
-				});
-			}
-		}, 60000); // Update every minute
-
-		return () => clearInterval(interval);
-	}, []);
-
 	const allNotes = getAllNotesOnly();
+	const displayStudyTime = getTodayStudyTime();
 
 	// Calculate stats with real data
 	const stats = {
 		streak: analytics?.studyStreak || 0,
-		totalNotes: allNotes.length, // Use real notes count
+		totalNotes: allNotes.length,
 		totalQuizzes: analytics?.totalQuizzes || 0,
 		totalFlashcards: analytics?.totalFlashcards || 0,
 		weeklyActivity:
@@ -159,34 +74,16 @@ const Home: React.FC = () => {
 		averageScore: analytics?.averageQuizScore || 0,
 	};
 
-	useEffect(() => {
-		const loadAnalytics = async () => {
-			try {
-				setLoading(true);
-
-				// Get dashboard analytics
-				const analyticsResult = await window.dashboardApi.getAnalytics();
-				if (analyticsResult.success) {
-					setAnalytics(analyticsResult.analytics);
-				}
-
-				// Get recent activity - this now comes properly formatted from backend
-				const activityResult = await window.dashboardApi.getRecentActivity();
-				if (activityResult.success) {
-					setRecentActivity(activityResult.activity);
-				}
-			} catch (error) {
-				console.error("Error loading analytics:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		loadAnalytics();
-	}, [lastActivityUpdate]);
-
-	function getTimeAgo(date: Date): string {
+	function getTimeAgo(timestamp: string | Date): string {
 		const now = new Date();
+		const date =
+			typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+
+		// Check if the date is valid
+		if (isNaN(date.getTime())) {
+			return "Unknown time";
+		}
+
 		const diffMs = now.getTime() - date.getTime();
 		const diffMins = Math.floor(diffMs / (1000 * 60));
 		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -264,7 +161,8 @@ const Home: React.FC = () => {
 							<Clock className="text-soma-accent3" size={20} />
 							<span>
 								{/* Fix: Use proper hours and minutes calculation */}
-								{Math.floor(studyMinutes / 60)}h {studyMinutes % 60}m today
+								{Math.floor(displayStudyTime / 60)}h {displayStudyTime % 60}m
+								today
 							</span>
 						</div>
 					</div>
@@ -407,11 +305,58 @@ const Home: React.FC = () => {
 										);
 									})
 								) : (
-									<div className="text-center py-8">
-										<p className="text-soma-text-secondary">
-											No recent activity. Start studying to see your progress
-											here!
+									<div className="text-center py-12">
+										{/* Animated icon stack */}
+										<div className="relative mb-6 flex justify-center">
+											<div className="relative">
+												{/* Background circles with subtle animation */}
+												<div className="absolute inset-0 w-20 h-20 bg-soma-accent1/10 rounded-full animate-pulse"></div>
+												<div className="absolute inset-2 w-16 h-16 bg-soma-accent2/10 rounded-full animate-pulse delay-75"></div>
+												<div className="absolute inset-4 w-12 h-12 bg-soma-accent3/10 rounded-full animate-pulse delay-150"></div>
+
+												{/* Main icon */}
+												<div className="relative w-20 h-20 flex items-center justify-center">
+													<Clock
+														size={32}
+														className="text-soma-text-secondary opacity-60"
+													/>
+												</div>
+											</div>
+										</div>
+
+										{/* Main message */}
+										<h3 className="text-xl font-semibold text-soma-text-primary mb-3">
+											No recent activity yet
+										</h3>
+
+										{/* Description */}
+										<p className="text-soma-text-secondary mb-6 max-w-sm mx-auto leading-relaxed">
+											Your study activities will appear here. Start creating
+											notes, taking quizzes, or reviewing flashcards to see your
+											progress!
 										</p>
+
+										{/* Action suggestions */}
+										<div className="flex flex-wrap justify-center gap-3">
+											<div className="flex items-center gap-2 px-4 py-2 bg-soma-accent1/10 rounded-full cursor-pointer">
+												<NotebookText size={16} className="text-soma-accent1" />
+												<span className="text-sm text-soma-accent1 font-medium">
+													Create a note
+												</span>
+											</div>
+											<div className="flex items-center gap-2 px-4 py-2 bg-soma-accent2/10 rounded-full cursor-pointer">
+												<Brain size={16} className="text-soma-accent2" />
+												<span className="text-sm text-soma-accent2 font-medium">
+													Take a quiz
+												</span>
+											</div>
+											<div className="flex items-center gap-2 px-4 py-2 bg-soma-accent3/10 rounded-full cursor-pointer">
+												<WalletCards size={16} className="text-soma-accent3" />
+												<span className="text-sm text-soma-accent3 font-medium">
+													Review cards
+												</span>
+											</div>
+										</div>
 									</div>
 								)}
 							</div>

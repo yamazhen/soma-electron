@@ -63,14 +63,14 @@ export class DashboardService {
 
 	getRecentActivity(): RecentActivity[] {
 		try {
-			const activities = this.activityDAL.getRecentActivities(8);
-
+			const activities = this.activityDAL.getRecentActivities(5);
+			const utc = "Z";
 			return activities.map((activity) => ({
 				id: `${activity.type}-${activity.id}`,
 				type: activity.type,
 				title: activity.title,
 				subtitle: activity.subtitle || "No description",
-				timestamp: new Date(activity.timestamp),
+				timestamp: new Date(activity.timestamp + utc),
 				icon: this.getIconForType(activity.type),
 				color: this.getColorForType(activity.type),
 			}));
@@ -82,8 +82,8 @@ export class DashboardService {
 
 	private getAllNotesCount(): number {
 		try {
-			// This would need to be implemented to get actual notes count
-			// For now, return a placeholder
+			// this would need to be implemented to get actual notes count
+			// for now, return a placeholder
 			return 0;
 		} catch (error) {
 			console.error("Error getting notes count:", error);
@@ -99,6 +99,8 @@ export class DashboardService {
 				return "WalletCards";
 			case "note":
 				return "NotebookText";
+			case "note-edit":
+				return "Edit3";
 			default:
 				return "Circle";
 		}
@@ -118,7 +120,7 @@ export class DashboardService {
 	}
 
 	logActivity(
-		type: "note" | "quiz" | "flashcard",
+		type: "note" | "quiz" | "flashcard" | "note-edit",
 		title: string,
 		entity_id: string,
 		metadata?: any,
@@ -145,6 +147,8 @@ export class DashboardService {
 					? `${metadata.cardCount} cards`
 					: "Deck reviewed";
 			case "note":
+				return "Note created";
+			case "note-edit":
 				return "Note modified";
 			default:
 				return "Activity completed";

@@ -3,7 +3,7 @@ import { BaseDAL } from "./BaseDAL";
 
 interface ActivityLogEntry {
 	id?: number;
-	type: "note" | "quiz" | "flashcard";
+	type: "note" | "quiz" | "flashcard" | "note-edit";
 	title: string;
 	subtitle?: string;
 	entity_id: string;

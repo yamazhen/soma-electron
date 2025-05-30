@@ -16,6 +16,29 @@ export const useStudyTracking = () => {
 	const studyStartTime = useRef<number | null>(null);
 	const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
+	// Load today's study time on mount
+	useEffect(() => {
+		const today = new Date().toDateString();
+		const savedDate = localStorage.getItem("studyTrackingDate");
+		const savedTime = localStorage.getItem("studyTrackingMinutes");
+
+		if (savedDate === today && savedTime) {
+			setStudyMinutes(Number.parseInt(savedTime));
+		} else {
+			setStudyMinutes(0);
+			localStorage.setItem("studyTrackingDate", today);
+			localStorage.setItem("studyTrackingMinutes", "0");
+		}
+	}, []);
+
+	// Save study time whenever it changes
+	useEffect(() => {
+		const today = new Date().toDateString();
+		localStorage.setItem("studyTrackingDate", today);
+		localStorage.setItem("studyTrackingMinutes", studyMinutes.toString());
+	}, [studyMinutes]);
+
+	// ADD THE MISSING FUNCTIONS:
 	const resetInactivityTimer = () => {
 		if (inactivityTimer.current) {
 			clearTimeout(inactivityTimer.current);
@@ -27,7 +50,7 @@ export const useStudyTracking = () => {
 					endStudySession();
 				},
 				5 * 60 * 1000,
-			);
+			); // 5 minutes
 		}
 	};
 
@@ -46,18 +69,12 @@ export const useStudyTracking = () => {
 		}
 	};
 
-	// Alias for compatibility with existing code
-	const trackStudyActivity = startStudySession;
-
 	const endStudySession = () => {
 		if (isStudying && studyStartTime.current) {
 			const sessionTime = Math.floor(
 				(Date.now() - studyStartTime.current) / 60000,
 			);
-			setStudyMinutes((prev) => {
-				const newTime = prev + sessionTime;
-				return newTime;
-			});
+			setStudyMinutes((prev) => prev + sessionTime);
 
 			setIsStudying(false);
 			studyStartTime.current = null;
@@ -69,6 +86,9 @@ export const useStudyTracking = () => {
 			}
 		}
 	};
+
+	// Alias for compatibility
+	const trackStudyActivity = startStudySession;
 
 	const getTodayStudyTime = () => {
 		return studyMinutes;
@@ -94,14 +114,14 @@ export const useStudyTracking = () => {
 				clearTimeout(inactivityTimer.current);
 			}
 		};
-	}, [isStudying, resetInactivityTimer]);
+	}, [isStudying]); // Remove resetInactivityTimer from deps since it's defined in this component
 
 	return {
 		studyMinutes,
 		isStudying,
 		currentSession,
 		startStudySession,
-		trackStudyActivity, // Add this alias
+		trackStudyActivity,
 		endStudySession,
 		getTodayStudyTime,
 	};

@@ -5,6 +5,15 @@ export const useFileState = (onFileSelected?: (filePath: string) => void) => {
 	const [selectedFile, setSelectedFile] = useState<string | null>(null);
 	const [sortMethod, setSortMethod] = useState<SortMethod>("custom");
 
+	const getFilename = (filePath: string) => {
+		return (
+			filePath
+				.split("/")
+				.pop()
+				?.replace(/\.[^/.]+$/, "") || null
+		);
+	};
+
 	const fileName = selectedFile
 		? selectedFile
 				.split("/")
@@ -108,6 +117,15 @@ export const useFileState = (onFileSelected?: (filePath: string) => void) => {
 			if (result) {
 				await loadNotes();
 				setSelectedFile(result.path);
+
+				if (result.content) {
+					await window.dashboardApi.logActivity(
+						"note",
+						getFilename(result.path),
+						result.path,
+						{ type: "create", contentLength: result.content.length },
+					);
+				}
 			}
 		} catch (error) {
 			console.error("Error creating note:", error);

@@ -91,10 +91,6 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
   foreign key (quiz_id) references quiz (id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_quiz_attempts_date ON quiz_attempts (created_at);
-
-CREATE INDEX IF NOT EXISTS idx_question_responses_correct ON question_responses (is_correct);
-
 -- for storing individual question responses
 CREATE TABLE IF NOT EXISTS question_responses (
   id integer primary key,
@@ -105,6 +101,10 @@ CREATE TABLE IF NOT EXISTS question_responses (
   foreign key (attempt_id) references quiz_attempts (id) on delete cascade,
   foreign key (question_id) references questions (id) on delete cascade
 );
+
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_date ON quiz_attempts (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_question_responses_correct ON question_responses (is_correct);
 
 /* 
 * FLASHCARD SCHEMA 
@@ -144,12 +144,14 @@ CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers (question_id);
 
 CREATE TABLE IF NOT EXISTS activity_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT NOT NULL CHECK (type IN ('note', 'quiz', 'flashcard')),
+  type TEXT NOT NULL CHECK (
+    type IN ('note', 'note-edit', 'quiz', 'flashcard')
+  ),
   title TEXT NOT NULL,
   subtitle TEXT,
-  entity_id TEXT, -- path for notes, id for quizzes/decks
+  entity_id TEXT,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  metadata TEXT -- JSON string for additional data
+  metadata TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_activity_timestamp ON activity_log (timestamp DESC);

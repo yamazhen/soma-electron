@@ -16,6 +16,7 @@ export async function resetDatabase() {
 	}
 
 	try {
+		console.log("Resetting database...");
 		const dbPath = path.join(app.getPath("userData"), dbName);
 		await unlink(dbPath);
 		console.log("Database reset successfully.");
@@ -58,7 +59,6 @@ export async function initDatabase(): Promise<Database | null> {
 			db.exec(`PRAGMA user_version = ${CURRENT_SCHEMA_VERSION};`);
 			db.exec("COMMIT;");
 		} else if (env.nodeEnv === "development") {
-			console.log("Development mode: resetting database");
 			db.exec("BEGIN TRANSACTION;");
 			db.exec(schema);
 			db.exec(`PRAGMA user_version = ${CURRENT_SCHEMA_VERSION};`);
