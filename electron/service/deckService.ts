@@ -1,171 +1,127 @@
+import {
+  handleServiceCall,
+  handleServiceOperation,
+} from "../utils/serviceHelper";
 import { DeckDAL } from "../database/dal";
 
 export class DeckService {
-	private deckDAL = new DeckDAL();
+  private deckDAL = new DeckDAL();
 
-	createDeck(deckData: Deck): {
-		success: boolean;
-		deckId?: number;
-		error?: string;
-	} {
-		try {
-			if (!deckData.title?.trim()) {
-				return { success: false, error: "Deck title is required" };
-			}
+  async createDeck(deckData: Deck): Promise<IpcResponseData<number>> {
+    return await handleServiceCall(() => {
+      if (!deckData.title?.trim()) {
+        throw new Error("Deck title is required");
+      }
 
-			if (!deckData.cards || deckData.cards.length === 0) {
-				return { success: false, error: "Deck must have at least one card" };
-			}
+      if (!deckData.cards || deckData.cards.length === 0) {
+        throw new Error("Deck must have at least one card");
+      }
 
-			for (const card of deckData.cards) {
-				if (!card.front?.trim() || !card.back?.trim()) {
-					return {
-						success: false,
-						error: "All cards must have front and back content",
-					};
-				}
-			}
+      for (const card of deckData.cards) {
+        if (!card.front?.trim() || !card.back?.trim()) {
+          throw new Error("All cards must have front and back content");
+        }
+      }
 
-			const deckId = this.deckDAL.create(deckData);
-			return { success: true, deckId };
-		} catch (error) {
-			console.error("Error in createDeck service:", error);
-			return { success: false, error: "Failed to create deck" };
-		}
-	}
+      return this.deckDAL.create(deckData);
+    }, "Failed to create deck");
+  }
 
-	getDeckById(deckId: number): {
-		success: boolean;
-		deck?: Deck;
-		error?: string;
-	} {
-		try {
-			if (!deckId || deckId <= 0) {
-				return { success: false, error: "Invalid deck ID" };
-			}
+  async getDeckById(deckId: number): Promise<IpcResponseData<Deck>> {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
 
-			const deck = this.deckDAL.findById(deckId);
-			if (!deck) {
-				return { success: false, error: "Deck not found" };
-			}
+      const deck = this.deckDAL.findById(deckId);
+      if (!deck) {
+        throw new Error("Deck not found");
+      }
+      return deck;
+    }, "Failed to retrieve deck");
+  }
 
-			return { success: true, deck };
-		} catch (error) {
-			console.error("Error in getDeckById service:", error);
-			return { success: false, error: "Failed to retrieve deck" };
-		}
-	}
+  async getAllDecks(): Promise<IpcResponseData<Deck[]>> {
+    return await handleServiceCall(() => {
+      return this.deckDAL.findAll();
+    }, "Failed to retrieve decks");
+  }
 
-	getAllDecks(): { success: boolean; decks?: Deck[]; error?: string } {
-		try {
-			const decks = this.deckDAL.findAll();
-			return { success: true, decks };
-		} catch (error) {
-			console.error("Error in getAllDecks service:", error);
-			return { success: false, error: "Failed to retrieve decks" };
-		}
-	}
+  async updateDeck(id: number, deckData: Partial<Deck>): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
+      if (!id || id <= 0) {
+        throw new Error("Invalid deck ID");
+      }
 
-	updateDeck(
-		id: number,
-		deckData: Partial<Deck>,
-	): { success: boolean; error?: string } {
-		try {
-			if (!id || id <= 0) {
-				return { success: false, error: "Invalid deck ID" };
-			}
+      const existingDeck = this.deckDAL.findById(id);
+      if (!existingDeck) {
+        throw new Error("Deck not found");
+      }
 
-			const existingDeck = this.deckDAL.findById(id);
-			if (!existingDeck) {
-				return { success: false, error: "Deck not found" };
-			}
+      if (deckData.title !== undefined && !deckData.title.trim()) {
+        throw new Error("Deck title cannot be empty");
+      }
 
-			if (deckData.title !== undefined && !deckData.title.trim()) {
-				return { success: false, error: "Deck title cannot be empty" };
-			}
+      if (deckData.cards) {
+        for (const card of deckData.cards) {
+          if (!card.front?.trim() || !card.back?.trim()) {
+            throw new Error("All cards must have front and back content");
+          }
+        }
+      }
 
-			if (deckData.cards) {
-				for (const card of deckData.cards) {
-					if (!card.front?.trim() || !card.back?.trim()) {
-						return {
-							success: false,
-							error: "All cards must have front and back content",
-						};
-					}
-				}
-			}
+      const success = this.deckDAL.update(id, deckData);
+      if (!success) {
+        return false;
+      }
+    }, "Failed to update deck");
+  }
 
-			const success = this.deckDAL.update(id, deckData);
-			if (!success) {
-				return { success: false, error: "Failed to update deck" };
-			}
+  async deleteDeck(id: number): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
+      if (!id || id <= 0) {
+        throw new Error("Invalid deck ID");
+      }
 
-			return { success: true };
-		} catch (error) {
-			console.error("Error in updateDeck service:", error);
-			return { success: false, error: "Failed to update deck" };
-		}
-	}
+      const existingDeck = this.deckDAL.findById(id);
+      if (!existingDeck) {
+        throw new Error("Deck not found");
+      }
 
-	deleteDeck(id: number): { success: boolean; error?: string } {
-		try {
-			if (!id || id <= 0) {
-				return { success: false, error: "Invalid deck ID" };
-			}
+      const success = this.deckDAL.delete(id);
+      if (!success) {
+        throw new Error("Failed to delete deck");
+      }
+    }, "Failed to delete deck");
+  }
 
-			const existingDeck = this.deckDAL.findById(id);
-			if (!existingDeck) {
-				return { success: false, error: "Deck not found" };
-			}
+  async searchDecks(query: string): Promise<IpcResponseData<Deck[]>> {
+    return await handleServiceCall(async () => {
+      if (!query?.trim()) {
+        const allDecks = await this.getAllDecks();
+        if (!allDecks.success) {
+          throw new Error(allDecks.error);
+        }
+        if (!allDecks.data) {
+          throw new Error("No decks found");
+        }
+        return allDecks.data;
+      }
 
-			const success = this.deckDAL.delete(id);
-			if (!success) {
-				return { success: false, error: "Failed to delete deck" };
-			}
+      return this.deckDAL.getDecksByTitle(query.trim());
+    }, "Failed to search decks");
+  }
 
-			return { success: true };
-		} catch (error) {
-			console.error("Error in deleteDeck service:", error);
-			return { success: false, error: "Failed to delete deck" };
-		}
-	}
+  async getDeckStats(
+    id: number,
+  ): Promise<IpcResponseData<{ cardCount: number }>> {
+    return await handleServiceCall(() => {
+      if (!id || id <= 0) {
+        throw new Error("Invalid deck ID");
+      }
 
-	searchDecks(query: string): {
-		success: boolean;
-		decks?: Deck[];
-		error?: string;
-	} {
-		try {
-			if (!query?.trim()) {
-				return this.getAllDecks();
-			}
-
-			const decks = this.deckDAL.getDecksByTitle(query.trim());
-			return { success: true, decks };
-		} catch (error) {
-			console.error("Error in searchDecks service:", error);
-			return { success: false, error: "Failed to search decks" };
-		}
-	}
-
-	getDeckStats(id: number): {
-		success: boolean;
-		stats?: { cardCount: number };
-		error?: string;
-	} {
-		try {
-			if (!id || id <= 0) {
-				return { success: false, error: "Invalid deck ID" };
-			}
-
-			const cardCount = this.deckDAL.getCardCount(id);
-			return {
-				success: true,
-				stats: { cardCount },
-			};
-		} catch (error) {
-			console.error("Error in getDeckStats service:", error);
-			return { success: false, error: "Failed to get deck statistics" };
-		}
-	}
+      const cardCount = this.deckDAL.getCardCount(id);
+      return { cardCount };
+    }, "Failed to retrieve deck statistics");
+  }
 }

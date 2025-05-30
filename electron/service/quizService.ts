@@ -316,17 +316,14 @@ export class QuizService {
     return this.questionDAL.scheduleExistingQuestions();
   }
 
-  // Add method to get mixed review questions
   getMixedReviewQuestions(limit: number = 20): QuestionWithDetails[] {
     return this.questionDAL.getDueQuestions(limit);
   }
 
-  // Add method to get quiz-specific scheduled questions
   getQuizScheduledQuestions(quizId: number): QuestionWithDetails[] {
     return this.questionDAL.getScheduledQuestionsByQuizId(quizId);
   }
 
-  // Fix the scheduling submission method
   submitQuizAttemptWithScheduling(
     quizId: number,
     answers: { questionId: number; answer: string; responseTime?: number }[],
@@ -338,25 +335,19 @@ export class QuizService {
 
     let questions: QuestionWithDetails[];
 
-    // Handle special quiz IDs for mixed reviews
     if (quizId === -1) {
-      // General review - get due questions across all quizzes
       const questionIds = answers.map((a) => a.questionId);
       questions = questionIds
         .map((id) => this.questionDAL.getById(id))
         .filter(Boolean);
     } else if (quizId === -2) {
-      // Weak questions review
       const questionIds = answers.map((a) => a.questionId);
       questions = questionIds
         .map((id) => this.questionDAL.getById(id))
         .filter(Boolean);
     } else {
-      // FIXED: For regular quiz reviews, only get questions that are actually due
-      // First get all questions from the quiz
       const allQuizQuestions = this.questionDAL.getByQuizId(quizId);
 
-      // Filter to only include questions that are actually due or being answered early
       const answeredQuestionIds = new Set(answers.map((a) => a.questionId));
       questions = allQuizQuestions.filter((q) => answeredQuestionIds.has(q.id));
     }
@@ -372,7 +363,6 @@ export class QuizService {
       is_correct: boolean;
     }[] = [];
 
-    // Process answers and update scheduling
     for (const answer of answers) {
       const question = questions.find((q) => q.id === answer.questionId);
       if (!question) continue;
@@ -386,15 +376,13 @@ export class QuizService {
         is_correct: isCorrect,
       });
 
-      // FIXED: Update scheduling for this question regardless of when it was due
       this.questionDAL.updateScheduling(
         answer.questionId,
         isCorrect,
-        answer.responseTime,
+        answer.responseTime!,
       );
     }
 
-    // Only save attempt for real quizzes, not mixed reviews
     let attemptId: number;
     if (quizId > 0) {
       attemptId = this.attemptDAL.create({
@@ -410,7 +398,7 @@ export class QuizService {
         });
       }
     } else {
-      attemptId = -1; // Placeholder for mixed reviews
+      attemptId = -1;
     }
 
     return {

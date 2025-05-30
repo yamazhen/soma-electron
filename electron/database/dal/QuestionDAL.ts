@@ -399,11 +399,10 @@ export class QuestionDAL extends BaseDAL {
     return questions.map((question) => this.loadDetails(question));
   }
 
-  // Fix the spaced repetition algorithm
   updateScheduling(
     questionId: number,
     isCorrect: boolean,
-    responseTime?: number,
+    responseTime: number,
   ): boolean {
     return this.transaction(() => {
       const question = this.getById(questionId);
@@ -415,24 +414,20 @@ export class QuestionDAL extends BaseDAL {
       let newEaseFactor = question.ease_factor || 2.5;
       let newConsecutiveCorrect = question.consecutive_correct || 0;
 
-      // Check if this is an early review
       const isEarlyReview =
         question.next_review_date && new Date(question.next_review_date) > now;
 
       if (isCorrect) {
         newConsecutiveCorrect++;
 
-        // SM-2 algorithm: specific intervals for first reviews
         if (newConsecutiveCorrect === 1) {
-          newInterval = 1; // First correct answer: 1 day
+          newInterval = 1;
         } else if (newConsecutiveCorrect === 2) {
-          newInterval = 6; // Second correct answer: 6 days
+          newInterval = 6;
         } else {
-          // For subsequent reviews: interval = previous_interval * ease_factor
           newInterval = Math.ceil(newInterval * newEaseFactor);
         }
 
-        // If this is an early review, apply a penalty to the interval
         if (isEarlyReview && newConsecutiveCorrect > 2) {
           const daysBetween = question.next_review_date
             ? Math.max(
@@ -445,23 +440,25 @@ export class QuestionDAL extends BaseDAL {
               )
             : 0;
 
-          // Reduce interval based on how early it was reviewed
           const earlyPenalty = Math.max(0.5, 1 - daysBetween / newInterval);
           newInterval = Math.ceil(newInterval * earlyPenalty);
         }
 
-        // Adjust ease factor for correct answers (quality = 4 in SM-2)
-        const quality = 4;
+        const quality = isCorrect
+          ? responseTime < 10
+            ? 5
+            : responseTime < 20
+              ? 4
+              : 3
+          : 1;
         newEaseFactor = Math.max(
           1.3,
           newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)),
         );
       } else {
-        // Reset on incorrect answer
         newConsecutiveCorrect = 0;
-        newInterval = 1; // Always start from 1 day for failed cards
+        newInterval = 1;
 
-        // Decrease ease factor for incorrect answers (quality = 2 in SM-2)
         const quality = 2;
         newEaseFactor = Math.max(
           1.3,
@@ -469,9 +466,8 @@ export class QuestionDAL extends BaseDAL {
         );
       }
 
-      // Response time adjustment (optional enhancement)
       if (responseTime && isCorrect) {
-        const avgResponseTime = 15; // seconds
+        const avgResponseTime = 15;
         if (responseTime < avgResponseTime / 2) {
           newInterval = Math.ceil(newInterval * 0.9);
         } else if (responseTime > avgResponseTime * 2) {
@@ -479,7 +475,6 @@ export class QuestionDAL extends BaseDAL {
         }
       }
 
-      // Calculate next review date
       const nextReviewDate = new Date();
       nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
 

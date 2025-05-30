@@ -1,3 +1,7 @@
+import {
+  handleServiceCall,
+  handleServiceOperation,
+} from "../utils/serviceHelper";
 import { QuizAttemptDAL, DeckDAL, ActivityDAL } from "../database/dal";
 
 export class DashboardService {
@@ -5,8 +9,8 @@ export class DashboardService {
   private deckDAL = new DeckDAL();
   private activityDAL = new ActivityDAL();
 
-  getAnalytics(): DashboardAnalytics {
-    try {
+  async getAnalytics(): Promise<IpcResponseData<DashboardAnalytics>> {
+    return await handleServiceCall(() => {
       const quizAnalytics = this.quizAttemptDAL.getAnalytics();
       const allDecks = this.deckDAL.findAll();
 
@@ -43,49 +47,34 @@ export class DashboardService {
         averageQuizScore: quizAnalytics.averageScore,
         notesCreatedThisWeek,
       };
-    } catch (error) {
-      console.error("Error getting dashboard analytics:", error);
-      return {
-        studyStreak: 0,
-        totalNotes: 0,
-        totalQuizzes: 0,
-        totalFlashcards: 0,
-        quizzesCompletedThisWeek: 0,
-        flashcardsReviewedThisWeek: 0,
-        averageQuizScore: 0,
-        notesCreatedThisWeek: 0,
-      };
-    }
-  }
-
-  getRecentActivity(): RecentActivity[] {
-    try {
-      const activities = this.activityDAL.getRecentActivities(5);
-      const utc = "Z";
-      return activities.map((activity) => ({
-        id: `${activity.type}-${activity.id}`,
-        type: activity.type,
-        title: activity.title,
-        subtitle: activity.subtitle || "No description",
-        timestamp: new Date(activity.timestamp + utc),
-        icon: this.getIconForType(activity.type),
-        color: this.getColorForType(activity.type),
-      }));
-    } catch (error) {
-      console.error("Error getting recent activity:", error);
-      return [];
-    }
+    }, "Failed to retrive dashboard analytics");
   }
 
   private getAllNotesCount(): number {
     try {
-      // this would need to be implemented to get actual notes count
-      // for now, return a placeholder
+      // using another method to get total notes count
+      // right now, this is a placeholder
+      // ideally, this should query the database or file system
       return 0;
     } catch (error) {
       console.error("Error getting notes count:", error);
       return 0;
     }
+  }
+
+  async getRecentActivity(): Promise<IpcResponseData<RecentActivity[]>> {
+    return await handleServiceCall(() => {
+      const activities = this.activityDAL.getRecentActivities(4);
+      return activities.map((activity) => ({
+        id: `${activity.type}-${activity.id}`,
+        type: activity.type,
+        title: activity.title,
+        subtitle: activity.subtitle || "No description",
+        timestamp: new Date(`${activity.timestamp}Z`),
+        icon: this.getIconForType(activity.type),
+        color: this.getColorForType(activity.type),
+      }));
+    });
   }
 
   private getIconForType(type: string): string {
@@ -116,13 +105,13 @@ export class DashboardService {
     }
   }
 
-  logActivity(
-    type: "note" | "quiz" | "flashcard" | "note-edit",
+  async logActivity(
+    type: ActivityType,
     title: string,
     entity_id: string,
     metadata?: any,
-  ): void {
-    try {
+  ): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
       this.activityDAL.logActivity({
         type,
         title,
@@ -130,9 +119,7 @@ export class DashboardService {
         subtitle: this.generateSubtitle(type, metadata),
         metadata: metadata ? JSON.stringify(metadata) : undefined,
       });
-    } catch (error) {
-      console.error("Error logging activity:", error);
-    }
+    }, "Failed to log activity");
   }
 
   private generateSubtitle(type: string, metadata?: any): string {
