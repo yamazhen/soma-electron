@@ -1,3 +1,4 @@
+// src/context/activityState.ts
 import { useCallback, useState } from "react";
 
 export const useActivityState = () => {
@@ -5,26 +6,20 @@ export const useActivityState = () => {
 
 	const recordActivity = useCallback(
 		async (type: "quiz" | "note" | "flashcard", details: any) => {
-			// Record the activity timestamp
-			const activities = JSON.parse(
-				localStorage.getItem("recentActivities") || "[]",
-			);
-			const newActivity = {
-				id: `${type}-${Date.now()}`,
-				type,
-				timestamp: new Date().toISOString(),
-				details,
-			};
+			try {
+				// Use the new dashboard API instead of localStorage
+				await window.dashboardApi.logActivity(
+					type,
+					details.title || `${type} activity`,
+					details.entityId || `${type}-${Date.now()}`,
+					details,
+				);
 
-			activities.unshift(newActivity);
-			// Keep only last 20 activities
-			localStorage.setItem(
-				"recentActivities",
-				JSON.stringify(activities.slice(0, 20)),
-			);
-
-			// Trigger dashboard refresh
-			setLastActivityUpdate(Date.now());
+				// Trigger dashboard refresh
+				setLastActivityUpdate(Date.now());
+			} catch (error) {
+				console.error("Error recording activity:", error);
+			}
 		},
 		[],
 	);

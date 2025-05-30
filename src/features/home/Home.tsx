@@ -24,7 +24,6 @@ const Home: React.FC = () => {
 		setQuizView,
 		setCardView,
 		handleCreateNote,
-		recordActivity,
 		lastActivityUpdate,
 	} = useAppContext();
 
@@ -50,14 +49,6 @@ const Home: React.FC = () => {
 			localStorage.setItem("todayStudyTime", "0");
 		}
 	}, []);
-
-	// Start study session when user interacts with study features
-	const startStudySession = () => {
-		if (!isStudying) {
-			setIsStudying(true);
-			studyStartTime.current = Date.now();
-		}
-	};
 
 	// End study session and add time
 	const endStudySession = () => {
@@ -168,22 +159,31 @@ const Home: React.FC = () => {
 		averageScore: analytics?.averageQuizScore || 0,
 	};
 
-	// Combine recent activities with notes data
-	const combinedRecentActivities = [
-		...recentActivity,
-		// Add recent notes
-		...allNotes.slice(0, 3).map((note, index) => ({
-			id: `note-${index}`,
-			type: "note" as const,
-			title: note.name,
-			subtitle: `Modified ${getTimeAgo(note.modifiedAt)}`,
-			timestamp: note.modifiedAt,
-			icon: "NotebookText",
-			color: "accent1",
-		})),
-	]
-		.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-		.slice(0, 5);
+	useEffect(() => {
+		const loadAnalytics = async () => {
+			try {
+				setLoading(true);
+
+				// Get dashboard analytics
+				const analyticsResult = await window.dashboardApi.getAnalytics();
+				if (analyticsResult.success) {
+					setAnalytics(analyticsResult.analytics);
+				}
+
+				// Get recent activity - this now comes properly formatted from backend
+				const activityResult = await window.dashboardApi.getRecentActivity();
+				if (activityResult.success) {
+					setRecentActivity(activityResult.activity);
+				}
+			} catch (error) {
+				console.error("Error loading analytics:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadAnalytics();
+	}, [lastActivityUpdate]);
 
 	// Helper function to calculate time ago
 	function getTimeAgo(date: Date): string {
@@ -355,8 +355,8 @@ const Home: React.FC = () => {
 								Recent Activity
 							</h2>
 							<div className="space-y-4">
-								{combinedRecentActivities.length > 0 ? (
-									combinedRecentActivities.map((activity) => {
+								{recentActivity.length > 0 ? (
+									recentActivity.map((activity) => {
 										const IconComponent = getActivityIcon(activity.icon);
 										return (
 											<div

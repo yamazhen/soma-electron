@@ -1,216 +1,89 @@
-import { QuizAttemptDAL, DeckDAL } from "../database/dal";
+// electron/service/dashboardService.ts
+import { QuizAttemptDAL, DeckDAL, ActivityDAL } from "../database/dal";
 
 export class DashboardService {
 	private quizAttemptDAL = new QuizAttemptDAL();
 	private deckDAL = new DeckDAL();
+	private activityDAL = new ActivityDAL(); // Add this
 
-	getDashboardAnalytics(): DashboardAnalytics {
-		try {
-			// Study streak from quiz attempts
-			const studyStreak = this.calculateStudyStreak();
-
-			// Notes count (from file system)
-			const totalNotes = this.getTotalNotesCount();
-
-			// Quiz metrics
-			const totalQuizzes = this.getTotalQuizzesCount();
-			const quizzesCompletedThisWeek = this.getQuizzesCompletedThisWeek();
-			const averageQuizScore = this.getAverageQuizScore();
-
-			// Flashcard metrics
-			const totalFlashcards = this.getTotalFlashcardsCount();
-			const flashcardsReviewedThisWeek = this.getFlashcardsReviewedThisWeek();
-
-			// Notes created this week
-			const notesCreatedThisWeek = this.getNotesCreatedThisWeek();
-
-			return {
-				studyStreak,
-				totalNotes,
-				totalQuizzes,
-				totalFlashcards,
-				quizzesCompletedThisWeek,
-				flashcardsReviewedThisWeek,
-				averageQuizScore,
-				notesCreatedThisWeek,
-			};
-		} catch (error) {
-			console.error("Error getting dashboard analytics:", error);
-			return {
-				studyStreak: 0,
-				totalNotes: 0,
-				totalQuizzes: 0,
-				totalFlashcards: 0,
-				quizzesCompletedThisWeek: 0,
-				flashcardsReviewedThisWeek: 0,
-				averageQuizScore: 0,
-				notesCreatedThisWeek: 0,
-			};
-		}
-	}
-
+	// Remove the old getRecentActivity method and replace with:
 	getRecentActivity(): RecentActivity[] {
 		try {
-			const activities: RecentActivity[] = [];
+			const activities = this.activityDAL.getRecentActivities(8);
 
-			// Recent quiz attempts (last 10)
-			const recentQuizzes = this.quizAttemptDAL.db
-				.prepare(`
-          SELECT qa.*, q.title as quiz_title
-          FROM quiz_attempts qa
-          JOIN quiz q ON qa.quiz_id = q.id
-          ORDER BY qa.created_at DESC
-          LIMIT 10
-        `)
-				.all();
-
-			for (const quiz of recentQuizzes) {
-				activities.push({
-					id: `quiz-${quiz.id}`,
-					type: "quiz",
-					title: quiz.quiz_title,
-					subtitle: `Score: ${Math.round(quiz.percentage)}%`,
-					timestamp: new Date(quiz.created_at),
-					icon: "Brain",
-					color: "accent2",
-				});
-			}
-
-			// Recent deck creations/updates
-			const recentDecks = this.deckDAL.db
-				.prepare(`
-          SELECT * FROM decks 
-          ORDER BY id DESC 
-          LIMIT 5
-        `)
-				.all();
-
-			for (const deck of recentDecks) {
-				activities.push({
-					id: `deck-${deck.id}`,
-					type: "flashcard",
-					title: deck.title,
-					subtitle: "Flashcard deck created",
-					timestamp: new Date(), // You might want to add created_at to decks table
-					icon: "WalletCards",
-					color: "accent3",
-				});
-			}
-
-			// Sort by timestamp and return latest 8
-			return activities
-				.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-				.slice(0, 8);
+			return activities.map((activity) => ({
+				id: `${activity.type}-${activity.id}`,
+				type: activity.type,
+				title: activity.title,
+				subtitle: activity.subtitle || "No description",
+				timestamp: new Date(activity.timestamp), // Proper Date conversion
+				icon: this.getIconForType(activity.type),
+				color: this.getColorForType(activity.type),
+			}));
 		} catch (error) {
 			console.error("Error getting recent activity:", error);
 			return [];
 		}
 	}
 
-	private calculateStudyStreak(): number {
-		try {
-			const attempts = this.quizAttemptDAL.db
-				.prepare(`
-          SELECT DISTINCT date(created_at) as study_date 
-          FROM quiz_attempts 
-          ORDER BY study_date DESC
-        `)
-				.all() as { study_date: string }[];
-
-			if (attempts.length === 0) return 0;
-
-			let streak = 0;
-			const today = new Date().toISOString().split("T")[0];
-			let currentDate = new Date();
-
-			for (const attempt of attempts) {
-				const studyDate = attempt.study_date;
-				const expectedDate = currentDate.toISOString().split("T")[0];
-
-				if (studyDate === expectedDate) {
-					streak++;
-					currentDate.setDate(currentDate.getDate() - 1);
-				} else if (studyDate === today && streak === 0) {
-					streak = 1;
-					currentDate.setDate(currentDate.getDate() - 1);
-				} else {
-					break;
-				}
-			}
-
-			return streak;
-		} catch (error) {
-			console.error("Error calculating study streak:", error);
-			return 0;
+	private getIconForType(type: string): string {
+		switch (type) {
+			case "quiz":
+				return "Brain";
+			case "flashcard":
+				return "WalletCards";
+			case "note":
+				return "NotebookText";
+			default:
+				return "Circle";
 		}
 	}
 
-	private getTotalNotesCount(): number {
-		// This would need to be implemented by counting files in notes directory
-		// For now, return 0 as it will be calculated from the frontend
-		return 0;
-	}
-
-	private getTotalQuizzesCount(): number {
-		try {
-			return (
-				this.quizAttemptDAL.db
-					.prepare("SELECT COUNT(DISTINCT quiz_id) as count FROM quiz_attempts")
-					.get()?.count || 0
-			);
-		} catch (error) {
-			return 0;
+	private getColorForType(type: string): string {
+		switch (type) {
+			case "quiz":
+				return "accent2";
+			case "flashcard":
+				return "accent3";
+			case "note":
+				return "accent1";
+			default:
+				return "accent1";
 		}
 	}
 
-	private getQuizzesCompletedThisWeek(): number {
+	// Add method to log activities
+	logActivity(
+		type: "note" | "quiz" | "flashcard",
+		title: string,
+		entity_id: string,
+		metadata?: any,
+	): void {
 		try {
-			return (
-				this.quizAttemptDAL.db
-					.prepare(`
-          SELECT COUNT(*) as count 
-          FROM quiz_attempts 
-          WHERE date(created_at) >= date('now', '-7 days')
-        `)
-					.get()?.count || 0
-			);
+			this.activityDAL.logActivity({
+				type,
+				title,
+				entity_id,
+				subtitle: this.generateSubtitle(type, metadata),
+				metadata: metadata ? JSON.stringify(metadata) : undefined,
+			});
 		} catch (error) {
-			return 0;
+			console.error("Error logging activity:", error);
 		}
 	}
 
-	private getAverageQuizScore(): number {
-		try {
-			return Math.round(
-				this.quizAttemptDAL.db
-					.prepare("SELECT AVG(percentage) as avg FROM quiz_attempts")
-					.get()?.avg || 0,
-			);
-		} catch (error) {
-			return 0;
+	private generateSubtitle(type: string, metadata?: any): string {
+		switch (type) {
+			case "quiz":
+				return metadata?.score ? `Score: ${metadata.score}%` : "Quiz completed";
+			case "flashcard":
+				return metadata?.cardCount
+					? `${metadata.cardCount} cards`
+					: "Deck reviewed";
+			case "note":
+				return "Note updated";
+			default:
+				return "Activity completed";
 		}
-	}
-
-	private getTotalFlashcardsCount(): number {
-		try {
-			return (
-				this.deckDAL.db.prepare("SELECT COUNT(*) as count FROM cards").get()
-					?.count || 0
-			);
-		} catch (error) {
-			return 0;
-		}
-	}
-
-	private getFlashcardsReviewedThisWeek(): number {
-		// TODO: Implement flashcard review tracking
-		// For now return 0 as we don't have review tracking yet
-		return 0;
-	}
-
-	private getNotesCreatedThisWeek(): number {
-		// TODO: Implement by checking file creation dates
-		// For now return 0 as it will be calculated from frontend
-		return 0;
 	}
 }

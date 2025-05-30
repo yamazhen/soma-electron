@@ -25,20 +25,6 @@ export const useStudyTracking = () => {
 	const studyStartTime = useRef<number | null>(null);
 	const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
-	useEffect(() => {
-		const savedTime = localStorage.getItem("todayStudyTime");
-		const lastSaveDate = localStorage.getItem("lastSaveDate");
-		const today = new Date().toDateString();
-
-		if (lastSaveDate === today && savedTime) {
-			setStudyMinutes(Number.parseInt(savedTime, 10));
-		} else {
-			setStudyMinutes(0);
-			localStorage.setItem("lastSaveDate", today);
-			localStorage.setItem("todayStudyTime", "0");
-		}
-	}, []);
-
 	const resetInactivityTimer = () => {
 		if (inactivityTimer.current) {
 			clearTimeout(inactivityTimer.current);
@@ -76,7 +62,6 @@ export const useStudyTracking = () => {
 			);
 			setStudyMinutes((prev) => {
 				const newTime = prev + sessionTime;
-				localStorage.setItem("todayStudyTime", newTime.toString());
 				return newTime;
 			});
 
@@ -89,44 +74,6 @@ export const useStudyTracking = () => {
 				inactivityTimer.current = null;
 			}
 		}
-	};
-
-	const trackStudyActivity = (
-		type: "quiz" | "flashcard" | "note",
-		title: string,
-	) => {
-		startStudySession(type, title);
-
-		const newActivity: RecentActivity = {
-			id: `${type}-${Date.now()}`,
-			type,
-			title,
-			subtitle: "Started",
-			timestamp: new Date(),
-			icon:
-				type === "quiz"
-					? "Brain"
-					: type === "flashcard"
-						? "WalletCards"
-						: "NotebookText",
-			color: "accent1",
-		};
-
-		const existingActivities = JSON.parse(
-			localStorage.getItem("recentActivities") || "[]",
-		);
-		existingActivities.unshift(newActivity);
-		localStorage.setItem(
-			"recentActivities",
-			JSON.stringify(existingActivities.slice(0, 10)),
-		);
-
-		window.dispatchEvent(
-			new StorageEvent("storage", {
-				key: "recentActivities",
-				newValue: JSON.stringify(existingActivities.slice(0, 10)),
-			}),
-		);
 	};
 
 	const getTodayStudyTime = () => {
@@ -161,7 +108,6 @@ export const useStudyTracking = () => {
 		currentSession,
 		startStudySession,
 		endStudySession,
-		trackStudyActivity,
 		getTodayStudyTime,
 	};
 };

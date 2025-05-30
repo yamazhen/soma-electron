@@ -3,3 +3,4 @@ export * from "./QuestionDAL";
 export * from "./QuizAttemptDAL";
 export * from "./DeckDAL";
 export * from "./FileOrderDAL";
+export * from "./ActivityDAL";

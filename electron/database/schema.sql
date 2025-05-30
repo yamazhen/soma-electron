@@ -141,3 +141,15 @@ CREATE INDEX IF NOT EXISTS idx_questions_quiz_id ON questions (quiz_id);
 CREATE INDEX IF NOT EXISTS idx_options_question_id ON options (question_id);
 
 CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers (question_id);
+
+CREATE TABLE IF NOT EXISTS activity_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL CHECK (type IN ('note', 'quiz', 'flashcard')),
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  entity_id TEXT, -- path for notes, id for quizzes/decks
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  metadata TEXT -- JSON string for additional data
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_timestamp ON activity_log (timestamp DESC);
