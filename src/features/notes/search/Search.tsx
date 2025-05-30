@@ -23,10 +23,8 @@ const Search: React.FC = () => {
     [flatNotes],
   );
 
-  // update theme on theme change
   useThemeListener();
 
-  // reset body class
   useEffect(() => {
     if (location.pathname === "/search") {
       document.body.classList.add("search-mode");
@@ -36,7 +34,6 @@ const Search: React.FC = () => {
     inputRef.current?.focus();
   }, [location]);
 
-  // highlight input when search popup is opened
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -59,7 +56,6 @@ const Search: React.FC = () => {
     };
   }, []);
 
-  // esc to close search popup
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -90,7 +86,6 @@ const Search: React.FC = () => {
     setActiveIndex(0);
   }, [inputText]);
 
-  // scroll to active note
   useEffect(() => {
     if (expanded && filteredNotes.length > 0) {
       const activeElement = document.querySelector(

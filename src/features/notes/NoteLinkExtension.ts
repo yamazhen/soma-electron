@@ -58,26 +58,21 @@ const wikiLinkField = StateField.define<DecorationSet>({
   },
 });
 
-// Properly type the completion function
 function wikiLinkCompletions(
   context: CompletionContext,
 ): CompletionResult | null {
-  // Only activate when we have [[ before the cursor
   const { state, pos } = context;
   const line = state.doc.lineAt(pos);
   const textBefore = line.text.slice(0, pos - line.from);
 
-  // Check if we're in the middle of typing a wiki link
   if (!/::([^:]*)?$/.test(textBefore)) return null;
 
-  // Get the text after the [[ but before the cursor
   const match = textBefore.match(/::([^:]*)?$/);
   if (!match) return null;
 
   const prefix = match[1];
-  const startPos = pos - prefix.length - 2; // -2 for the [[ characters
+  const startPos = pos - prefix.length - 2;
 
-  // Get all existing notes and filter based on prefix
   const noteNames = getAllNoteNames();
   const filteredNotes = prefix
     ? noteNames.filter((name) =>
@@ -86,7 +81,7 @@ function wikiLinkCompletions(
     : noteNames;
 
   return {
-    from: startPos + 2, // Start after [[
+    from: startPos + 2,
     options: filteredNotes.map((name) => ({
       label: name,
       apply: name + "::",
@@ -96,27 +91,21 @@ function wikiLinkCompletions(
   };
 }
 
-// Create the extension
 export function wikiLinks() {
   return [
     wikiLinkField,
     autocompletion({
       override: [wikiLinkCompletions],
     }),
-    // Handle click events on links
     EditorView.domEventHandlers({
-      click: (event: MouseEvent, view: EditorView) => {
-        // Properly cast target to HTMLElement with null check
+      click: (event: MouseEvent, _view: EditorView) => {
         const target = event.target as HTMLElement | null;
         if (target && target.classList.contains("cm-note-link")) {
-          // Get the link text from the data attribute
           const linkText = target.getAttribute("data-note-link");
 
           if (linkText) {
-            // Handle navigation to the linked note
             console.log(`Navigate to: ${linkText}`);
 
-            // Prevent default behavior
             event.preventDefault();
             return true;
           }

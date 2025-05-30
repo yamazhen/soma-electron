@@ -9,20 +9,17 @@ import editorTheme from "./editorTheme";
 import { wikiLinkField } from "./wikiLinkPlugin";
 import { createWikiLinkCompletion } from "./wikiLinkCompletion";
 import { useMemo } from "react";
-import { useAppContext } from "../../../../context/AppContext";
 
 export type MarkdocPluginConfig = {
   lezer?: any;
   markdoc: Config;
 };
 
-export default function (config: MarkdocPluginConfig) {
+export default function (config: MarkdocPluginConfig, getAllNotesOnly: () => MarkdownItem[]) {
   const mergedConfig = {
     ...(config.lezer ?? []),
     extensions: [tagParser, ...(config.lezer?.extensions ?? [])],
   };
-
-  const { getAllNotesOnly } = useAppContext();
 
   const wikiLinkCompletion = useMemo(
     () => createWikiLinkCompletion(getAllNotesOnly),
@@ -34,7 +31,7 @@ export default function (config: MarkdocPluginConfig) {
     wikiLinkCompletion,
     ViewPlugin.fromClass(RichEditPlugin, {
       decorations: (v) => v.decorations,
-      provide: (v) => [
+      provide: (_v) => [
         renderBlock(config.markdoc),
         syntaxHighlighting(editorTheme),
         markdown(mergedConfig),

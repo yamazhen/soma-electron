@@ -27,6 +27,7 @@ import { Table } from "@lezer/markdown";
 import richEditor from "./editor/codemirrorMarkdownExtension";
 import markdocConfig from "./markdoc";
 import { customFoldingExtension } from "./CustomFoldingExtension";
+import { useAppContext } from "@/context/AppContext";
 
 interface EditorProps {
   initialValue?: string;
@@ -43,9 +44,10 @@ export interface MarkdownEditorRef {
 const MarkdownEditorComponent: ForwardRefRenderFunction<
   MarkdownEditorRef,
   EditorProps
-> = ({ initialValue = "", onChange = () => {} }, ref) => {
+> = ({ initialValue = "", onChange = () => { } }, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const { getAllNotesOnly } = useAppContext();
 
   useImperativeHandle(ref, () => ({
     undo: () => {
@@ -75,8 +77,8 @@ const MarkdownEditorComponent: ForwardRefRenderFunction<
   const extensions = [
     richEditor({
       markdoc: markdocConfig,
-      lezer: { codeLanguages: languages, extensions: [Table] },
-    }),
+      lezer: { codeLanguages: languages, extensions: [Table] }
+    }, getAllNotesOnly),
     drawSelection(),
     rectangularSelection(),
     history(),

@@ -2,8 +2,7 @@ import { useEffect } from "react";
 
 export function useThemeListener() {
   useEffect(() => {
-    // @ts-ignore
-    const handleThemeUpdate = (e: Event, theme: string) => {
+    const handleThemeUpdate = (_: Event, theme: string) => {
       document.documentElement.setAttribute("data-theme", theme);
     };
 

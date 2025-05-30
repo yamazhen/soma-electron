@@ -22,7 +22,7 @@ class RenderBlockWidget extends WidgetType {
 
     const processedSource = source.replace(
       /\[\[([^\[\]\n]+)\]\]/g,
-      (match, noteName) => {
+      (_match, noteName) => {
         return `<a class="wiki-link" data-note="${noteName}">${noteName}</a>`;
       },
     );
@@ -118,7 +118,7 @@ export default function (config: Config) {
       return RangeSet.of(replaceBlocks(state, config), true);
     },
 
-    update(decorations, transaction) {
+    update(_decorations, transaction) {
       return RangeSet.of(replaceBlocks(transaction.state, config), true);
     },
 
