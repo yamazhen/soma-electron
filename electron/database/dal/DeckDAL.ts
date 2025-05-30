@@ -510,4 +510,84 @@ export class DeckDAL extends BaseDAL {
       learningCards,
     };
   }
+
+  getDueCardsByDeck(deckId: number, limit?: number): any[] {
+    const now = new Date().toISOString();
+    let query = `
+    SELECT c.*, d.title as deck_title
+    FROM cards c
+    JOIN decks d ON c.deck_id = d.id
+    WHERE c.deck_id = ? 
+    AND c.scheduled = 1 
+    AND (c.next_review_date IS NULL OR c.next_review_date <= ?)
+    ORDER BY 
+      CASE WHEN c.next_review_date IS NULL THEN 0 ELSE 1 END,
+      c.next_review_date ASC, 
+      c.consecutive_correct ASC,
+      c.id ASC
+  `;
+
+    if (limit) query += ` LIMIT ?`;
+
+    const params = limit ? [deckId, now, limit] : [deckId, now];
+    return this.db.prepare(query).all(...params);
+  }
+
+  getDueCardsCountByDeck(deckId: number): {
+    today: number;
+    overdue: number;
+    upcoming: number;
+  } {
+    const now = new Date();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString();
+    const tomorrow = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    ).toISOString();
+
+    const overdueCount =
+      this.db
+        .prepare(
+          `
+        SELECT COUNT(*) as count FROM cards 
+        WHERE deck_id = ? AND scheduled = 1 
+        AND next_review_date < ?
+      `,
+        )
+        .get(deckId, today)?.count || 0;
+
+    const upcomingCount =
+      this.db
+        .prepare(
+          `
+        SELECT COUNT(*) as count FROM cards 
+        WHERE deck_id = ? AND scheduled = 1 
+        AND next_review_date >= ?
+      `,
+        )
+        .get(deckId, tomorrow)?.count || 0;
+
+    // Count cards that are due right now
+    const dueNowCount =
+      this.db
+        .prepare(
+          `
+        SELECT COUNT(*) as count FROM cards 
+        WHERE deck_id = ? AND scheduled = 1 
+        AND (next_review_date IS NULL OR next_review_date <= ?)
+      `,
+        )
+        .get(deckId, now.toISOString())?.count || 0;
+
+    return {
+      today: dueNowCount,
+      overdue: overdueCount,
+      upcoming: upcomingCount,
+    };
+  }
 }

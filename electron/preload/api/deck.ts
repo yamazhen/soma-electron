@@ -21,4 +21,8 @@ export const deckApi = {
   }) => ipcRenderer.invoke("deck:submitReview", data),
   scheduleCard: (cardId: number, scheduled: boolean) =>
     ipcRenderer.invoke("deck:scheduleCard", cardId, scheduled),
+  getDueCardsByDeck: (deckId: number, limit?: number) =>
+    ipcRenderer.invoke("deck:getDueCardsByDeck", deckId, limit),
+  getDueCardsCountByDeck: (deckId: number) =>
+    ipcRenderer.invoke("deck:getDueCardsCountByDeck", deckId),
 };

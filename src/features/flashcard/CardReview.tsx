@@ -20,6 +20,18 @@ import { toast } from "sonner";
 
 type ReviewFilter = "all" | "due-today" | "overdue" | "upcoming";
 
+interface DeckWithStats {
+  id?: number;
+  title: string;
+  cards: any[];
+  dueCards: number;
+  overdueCards: number;
+  upcomingCards: number;
+  lastReviewed: Date;
+  accuracy: number;
+  difficulty: number;
+}
+
 const CardReview: React.FC = () => {
   const { getMessage, decks, setCardView, setDeckInView } = useAppContext();
   const [filter, setFilter] = useState<ReviewFilter>("all");
@@ -33,6 +45,7 @@ const CardReview: React.FC = () => {
     upcoming: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [decksWithStats, setDecksWithStats] = useState<DeckWithStats[]>([]);
 
   const loadAnalytics = async () => {
     try {
@@ -65,6 +78,45 @@ const CardReview: React.FC = () => {
         overdue: dueCounts.overdue,
         upcoming: dueCounts.upcoming,
       });
+
+      // Load deck stats
+      if (decks && decks.length > 0) {
+        const decksWithStatsData = await Promise.all(
+          decks.map(async (deck) => {
+            try {
+              const dueCountResult =
+                await window.deckIpc.getDueCardsCountByDeck(deck.id!);
+              const dueCounts = dueCountResult.success
+                ? dueCountResult.data
+                : { today: 0, overdue: 0, upcoming: 0 };
+
+              return {
+                ...deck,
+                dueCards: dueCounts.today,
+                overdueCards: dueCounts.overdue,
+                upcomingCards: dueCounts.upcoming,
+                lastReviewed: new Date(
+                  Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+                ),
+                accuracy: Math.floor(Math.random() * 30) + 70, // TODO: Calculate real accuracy
+                difficulty: Math.random() * 5, // TODO: Calculate real difficulty
+              };
+            } catch (error) {
+              console.error(`Error loading stats for deck ${deck.id}:`, error);
+              return {
+                ...deck,
+                dueCards: 0,
+                overdueCards: 0,
+                upcomingCards: 0,
+                lastReviewed: new Date(),
+                accuracy: 0,
+                difficulty: 0,
+              };
+            }
+          }),
+        );
+        setDecksWithStats(decksWithStatsData);
+      }
     } catch (error) {
       console.error("Error loading analytics:", error);
     } finally {
@@ -74,31 +126,18 @@ const CardReview: React.FC = () => {
 
   useEffect(() => {
     loadAnalytics();
-  }, []);
-
-  const scheduledDecks =
-    decks?.map((deck) => ({
-      ...deck,
-      dueCards: Math.floor(Math.random() * 15) + 1, // TODO: Get real due cards per deck
-      overdueCards: Math.floor(Math.random() * 5),
-      newCards: Math.floor(Math.random() * 10),
-      lastReviewed: new Date(
-        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
-      ),
-      accuracy: Math.floor(Math.random() * 30) + 70,
-      difficulty: Math.random() * 5,
-    })) || [];
+  }, [decks]);
 
   const filterDecks = () => {
     switch (filter) {
       case "due-today":
-        return scheduledDecks.filter((deck) => deck.dueCards > 0);
+        return decksWithStats.filter((deck) => deck.dueCards > 0);
       case "overdue":
-        return scheduledDecks.filter((deck) => deck.overdueCards > 0);
+        return decksWithStats.filter((deck) => deck.overdueCards > 0);
       case "upcoming":
-        return scheduledDecks.filter((deck) => deck.newCards > 0);
+        return decksWithStats.filter((deck) => deck.upcomingCards > 0);
       default:
-        return scheduledDecks;
+        return decksWithStats;
     }
   };
 
@@ -138,11 +177,26 @@ const CardReview: React.FC = () => {
     }
   };
 
-  const startReview = (deckId: number) => {
-    const deck = decks?.find((d) => d.id === deckId);
-    if (deck) {
-      setDeckInView(deck);
-      setCardView("inReview"); // Use the mixed review for individual decks too
+  const startReview = async (deckId: number) => {
+    try {
+      // Check if this deck has due cards
+      const dueCardsResult = await window.deckIpc.getDueCardsByDeck(deckId, 1);
+
+      if (
+        dueCardsResult.success &&
+        dueCardsResult.data &&
+        dueCardsResult.data.length > 0
+      ) {
+        const deck = decks?.find((d) => d.id === deckId);
+        if (deck) {
+          setDeckInView(deck);
+          setCardView("inReview");
+        }
+      } else {
+        toast.error("No cards are due for review in this deck!");
+      }
+    } catch (error) {
+      toast.error("Failed to start deck review");
     }
   };
 
@@ -444,7 +498,12 @@ const CardReview: React.FC = () => {
 
                     <button
                       onClick={() => deck.id && startReview(deck.id)}
-                      className="px-4 py-2.5 bg-soma-accent2 text-white rounded-lg hover:bg-soma-accent2/90 transition-all flex items-center gap-2 font-medium"
+                      disabled={deck.dueCards === 0}
+                      className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all ${
+                        deck.dueCards > 0
+                          ? "bg-soma-accent2 text-white hover:bg-soma-accent2/90"
+                          : "bg-soma-medium text-soma-text-secondary cursor-not-allowed"
+                      }`}
                     >
                       <Play size={18} />
                       Start Review

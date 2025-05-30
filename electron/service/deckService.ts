@@ -225,4 +225,29 @@ export class DeckService {
       return { success: true };
     }, "Failed to submit card review");
   }
+
+  async getDueCardsByDeck(
+    deckId: number,
+    limit?: number,
+  ): Promise<IpcResponseData<any[]>> {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.getDueCardsByDeck(deckId, limit);
+    }, "Failed to get due cards for deck");
+  }
+
+  async getDueCardsCountByDeck(
+    deckId: number,
+  ): Promise<
+    IpcResponseData<{ today: number; overdue: number; upcoming: number }>
+  > {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.getDueCardsCountByDeck(deckId);
+    }, "Failed to get due cards count for deck");
+  }
 }

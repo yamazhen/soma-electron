@@ -79,4 +79,15 @@ export function setupDeckHandlers() {
   ipcMain.handle("deck:getAnalytics", async () => {
     return deckService.getCardAnalytics();
   });
+
+  ipcMain.handle(
+    "deck:getDueCardsByDeck",
+    async (_, deckId: number, limit?: number) => {
+      return deckService.getDueCardsByDeck(deckId, limit);
+    },
+  );
+
+  ipcMain.handle("deck:getDueCardsCountByDeck", async (_, deckId: number) => {
+    return deckService.getDueCardsCountByDeck(deckId);
+  });
 }

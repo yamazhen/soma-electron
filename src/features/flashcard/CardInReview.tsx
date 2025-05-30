@@ -10,7 +10,8 @@ const CardInReview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [reviewComplete, setReviewComplete] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
-  const { setCardView, recordActivity, trackStudyActivity } = useAppContext();
+  const { setCardView, recordActivity, trackStudyActivity, deckInView } =
+    useAppContext();
 
   useEffect(() => {
     loadDueCards();
@@ -25,7 +26,15 @@ const CardInReview: React.FC = () => {
   const loadDueCards = async () => {
     try {
       setLoading(true);
-      const result = await window.deckIpc.getDueCards(20); // Limit to 20 cards
+      let result;
+
+      // Check if we're reviewing a specific deck
+      if (deckInView && deckInView.id) {
+        result = await window.deckIpc.getDueCardsByDeck(deckInView.id, 20);
+      } else {
+        // Mixed review from all decks
+        result = await window.deckIpc.getDueCards(20);
+      }
 
       if (result.success && result.data) {
         setDueCards(result.data);
