@@ -8,6 +8,8 @@ import { useFlashCardState } from "./flashCardState";
 import { useLanguageState } from "./languageState";
 import { useSettingState } from "./settingsState";
 import { useUserState } from "./userState";
+import { useActivityState } from "./activityState";
+import { useStudyTracking } from "./studyState";
 
 type AppContextType = ReturnType<typeof useFileState> &
 	ReturnType<typeof useNoteState> &
@@ -16,7 +18,9 @@ type AppContextType = ReturnType<typeof useFileState> &
 	ReturnType<typeof useFlashCardState> &
 	ReturnType<typeof useLanguageState> &
 	ReturnType<typeof useSettingState> &
-	ReturnType<typeof useUserState>;
+	ReturnType<typeof useUserState> &
+	ReturnType<typeof useActivityState> &
+	ReturnType<typeof useStudyTracking>;
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -33,6 +37,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 	const languageState = useLanguageState();
 	const settingState = useSettingState();
 	const userState = useUserState();
+	const activityState = useActivityState();
+	const studyTracking = useStudyTracking();
 
 	const value = {
 		...fileState,
@@ -43,6 +49,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 		...languageState,
 		...settingState,
 		...userState,
+		...activityState,
+		...studyTracking,
 	};
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

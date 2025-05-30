@@ -7,7 +7,7 @@ import MarkdownViewer from "./MarkdownViewer";
 import { MoonLoader } from "react-spinners";
 
 const NoteEditor: React.FC = () => {
-	const { selectedFile, files } = useAppContext();
+	const { selectedFile, files, trackStudyActivity } = useAppContext();
 	const [noteContent, setNoteContent] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
@@ -15,6 +15,14 @@ const NoteEditor: React.FC = () => {
 	const editorRef = useRef<MarkdownEditorRef>(null);
 	const [canUndo, setCanUndo] = useState<boolean>(false);
 	const [canRedo, setCanRedo] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (selectedFile) {
+			const fileName =
+				selectedFile.split("/").pop()?.replace(".md", "") || "Untitled";
+			trackStudyActivity("note", fileName);
+		}
+	}, [selectedFile, trackStudyActivity]);
 
 	useNoteAutosave({
 		selectedFile,

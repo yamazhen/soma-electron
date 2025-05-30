@@ -8,7 +8,7 @@ interface Card {
 }
 
 const CardCreateForm: React.FC = () => {
-	const { setCardView, fetchDecks } = useAppContext();
+	const { setCardView, fetchDecks, recordActivity } = useAppContext();
 	const [title, setTitle] = useState("");
 	const [cards, setCards] = useState<Card[]>([{ front: "", back: "" }]);
 
@@ -43,6 +43,11 @@ const CardCreateForm: React.FC = () => {
 			if (res.success) {
 				fetchDecks();
 				setCardView("listing");
+
+				recordActivity("flashcard", {
+					deckTitle: title,
+					cardCount: cards.length,
+				});
 			} else {
 				console.error("Failed to save deck:", res.error);
 			}

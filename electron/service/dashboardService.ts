@@ -53,14 +53,14 @@ export class DashboardService {
 		try {
 			const activities: RecentActivity[] = [];
 
-			// Recent quiz attempts (last 5)
+			// Recent quiz attempts (last 10)
 			const recentQuizzes = this.quizAttemptDAL.db
 				.prepare(`
           SELECT qa.*, q.title as quiz_title
           FROM quiz_attempts qa
           JOIN quiz q ON qa.quiz_id = q.id
           ORDER BY qa.created_at DESC
-          LIMIT 5
+          LIMIT 10
         `)
 				.all();
 
@@ -76,13 +76,31 @@ export class DashboardService {
 				});
 			}
 
-			// Note: We'll get recent notes and flashcard reviews from other sources
-			// since we don't have activity tracking for those yet
+			// Recent deck creations/updates
+			const recentDecks = this.deckDAL.db
+				.prepare(`
+          SELECT * FROM decks 
+          ORDER BY id DESC 
+          LIMIT 5
+        `)
+				.all();
 
-			// Sort by timestamp and return latest 6
+			for (const deck of recentDecks) {
+				activities.push({
+					id: `deck-${deck.id}`,
+					type: "flashcard",
+					title: deck.title,
+					subtitle: "Flashcard deck created",
+					timestamp: new Date(), // You might want to add created_at to decks table
+					icon: "WalletCards",
+					color: "accent3",
+				});
+			}
+
+			// Sort by timestamp and return latest 8
 			return activities
 				.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-				.slice(0, 6);
+				.slice(0, 8);
 		} catch (error) {
 			console.error("Error getting recent activity:", error);
 			return [];

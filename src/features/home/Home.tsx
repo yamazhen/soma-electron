@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
 	Brain,
 	Calendar,
@@ -24,12 +24,80 @@ const Home: React.FC = () => {
 		setQuizView,
 		setCardView,
 		handleCreateNote,
+		recordActivity,
+		lastActivityUpdate,
 	} = useAppContext();
 
-	const [studyMinutes, setStudyMinutes] = useState(0);
 	const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
 	const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [studyMinutes, setStudyMinutes] = useState(0);
+	const [isStudying, setIsStudying] = useState(false);
+	const studyStartTime = useRef<number | null>(null);
+
+	// Track real study activities
+	useEffect(() => {
+		// Load saved study time for today
+		const savedTime = localStorage.getItem("todayStudyTime");
+		const lastSaveDate = localStorage.getItem("lastSaveDate");
+		const today = new Date().toDateString();
+
+		if (lastSaveDate === today && savedTime) {
+			setStudyMinutes(parseInt(savedTime));
+		} else {
+			setStudyMinutes(0);
+			localStorage.setItem("lastSaveDate", today);
+			localStorage.setItem("todayStudyTime", "0");
+		}
+	}, []);
+
+	// Start study session when user interacts with study features
+	const startStudySession = () => {
+		if (!isStudying) {
+			setIsStudying(true);
+			studyStartTime.current = Date.now();
+		}
+	};
+
+	// End study session and add time
+	const endStudySession = () => {
+		if (isStudying && studyStartTime.current) {
+			const sessionTime = Math.floor(
+				(Date.now() - studyStartTime.current) / 60000,
+			); // minutes
+			setStudyMinutes((prev) => {
+				const newTime = prev + sessionTime;
+				localStorage.setItem("todayStudyTime", newTime.toString());
+				return newTime;
+			});
+			setIsStudying(false);
+			studyStartTime.current = null;
+		}
+	};
+
+	// Auto-end session after inactivity
+	useEffect(() => {
+		let inactivityTimer: NodeJS.Timeout;
+
+		const handleActivity = () => {
+			if (isStudying) {
+				clearTimeout(inactivityTimer);
+				inactivityTimer = setTimeout(endStudySession, 5 * 60 * 1000); // 5 min inactivity
+			}
+		};
+
+		if (isStudying) {
+			window.addEventListener("mousemove", handleActivity);
+			window.addEventListener("keypress", handleActivity);
+			handleActivity(); // Start the timer
+		}
+
+		return () => {
+			window.removeEventListener("mousemove", handleActivity);
+			window.removeEventListener("keypress", handleActivity);
+			clearTimeout(inactivityTimer);
+		};
+	}, [isStudying]);
 
 	// Load real analytics data
 	useEffect(() => {
@@ -69,7 +137,7 @@ const Home: React.FC = () => {
 		};
 
 		loadAnalytics();
-	}, []);
+	}, [lastActivityUpdate]);
 
 	// Update study time periodically (only when app is active)
 	useEffect(() => {
@@ -194,6 +262,7 @@ const Home: React.FC = () => {
 						<div className="flex items-center gap-2">
 							<Clock className="text-soma-accent3" size={20} />
 							<span>
+								{/* Fix: Use proper hours and minutes calculation */}
 								{Math.floor(studyMinutes / 60)}h {studyMinutes % 60}m today
 							</span>
 						</div>
