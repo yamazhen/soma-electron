@@ -409,24 +409,48 @@ export class QuestionDAL extends BaseDAL {
       const question = this.getById(questionId);
       if (!question) return false;
 
-      const now = new Date().toISOString();
+      const now = new Date();
+      const nowISO = now.toISOString();
       let newInterval = question.review_interval || 1;
       let newEaseFactor = question.ease_factor || 2.5;
       let newConsecutiveCorrect = question.consecutive_correct || 0;
 
+      // Check if this is an early review
+      const isEarlyReview =
+        question.next_review_date && new Date(question.next_review_date) > now;
+
       if (isCorrect) {
         newConsecutiveCorrect++;
 
-        // Improved SM-2 algorithm
+        // SM-2 algorithm: specific intervals for first reviews
         if (newConsecutiveCorrect === 1) {
-          newInterval = 1;
+          newInterval = 1; // First correct answer: 1 day
         } else if (newConsecutiveCorrect === 2) {
-          newInterval = 6;
+          newInterval = 6; // Second correct answer: 6 days
         } else {
+          // For subsequent reviews: interval = previous_interval * ease_factor
           newInterval = Math.ceil(newInterval * newEaseFactor);
         }
 
-        // Adjust ease factor based on performance (quality = 4 for correct)
+        // If this is an early review, apply a penalty to the interval
+        if (isEarlyReview && newConsecutiveCorrect > 2) {
+          const daysBetween = question.next_review_date
+            ? Math.max(
+                1,
+                Math.floor(
+                  (new Date(question.next_review_date).getTime() -
+                    now.getTime()) /
+                    (1000 * 60 * 60 * 24),
+                ),
+              )
+            : 0;
+
+          // Reduce interval based on how early it was reviewed
+          const earlyPenalty = Math.max(0.5, 1 - daysBetween / newInterval);
+          newInterval = Math.ceil(newInterval * earlyPenalty);
+        }
+
+        // Adjust ease factor for correct answers (quality = 4 in SM-2)
         const quality = 4;
         newEaseFactor = Math.max(
           1.3,
@@ -435,8 +459,9 @@ export class QuestionDAL extends BaseDAL {
       } else {
         // Reset on incorrect answer
         newConsecutiveCorrect = 0;
-        newInterval = 1;
-        // Decrease ease factor for incorrect answers (quality = 2)
+        newInterval = 1; // Always start from 1 day for failed cards
+
+        // Decrease ease factor for incorrect answers (quality = 2 in SM-2)
         const quality = 2;
         newEaseFactor = Math.max(
           1.3,
@@ -444,18 +469,17 @@ export class QuestionDAL extends BaseDAL {
         );
       }
 
-      // Consider response time for interval adjustment
-      if (responseTime) {
+      // Response time adjustment (optional enhancement)
+      if (responseTime && isCorrect) {
         const avgResponseTime = 15; // seconds
-        const timeFactor = Math.min(
-          Math.max(responseTime / avgResponseTime, 0.5),
-          2.0,
-        );
-        if (isCorrect) {
-          newInterval = Math.ceil(newInterval / timeFactor);
+        if (responseTime < avgResponseTime / 2) {
+          newInterval = Math.ceil(newInterval * 0.9);
+        } else if (responseTime > avgResponseTime * 2) {
+          newInterval = Math.ceil(newInterval * 1.1);
         }
       }
 
+      // Calculate next review date
       const nextReviewDate = new Date();
       nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
 
@@ -475,12 +499,36 @@ export class QuestionDAL extends BaseDAL {
         newInterval,
         newEaseFactor,
         newConsecutiveCorrect,
-        now,
+        nowISO,
         nextReviewDate.toISOString(),
         questionId,
       );
 
       return result.changes > 0;
     });
+  }
+
+  getQuizDueQuestions(quizId: number, limit?: number): QuestionWithDetails[] {
+    const now = new Date().toISOString();
+    let query = `
+    SELECT * FROM questions 
+    WHERE quiz_id = ? 
+    AND scheduled = 1 
+    AND (next_review_date IS NULL OR next_review_date <= ?)
+    ORDER BY 
+      CASE WHEN next_review_date IS NULL THEN 0 ELSE 1 END,
+      next_review_date ASC, 
+      consecutive_correct ASC,
+      id ASC
+  `;
+
+    if (limit) {
+      query += ` LIMIT ?`;
+      const questions = this.db.prepare(query).all(quizId, now, limit);
+      return questions.map((q) => this.loadDetails(q));
+    }
+
+    const questions = this.db.prepare(query).all(quizId, now);
+    return questions.map((q) => this.loadDetails(q));
   }
 }

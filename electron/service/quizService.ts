@@ -340,7 +340,7 @@ export class QuizService {
 
     // Handle special quiz IDs for mixed reviews
     if (quizId === -1) {
-      // General review
+      // General review - get due questions across all quizzes
       const questionIds = answers.map((a) => a.questionId);
       questions = questionIds
         .map((id) => this.questionDAL.getById(id))
@@ -352,7 +352,13 @@ export class QuizService {
         .map((id) => this.questionDAL.getById(id))
         .filter(Boolean);
     } else {
-      questions = this.questionDAL.getByQuizId(quizId);
+      // FIXED: For regular quiz reviews, only get questions that are actually due
+      // First get all questions from the quiz
+      const allQuizQuestions = this.questionDAL.getByQuizId(quizId);
+
+      // Filter to only include questions that are actually due or being answered early
+      const answeredQuestionIds = new Set(answers.map((a) => a.questionId));
+      questions = allQuizQuestions.filter((q) => answeredQuestionIds.has(q.id));
     }
 
     if (questions.length === 0) {
@@ -380,7 +386,7 @@ export class QuizService {
         is_correct: isCorrect,
       });
 
-      // Update scheduling for this question
+      // FIXED: Update scheduling for this question regardless of when it was due
       this.questionDAL.updateScheduling(
         answer.questionId,
         isCorrect,
@@ -418,5 +424,9 @@ export class QuizService {
         .filter((r) => !r.is_correct)
         .map((r) => r.question_id),
     };
+  }
+
+  getQuizDueQuestions(quizId: number, limit?: number): QuestionWithDetails[] {
+    return this.questionDAL.getQuizDueQuestions(quizId, limit);
   }
 }

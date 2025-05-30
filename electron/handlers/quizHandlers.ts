@@ -285,4 +285,17 @@ export function setupQuizHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  ipcMain.handle(
+    "quiz:getQuizDueQuestions",
+    (_, quizId: number, limit?: number) => {
+      try {
+        const questions = quizService.getQuizDueQuestions(quizId, limit);
+        return { success: true, questions };
+      } catch (error: any) {
+        console.error("Error getting quiz due questions:", error);
+        return { success: false, error: error.message };
+      }
+    },
+  );
 }
