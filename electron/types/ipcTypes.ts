@@ -134,6 +134,29 @@ interface Window {
     getAnalytics: () => Promise<IpcResponseData<QuizAnalytics>>;
     getDailyActivity: () => Promise<IpcResponseData<DailyActivity[]>>;
     getSubjectPerformance: () => Promise<IpcResponseData<SubjectPerformance[]>>;
+    submitAttemptWithScheduling: (data: {
+      quizId: number;
+      answers: { questionId: number; answer: string; responseTime?: number }[];
+    }) => Promise<{ success: boolean; review?: QuizReview; error?: string }>;
+    getScheduledQuestions: (
+      limit?: number,
+    ) => Promise<{
+      success: boolean;
+      questions?: QuestionWithDetails[];
+      error?: string;
+    }>;
+    getDueQuestionsCount: () => Promise<{
+      success: boolean;
+      counts?: { today: number; overdue: number; upcoming: number };
+      error?: string;
+    }>;
+    getQuestionsByScheduleStatus: (
+      status: string,
+    ) => Promise<{
+      success: boolean;
+      questions?: QuestionWithDetails[];
+      error?: string;
+    }>;
   };
   questionIpc: {
     add: (data: { quizId: number; question: any }) => Promise<number>;

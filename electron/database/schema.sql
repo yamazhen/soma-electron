@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS questions (
   -- for true or false questions
   boolean_answer boolean default null,
   scheduled boolean default false,
+  next_review_date text default null,
+  review_interval integer default 1,
+  ease_factor real default 2.5,
+  consecutive_correct integer default 0,
+  last_reviewed text default null,
   foreign key (quiz_id) references quiz (id)
 );
 
@@ -105,6 +110,10 @@ CREATE TABLE IF NOT EXISTS question_responses (
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_date ON quiz_attempts (created_at);
 
 CREATE INDEX IF NOT EXISTS idx_question_responses_correct ON question_responses (is_correct);
+
+CREATE INDEX IF NOT EXISTS idx_questions_next_review ON questions (next_review_date);
+
+CREATE INDEX IF NOT EXISTS idx_questions_scheduled_review ON questions (scheduled, next_review_date);
 
 /* 
 * FLASHCARD SCHEMA 

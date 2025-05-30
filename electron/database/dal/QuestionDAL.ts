@@ -213,4 +213,200 @@ export class QuestionDAL extends BaseDAL {
     const result = stmt.run();
     return result.changes > 0;
   }
+
+  updateScheduling(
+    questionId: number,
+    isCorrect: boolean,
+    responseTime?: number,
+  ): boolean {
+    return this.transaction(() => {
+      const question = this.getById(questionId);
+      if (!question) return false;
+
+      const now = new Date().toISOString();
+      let newInterval = question.review_interval || 1;
+      let newEaseFactor = question.ease_factor || 2.5;
+      let newConsecutiveCorrect = question.consecutive_correct || 0;
+
+      if (isCorrect) {
+        newConsecutiveCorrect++;
+
+        // SM-2 algorithm implementation
+        if (newConsecutiveCorrect === 1) {
+          newInterval = 1;
+        } else if (newConsecutiveCorrect === 2) {
+          newInterval = 6;
+        } else {
+          newInterval = Math.round(newInterval * newEaseFactor);
+        }
+
+        // Adjust ease factor based on performance
+        newEaseFactor = Math.max(
+          1.3,
+          newEaseFactor + (0.1 - (5 - 5) * (0.08 + (5 - 5) * 0.02)),
+        );
+      } else {
+        // Reset on incorrect answer
+        newConsecutiveCorrect = 0;
+        newInterval = 1;
+        newEaseFactor = Math.max(1.3, newEaseFactor - 0.2);
+      }
+
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
+
+      const stmt = this.db.prepare(`
+        UPDATE questions 
+        SET 
+          review_interval = ?,
+          ease_factor = ?,
+          consecutive_correct = ?,
+          last_reviewed = ?,
+          next_review_date = ?,
+          scheduled = 1
+        WHERE id = ?
+      `);
+
+      const result = stmt.run(
+        newInterval,
+        newEaseFactor,
+        newConsecutiveCorrect,
+        now,
+        nextReviewDate.toISOString(),
+        questionId,
+      );
+
+      return result.changes > 0;
+    });
+  }
+
+  getScheduledQuestions(limit?: number): QuestionWithDetails[] {
+    const now = new Date().toISOString();
+    let query = `
+      SELECT * FROM questions 
+      WHERE scheduled = 1 
+      AND (next_review_date IS NULL OR next_review_date <= ?)
+      ORDER BY next_review_date ASC, id ASC
+    `;
+
+    if (limit) {
+      query += ` LIMIT ?`;
+      const questions = this.db.prepare(query).all(now, limit);
+      return questions.map((q) => this.loadDetails(q));
+    }
+
+    const questions = this.db.prepare(query).all(now);
+    return questions.map((q) => this.loadDetails(q));
+  }
+
+  getDueQuestionsCount(): { today: number; overdue: number; upcoming: number } {
+    const now = new Date();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString();
+    const tomorrow = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    ).toISOString();
+
+    const todayCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM questions 
+      WHERE scheduled = 1 
+      AND next_review_date >= ? 
+      AND next_review_date < ?
+    `,
+        )
+        .get(today, tomorrow)?.count || 0;
+
+    const overdueCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM questions 
+      WHERE scheduled = 1 
+      AND next_review_date < ?
+    `,
+        )
+        .get(today)?.count || 0;
+
+    const upcomingCount =
+      this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count FROM questions 
+      WHERE scheduled = 1 
+      AND next_review_date >= ?
+    `,
+        )
+        .get(tomorrow)?.count || 0;
+
+    return {
+      today: todayCount,
+      overdue: overdueCount,
+      upcoming: upcomingCount,
+    };
+  }
+
+  getQuestionsByScheduleStatus(
+    status: "due-today" | "overdue" | "upcoming",
+  ): QuestionWithDetails[] {
+    const now = new Date();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString();
+    const tomorrow = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    ).toISOString();
+
+    let query = `SELECT * FROM questions WHERE scheduled = 1 `;
+    let params: string[] = [];
+
+    switch (status) {
+      case "due-today":
+        query += `AND next_review_date >= ? AND next_review_date < ?`;
+        params = [today, tomorrow];
+        break;
+      case "overdue":
+        query += `AND next_review_date < ?`;
+        params = [today];
+        break;
+      case "upcoming":
+        query += `AND next_review_date >= ?`;
+        params = [tomorrow];
+        break;
+    }
+
+    query += ` ORDER BY next_review_date ASC`;
+
+    const questions = this.db.prepare(query).all(...params);
+    return questions.map((q) => this.loadDetails(q));
+  }
+
+  scheduleExistingQuestions(): boolean {
+    return this.transaction(() => {
+      const stmt = this.db.prepare(`
+      UPDATE questions 
+      SET 
+        scheduled = 1,
+        next_review_date = datetime('now', '+1 day'),
+        review_interval = 1,
+        ease_factor = 2.5,
+        consecutive_correct = 0
+      WHERE scheduled = 0 OR scheduled IS NULL
+    `);
+
+      const result = stmt.run();
+      return result.changes > 0;
+    });
+  }
 }
