@@ -139,16 +139,6 @@ export function setupQuizHandlers() {
     },
   );
 
-  ipcMain.handle("quiz:scheduleTopFailedQuestions", (_) => {
-    try {
-      const result = quizService.scheduleTopFailedQuestions();
-      return { success: result };
-    } catch (error: any) {
-      console.error("Error scheduling top failed questions:", error);
-      return { success: false, error: error.message };
-    }
-  });
-
   ipcMain.handle("quiz:getAttemptHistory", (_, quizId: number) => {
     try {
       const history = quizService.getQuizAttemptHistory(quizId);
@@ -261,6 +251,37 @@ export function setupQuizHandlers() {
       return { success: result };
     } catch (error: any) {
       console.error("Error scheduling all questions:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Add these new handlers
+  ipcMain.handle("quiz:getMixedReview", (_, limit?: number) => {
+    try {
+      const questions = quizService.getMixedReviewQuestions(limit);
+      return { success: true, questions };
+    } catch (error: any) {
+      console.error("Error getting mixed review questions:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("quiz:getQuizScheduledQuestions", (_, quizId: number) => {
+    try {
+      const questions = quizService.getQuizScheduledQuestions(quizId);
+      return { success: true, questions };
+    } catch (error: any) {
+      console.error("Error getting quiz scheduled questions:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("quiz:scheduleTopFailedQuestions", () => {
+    try {
+      const result = quizService.scheduleTopFailedQuestions();
+      return { success: result };
+    } catch (error: any) {
+      console.error("Error scheduling top failed questions:", error);
       return { success: false, error: error.message };
     }
   });

@@ -300,6 +300,33 @@ export class QuizService {
     return this.attemptDAL.getSubjectPerformance();
   }
 
+  getScheduledQuestions(limit?: number): QuestionWithDetails[] {
+    return this.questionDAL.getScheduledQuestions(limit);
+  }
+
+  getDueQuestionsCount() {
+    return this.questionDAL.getDueQuestionsCount();
+  }
+
+  getQuestionsByScheduleStatus(status: "due-today" | "overdue" | "upcoming") {
+    return this.questionDAL.getQuestionsByScheduleStatus(status);
+  }
+
+  scheduleAllExistingQuestions(): boolean {
+    return this.questionDAL.scheduleExistingQuestions();
+  }
+
+  // Add method to get mixed review questions
+  getMixedReviewQuestions(limit: number = 20): QuestionWithDetails[] {
+    return this.questionDAL.getDueQuestions(limit);
+  }
+
+  // Add method to get quiz-specific scheduled questions
+  getQuizScheduledQuestions(quizId: number): QuestionWithDetails[] {
+    return this.questionDAL.getScheduledQuestionsByQuizId(quizId);
+  }
+
+  // Fix the scheduling submission method
   submitQuizAttemptWithScheduling(
     quizId: number,
     answers: { questionId: number; answer: string; responseTime?: number }[],
@@ -309,10 +336,27 @@ export class QuizService {
       throw new Error("Quiz not found");
     }
 
-    const questions = this.questionDAL.getByQuizId(quizId);
+    let questions: QuestionWithDetails[];
+
+    // Handle special quiz IDs for mixed reviews
+    if (quizId === -1) {
+      // General review
+      const questionIds = answers.map((a) => a.questionId);
+      questions = questionIds
+        .map((id) => this.questionDAL.getById(id))
+        .filter(Boolean);
+    } else if (quizId === -2) {
+      // Weak questions review
+      const questionIds = answers.map((a) => a.questionId);
+      questions = questionIds
+        .map((id) => this.questionDAL.getById(id))
+        .filter(Boolean);
+    } else {
+      questions = this.questionDAL.getByQuizId(quizId);
+    }
 
     if (questions.length === 0) {
-      throw new Error("Quiz has no questions");
+      throw new Error("No questions found");
     }
 
     let score = 0;
@@ -325,11 +369,9 @@ export class QuizService {
     // Process answers and update scheduling
     for (const answer of answers) {
       const question = questions.find((q) => q.id === answer.questionId);
-
       if (!question) continue;
 
       const isCorrect = this.checkAnswer(question, answer.answer);
-
       if (isCorrect) score++;
 
       responses.push({
@@ -346,69 +388,35 @@ export class QuizService {
       );
     }
 
-    // Handle unanswered questions (timeout)
-    if (responses.length !== questions.length) {
-      const answeredQuestionIds = new Set(responses.map((r) => r.question_id));
-
-      for (const question of questions) {
-        if (!answeredQuestionIds.has(question.id)) {
-          responses.push({
-            question_id: question.id,
-            user_answer: "TIMEOUT",
-            is_correct: false,
-          });
-
-          // Update scheduling for timeout (treat as incorrect)
-          this.questionDAL.updateScheduling(question.id, false);
-        }
-      }
-    }
-
-    // Save attempt
-    const attemptId = this.attemptDAL.create({
-      quiz_id: quizId,
-      score,
-      total_questions: questions.length,
-    });
-
-    for (const response of responses) {
-      this.attemptDAL.saveResponse({
-        attempt_id: attemptId,
-        ...response,
+    // Only save attempt for real quizzes, not mixed reviews
+    let attemptId: number;
+    if (quizId > 0) {
+      attemptId = this.attemptDAL.create({
+        quiz_id: quizId,
+        score,
+        total_questions: questions.length,
       });
-    }
 
-    const attempt = this.attemptDAL.getWithResponses(attemptId);
-    if (!attempt) {
-      throw new Error("Failed to retrieve attempt");
+      for (const response of responses) {
+        this.attemptDAL.saveResponse({
+          attempt_id: attemptId,
+          ...response,
+        });
+      }
+    } else {
+      attemptId = -1; // Placeholder for mixed reviews
     }
 
     return {
-      id: attempt.id,
-      score: attempt.score,
-      percentage: attempt.percentage,
-      correct_questions: attempt.responses
+      id: attemptId,
+      score: score,
+      percentage: Math.round((score / questions.length) * 100),
+      correct_questions: responses
         .filter((r) => r.is_correct)
         .map((r) => r.question_id),
-      wrong_questions: attempt.responses
+      wrong_questions: responses
         .filter((r) => !r.is_correct)
         .map((r) => r.question_id),
     };
-  }
-
-  getScheduledQuestions(limit?: number): QuestionWithDetails[] {
-    return this.questionDAL.getScheduledQuestions(limit);
-  }
-
-  getDueQuestionsCount() {
-    return this.questionDAL.getDueQuestionsCount();
-  }
-
-  getQuestionsByScheduleStatus(status: "due-today" | "overdue" | "upcoming") {
-    return this.questionDAL.getQuestionsByScheduleStatus(status);
-  }
-
-  scheduleAllExistingQuestions(): boolean {
-    return this.questionDAL.scheduleExistingQuestions();
   }
 }

@@ -115,6 +115,10 @@ CREATE INDEX IF NOT EXISTS idx_questions_next_review ON questions (next_review_d
 
 CREATE INDEX IF NOT EXISTS idx_questions_scheduled_review ON questions (scheduled, next_review_date);
 
+CREATE INDEX IF NOT EXISTS idx_questions_scheduled_next_review ON questions (scheduled, next_review_date);
+
+CREATE INDEX IF NOT EXISTS idx_questions_consecutive_correct ON questions (consecutive_correct);
+
 /* 
 * FLASHCARD SCHEMA 
 * FLASHCARD SCHEMA

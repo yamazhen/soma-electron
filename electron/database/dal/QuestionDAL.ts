@@ -214,72 +214,6 @@ export class QuestionDAL extends BaseDAL {
     return result.changes > 0;
   }
 
-  updateScheduling(
-    questionId: number,
-    isCorrect: boolean,
-    responseTime?: number,
-  ): boolean {
-    return this.transaction(() => {
-      const question = this.getById(questionId);
-      if (!question) return false;
-
-      const now = new Date().toISOString();
-      let newInterval = question.review_interval || 1;
-      let newEaseFactor = question.ease_factor || 2.5;
-      let newConsecutiveCorrect = question.consecutive_correct || 0;
-
-      if (isCorrect) {
-        newConsecutiveCorrect++;
-
-        // SM-2 algorithm implementation
-        if (newConsecutiveCorrect === 1) {
-          newInterval = 1;
-        } else if (newConsecutiveCorrect === 2) {
-          newInterval = 6;
-        } else {
-          newInterval = Math.round(newInterval * newEaseFactor);
-        }
-
-        // Adjust ease factor based on performance
-        newEaseFactor = Math.max(
-          1.3,
-          newEaseFactor + (0.1 - (5 - 5) * (0.08 + (5 - 5) * 0.02)),
-        );
-      } else {
-        // Reset on incorrect answer
-        newConsecutiveCorrect = 0;
-        newInterval = 1;
-        newEaseFactor = Math.max(1.3, newEaseFactor - 0.2);
-      }
-
-      const nextReviewDate = new Date();
-      nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
-
-      const stmt = this.db.prepare(`
-        UPDATE questions 
-        SET 
-          review_interval = ?,
-          ease_factor = ?,
-          consecutive_correct = ?,
-          last_reviewed = ?,
-          next_review_date = ?,
-          scheduled = 1
-        WHERE id = ?
-      `);
-
-      const result = stmt.run(
-        newInterval,
-        newEaseFactor,
-        newConsecutiveCorrect,
-        now,
-        nextReviewDate.toISOString(),
-        questionId,
-      );
-
-      return result.changes > 0;
-    });
-  }
-
   getScheduledQuestions(limit?: number): QuestionWithDetails[] {
     const now = new Date().toISOString();
     let query = `
@@ -424,6 +358,128 @@ export class QuestionDAL extends BaseDAL {
     `);
 
       const result = stmt.run();
+      return result.changes > 0;
+    });
+  }
+
+  getDueQuestions(limit?: number): QuestionWithDetails[] {
+    const now = new Date().toISOString();
+    let query = `
+    SELECT * FROM questions 
+    WHERE scheduled = 1 
+    AND (next_review_date IS NULL OR next_review_date <= ?)
+    ORDER BY 
+      CASE WHEN next_review_date IS NULL THEN 0 ELSE 1 END,
+      next_review_date ASC, 
+      consecutive_correct ASC,
+      id ASC
+  `;
+
+    if (limit) {
+      query += ` LIMIT ?`;
+      const questions = this.db.prepare(query).all(now, limit);
+      return questions.map((q) => this.loadDetails(q));
+    }
+
+    const questions = this.db.prepare(query).all(now);
+    return questions.map((q) => this.loadDetails(q));
+  }
+
+  getScheduledQuestionsByQuizId(quizId: number): QuestionWithDetails[] {
+    const questions = this.db
+      .prepare(
+        `
+      SELECT * FROM questions 
+      WHERE quiz_id = ? AND scheduled = 1 
+      ORDER BY next_review_date ASC, id ASC
+    `,
+      )
+      .all(quizId);
+
+    return questions.map((question) => this.loadDetails(question));
+  }
+
+  // Fix the spaced repetition algorithm
+  updateScheduling(
+    questionId: number,
+    isCorrect: boolean,
+    responseTime?: number,
+  ): boolean {
+    return this.transaction(() => {
+      const question = this.getById(questionId);
+      if (!question) return false;
+
+      const now = new Date().toISOString();
+      let newInterval = question.review_interval || 1;
+      let newEaseFactor = question.ease_factor || 2.5;
+      let newConsecutiveCorrect = question.consecutive_correct || 0;
+
+      if (isCorrect) {
+        newConsecutiveCorrect++;
+
+        // Improved SM-2 algorithm
+        if (newConsecutiveCorrect === 1) {
+          newInterval = 1;
+        } else if (newConsecutiveCorrect === 2) {
+          newInterval = 6;
+        } else {
+          newInterval = Math.ceil(newInterval * newEaseFactor);
+        }
+
+        // Adjust ease factor based on performance (quality = 4 for correct)
+        const quality = 4;
+        newEaseFactor = Math.max(
+          1.3,
+          newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)),
+        );
+      } else {
+        // Reset on incorrect answer
+        newConsecutiveCorrect = 0;
+        newInterval = 1;
+        // Decrease ease factor for incorrect answers (quality = 2)
+        const quality = 2;
+        newEaseFactor = Math.max(
+          1.3,
+          newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)),
+        );
+      }
+
+      // Consider response time for interval adjustment
+      if (responseTime) {
+        const avgResponseTime = 15; // seconds
+        const timeFactor = Math.min(
+          Math.max(responseTime / avgResponseTime, 0.5),
+          2.0,
+        );
+        if (isCorrect) {
+          newInterval = Math.ceil(newInterval / timeFactor);
+        }
+      }
+
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
+
+      const stmt = this.db.prepare(`
+      UPDATE questions 
+      SET 
+        review_interval = ?,
+        ease_factor = ?,
+        consecutive_correct = ?,
+        last_reviewed = ?,
+        next_review_date = ?,
+        scheduled = 1
+      WHERE id = ?
+    `);
+
+      const result = stmt.run(
+        newInterval,
+        newEaseFactor,
+        newConsecutiveCorrect,
+        now,
+        nextReviewDate.toISOString(),
+        questionId,
+      );
+
       return result.changes > 0;
     });
   }

@@ -33,6 +33,13 @@ export const quizApi = {
   getQuestionsByScheduleStatus: (status: string) =>
     ipcRenderer.invoke("quiz:getQuestionsByScheduleStatus", status),
   scheduleAllQuestions: () => ipcRenderer.invoke("quiz:scheduleAllQuestions"),
+  // Add these new methods
+  getMixedReview: (limit?: number) =>
+    ipcRenderer.invoke("quiz:getMixedReview", limit),
+  getQuizScheduledQuestions: (quizId: number) =>
+    ipcRenderer.invoke("quiz:getQuizScheduledQuestions", quizId),
+  scheduleTopFailedQuestions: () =>
+    ipcRenderer.invoke("quiz:scheduleTopFailedQuestions"),
 };
 
 export const questionApi = {

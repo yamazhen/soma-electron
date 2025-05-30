@@ -142,12 +142,11 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
 
   const startGeneralReview = async () => {
     try {
-      const result = await window.quizIpc.getScheduledQuestions(50);
+      const result = await window.quizIpc.getMixedReview(30);
       if (result.success && result.questions && result.questions.length > 0) {
-        // Create a virtual quiz with scheduled questions
         const generalQuiz: QuizDetails = {
-          id: -1, // Special ID for general review
-          title: "General Review",
+          id: -1,
+          title: "Mixed Review Session",
           questions: result.questions,
           count: result.questions.length,
           created_at: new Date().toISOString(),
@@ -165,46 +164,27 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
 
   const startWeakQuestionsReview = async () => {
     try {
-      // Get questions that need more practice based on low accuracy
-      const weakQuestions: QuestionWithDetails[] = [];
-
-      // Get all quizzes and their questions
-      if (quizzes && quizzes.length > 0) {
-        for (const quiz of quizzes) {
-          // Get question performance data for each quiz
-          const historyResult = await window.quizIpc.getAttemptHistory(
-            quiz.id!,
-          );
-          if (historyResult.success && historyResult.history) {
-            // Find questions with low accuracy (< 70%)
-            // This is a simplified approach - you might want to implement
-            // more sophisticated analytics in the backend
-            const questionsNeedingWork = quiz.questions
-              .filter((q) => {
-                // For now, just include scheduled questions
-                // In a real implementation, you'd track per-question accuracy
-                return q.scheduled;
-              })
-              .slice(0, 20); // Limit to 20 questions
-
-            weakQuestions.push(...questionsNeedingWork);
-          }
-        }
+      // Schedule top failed questions first
+      const scheduleResult = await window.quizIpc.scheduleTopFailedQuestions();
+      if (!scheduleResult.success) {
+        alert("No questions need extra practice!");
+        return;
       }
 
-      if (weakQuestions.length > 0) {
-        // Create a virtual quiz with weak questions
+      // Get the scheduled weak questions
+      const result = await window.quizIpc.getMixedReview(20);
+      if (result.success && result.questions && result.questions.length > 0) {
         const weakQuestionsQuiz: QuizDetails = {
-          id: -2, // Special ID for weak questions review
-          title: "Weak Questions Review",
-          questions: weakQuestions,
-          count: weakQuestions.length,
+          id: -2,
+          title: "Weak Questions Practice",
+          questions: result.questions,
+          count: result.questions.length,
           created_at: new Date().toISOString(),
         };
         setQuizInReview(weakQuestionsQuiz);
         setQuizView("inReview");
       } else {
-        alert("No weak questions found! Great job with your studies!");
+        alert("No weak questions found! Great job!");
       }
     } catch (error) {
       console.error("Error starting weak questions review:", error);
