@@ -2,15 +2,13 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { EditorView, gutter, GutterMarker, Decoration } from "@codemirror/view";
+import type { Range, RangeValue, Transaction } from "@codemirror/state";
 import {
-	StateField,
 	StateEffect,
-	Range,
-	RangeSet,
-	RangeValue,
-	Transaction,
-	MapMode,
 	EditorState,
+	MapMode,
+	StateField,
+	RangeSet,
 } from "@codemirror/state";
 
 const toggleFoldEffect = StateEffect.define<number>();
@@ -71,8 +69,8 @@ class FoldDecoration implements RangeValue {
 	}
 
 	map(mapping: any, _from: number, _to: number) {
-		let newFrom = mapping.mapPos(this.from);
-		let newTo = mapping.mapPos(this.to);
+		const newFrom = mapping.mapPos(this.from);
+		const newTo = mapping.mapPos(this.to);
 		return newFrom < newTo ? new FoldDecoration(newFrom, newTo) : null;
 	}
 }
@@ -84,13 +82,12 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
 	},
 
 	update(folds: RangeSet<FoldDecoration>, tr: Transaction) {
-		folds = folds.map(tr.changes);
+		let updatedFolds = folds.map(tr.changes);
 
 		for (const effect of tr.effects) {
 			if (effect.is(toggleFoldEffect)) {
 				const lineNumber = effect.value;
 				const line = tr.state.doc.line(lineNumber);
-
 				const headingMatch = line.text.match(/^(#+)\s+/);
 				if (!headingMatch) continue;
 
@@ -119,18 +116,18 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
 				}
 
 				let isFolded = false;
-				folds.between(line.from, line.from + 1, () => {
+				updatedFolds.between(line.from, line.from + 1, () => {
 					isFolded = true;
 				});
 
 				if (isFolded) {
-					folds = folds.update({
+					updatedFolds = updatedFolds.update({
 						filter: (from) => from !== line.from,
 					});
 				} else {
 					if (foundContent && endPos > line.to) {
 						const decoration = new FoldDecoration(line.to, endPos);
-						folds = folds.update({
+						updatedFolds = updatedFolds.update({
 							add: [{ from: line.from, to: line.from, value: decoration }],
 						});
 					}
@@ -138,7 +135,7 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
 			}
 		}
 
-		return folds;
+		return updatedFolds;
 	},
 
 	provide(field) {
@@ -146,7 +143,7 @@ const foldStateField = StateField.define<RangeSet<FoldDecoration>>({
 			EditorView.decorations.from(field, (folds: RangeSet<FoldDecoration>) => {
 				const decorations: Range<Decoration>[] = [];
 
-				folds.between(0, Infinity, (_from, _to, value) => {
+				folds.between(0, Number.POSITIVE_INFINITY, (_from, _to, value) => {
 					decorations.push(
 						Decoration.replace({
 							inclusive: true,

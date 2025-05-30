@@ -148,7 +148,7 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
 					title: quiz.title,
 					quizTitle: quiz.title,
 					entityId: quiz.id.toString(),
-					score: result.review.percentage,
+					score: Number(result.review.percentage.toFixed(2)),
 					questionsCount: quiz.questions.length,
 				});
 			} else {

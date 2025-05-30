@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import type { FC } from "react";
 import { useAppContext } from "../../context/AppContext";
 import {
 	ChevronLeft,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Tippy from "@tippyjs/react";
 
-const CardSetView: React.FC = () => {
+const CardSetView: FC = () => {
 	const { deckInView, setCardView, trackStudyActivity } = useAppContext();
 	const [currentIdx, setCurrentIdx] = useState(0);
 	const [showBack, setShowBack] = useState(false);
@@ -48,8 +49,9 @@ const CardSetView: React.FC = () => {
 							No deck selected
 						</h2>
 						<button
+							type="button"
 							onClick={() => setCardView("listing")}
-							className="px-4 py-2 bg-soma-accent1 text-white rounded-lg hover:bg-opacity-90 transition-all"
+							className="px-4 py-2 bg-soma-accent1 text-white rounded-lg hover:bg-opacity-90 transition-all cursor-pointer"
 						>
 							Back to Decks
 						</button>
@@ -88,12 +90,12 @@ const CardSetView: React.FC = () => {
 		}
 	};
 
-	// Keyboard navigation
-	React.useEffect(() => {
+	useEffect(() => {
 		const handleKeyPress = (e: KeyboardEvent) => {
 			if (viewMode === "stack") {
-				if (e.key === "ArrowLeft") prev();
-				if (e.key === "ArrowRight") next();
+				if (e.key === "ArrowLeft") setCurrentIdx((idx) => Math.max(0, idx - 1));
+				if (e.key === "ArrowRight")
+					setCurrentIdx((idx) => Math.min(cards.length - 1, idx + 1));
 				if (e.key === " ") {
 					e.preventDefault();
 					setShowBack(!showBack);
@@ -103,7 +105,7 @@ const CardSetView: React.FC = () => {
 
 		window.addEventListener("keydown", handleKeyPress);
 		return () => window.removeEventListener("keydown", handleKeyPress);
-	}, [currentIdx, showBack, viewMode]);
+	}, [showBack, viewMode, cards.length]);
 
 	return (
 		<section className="h-full w-full bg-soma-darkest overflow-auto">
@@ -113,8 +115,9 @@ const CardSetView: React.FC = () => {
 					<div className="mb-6">
 						<div className="flex items-center justify-between mb-4">
 							<button
+								type="button"
 								onClick={() => setCardView("listing")}
-								className="flex items-center gap-2 text-soma-text-secondary hover:text-soma-text-primary transition-colors"
+								className="flex items-center gap-2 text-soma-text-secondary hover:text-soma-text-primary transition-colors cursor-pointer"
 							>
 								<ChevronLeft size={20} />
 								Back to decks
@@ -123,17 +126,22 @@ const CardSetView: React.FC = () => {
 							<div className="flex items-center gap-2">
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
-										<Tippy
-											content="Delete deck"
-											placement="bottom"
-											arrow={true}
-											delay={200}
-											theme="custom"
-										>
-											<button className="p-2 bg-soma-error/20 text-soma-error rounded-lg hover:bg-soma-error/30 transition-all">
-												<Trash2 size={20} />
-											</button>
-										</Tippy>
+										<div>
+											<Tippy
+												content="Delete deck"
+												placement="bottom"
+												arrow={true}
+												delay={200}
+												theme="custom"
+											>
+												<button
+													type="button"
+													className="p-2 bg-soma-error/20 text-soma-error rounded-lg hover:bg-soma-error/30 transition-all"
+												>
+													<Trash2 size={20} />
+												</button>
+											</Tippy>
+										</div>
 									</AlertDialogTrigger>
 									<AlertDialogContent>
 										<AlertDialogHeader>
@@ -156,6 +164,7 @@ const CardSetView: React.FC = () => {
 								</AlertDialog>
 
 								<button
+									type="button"
 									onClick={() => setViewMode("stack")}
 									className={`p-2 rounded-lg transition-all ${
 										viewMode === "stack"
@@ -166,6 +175,7 @@ const CardSetView: React.FC = () => {
 									<Grid3X3 size={20} />
 								</button>
 								<button
+									type="button"
 									onClick={() => setViewMode("grid")}
 									className={`p-2 rounded-lg transition-all ${
 										viewMode === "grid"
@@ -214,12 +224,13 @@ const CardSetView: React.FC = () => {
 							<div className="relative w-full max-w-2xl">
 								{/* Left Navigation */}
 								<button
+									type="button"
 									onClick={prev}
 									disabled={currentIdx === 0}
 									className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-30 p-3 rounded-full transition-all duration-200 ${
 										currentIdx === 0
 											? "bg-soma-medium/30 text-soma-text-secondary cursor-not-allowed"
-											: "bg-soma-dark hover:bg-soma-medium text-soma-text-primary hover:scale-110"
+											: "bg-soma-dark hover:bg-soma-medium text-soma-text-primary hover:scale-110 cursor-pointer"
 									}`}
 								>
 									<ArrowLeft size={24} />
@@ -227,12 +238,13 @@ const CardSetView: React.FC = () => {
 
 								{/* Right Navigation */}
 								<button
+									type="button"
 									onClick={next}
 									disabled={currentIdx === cards.length - 1}
 									className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-30 p-3 rounded-full transition-all duration-200 ${
 										currentIdx === cards.length - 1
 											? "bg-soma-medium/30 text-soma-text-secondary cursor-not-allowed"
-											: "bg-soma-dark hover:bg-soma-medium text-soma-text-primary hover:scale-110"
+											: "bg-soma-dark hover:bg-soma-medium text-soma-text-primary hover:scale-110 cursor-pointer "
 									}`}
 								>
 									<ArrowRight size={24} />
@@ -254,6 +266,12 @@ const CardSetView: React.FC = () => {
 								<div
 									onClick={() => handleCardClick(currentIdx)}
 									className="relative bg-soma-dark rounded-xl p-12 cursor-pointer min-h-[400px] flex flex-col items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 z-20 transform hover:scale-[1.02]"
+									onKeyDown={(e) => {
+										e.preventDefault();
+										if (e.key === " ") {
+											handleCardClick(currentIdx);
+										}
+									}}
 								>
 									<div className="text-center max-w-lg">
 										<p className="text-2xl text-soma-text-primary leading-relaxed">
@@ -284,12 +302,13 @@ const CardSetView: React.FC = () => {
 							{/* Minimalist Bottom Navigation */}
 							<div className="flex items-center gap-8 mt-8">
 								<button
+									type="button"
 									onClick={prev}
 									disabled={currentIdx === 0}
 									className={`group flex items-center gap-2 transition-all duration-200 ${
 										currentIdx === 0
 											? "text-soma-text-secondary cursor-not-allowed opacity-50"
-											: "text-soma-text-secondary hover:text-soma-text-primary"
+											: "text-soma-text-secondary hover:text-soma-text-primary cursor-pointer"
 									}`}
 								>
 									<ChevronLeft
@@ -300,12 +319,13 @@ const CardSetView: React.FC = () => {
 								</button>
 
 								<div className="flex gap-2">
-									{cards.map((_, idx) => (
+									{cards.map((card, index) => (
 										<button
-											key={idx}
-											onClick={() => setCurrentIdx(idx)}
+											type="button"
+											key={card.id}
+											onClick={() => setCurrentIdx(index)}
 											className={`h-2 rounded-full transition-all duration-300 ${
-												idx === currentIdx
+												index === currentIdx
 													? "w-8 bg-soma-accent1"
 													: "w-2 bg-soma-medium hover:bg-soma-light"
 											}`}
@@ -314,12 +334,13 @@ const CardSetView: React.FC = () => {
 								</div>
 
 								<button
+									type="button"
 									onClick={next}
 									disabled={currentIdx === cards.length - 1}
 									className={`group flex items-center gap-2 transition-all duration-200 ${
 										currentIdx === cards.length - 1
 											? "text-soma-text-secondary cursor-not-allowed opacity-50"
-											: "text-soma-text-secondary hover:text-soma-text-primary"
+											: "text-soma-text-secondary hover:text-soma-text-primary cursor-pointer"
 									}`}
 								>
 									<span className="text-sm font-medium">Next</span>
@@ -337,6 +358,7 @@ const CardSetView: React.FC = () => {
 						<div>
 							<div className="flex justify-end mb-4">
 								<button
+									type="button"
 									onClick={() => setShowAllAnswers(!showAllAnswers)}
 									className="flex items-center gap-2 px-4 py-2 bg-soma-dark rounded-lg hover:bg-soma-medium transition-all"
 								>
@@ -350,8 +372,9 @@ const CardSetView: React.FC = () => {
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 								{cards.map((card, idx) => (
 									<div
-										key={idx}
+										key={card.id}
 										onClick={() => handleCardClick(idx)}
+										onKeyDown={(_) => {}}
 										className="bg-soma-dark rounded-xl p-6 hover:bg-soma-medium cursor-pointer transition-all duration-200 hover:shadow-lg"
 									>
 										<div className="flex items-start justify-between mb-3">
