@@ -185,7 +185,6 @@ const Home: React.FC = () => {
 		loadAnalytics();
 	}, [lastActivityUpdate]);
 
-	// Helper function to calculate time ago
 	function getTimeAgo(date: Date): string {
 		const now = new Date();
 		const diffMs = now.getTime() - date.getTime();
@@ -193,8 +192,10 @@ const Home: React.FC = () => {
 		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+		if (diffMins < 1) return "Just now";
 		if (diffMins < 60) return `${diffMins} min ago`;
-		if (diffHours < 24) return `${diffHours} hours ago`;
+		if (diffHours < 24)
+			return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
 		if (diffDays === 1) return "Yesterday";
 		return `${diffDays} days ago`;
 	}

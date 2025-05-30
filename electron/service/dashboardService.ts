@@ -145,7 +145,7 @@ export class DashboardService {
 					? `${metadata.cardCount} cards`
 					: "Deck reviewed";
 			case "note":
-				return "Note updated";
+				return "Note modified";
 			default:
 				return "Activity completed";
 		}
