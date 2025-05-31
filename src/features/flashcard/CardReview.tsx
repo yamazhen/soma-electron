@@ -640,9 +640,6 @@ const CardReview: React.FC = () => {
                         <span className="text-sm text-soma-text-secondary">
                           {deck.cards.length} cards
                         </span>
-                        <span className="text-sm text-soma-text-secondary">
-                          ({deck.scheduledCards} scheduled)
-                        </span>
                         {deck.hasUnscheduledCards && (
                           <span className="px-2 py-1 bg-soma-warning/20 text-soma-warning rounded-lg text-xs font-medium">
                             Has unscheduled cards
