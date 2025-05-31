@@ -86,71 +86,77 @@ const CardReview: React.FC = () => {
       // Load deck stats with real data
       if (decks && decks.length > 0) {
         const decksWithStatsData = await Promise.all(
-          decks.map(async (deck) => {
-            try {
-              const [
-                dueCountResult,
-                accuracyResult,
-                difficultyResult,
-                reviewStatsResult,
-                unscheduledResult,
-              ] = await Promise.all([
-                window.deckIpc.getDueCardsCountByDeck(deck.id!),
-                window.deckIpc.getDeckAccuracy(deck.id!),
-                window.deckIpc.getDeckDifficulty(deck.id!),
-                window.deckIpc.getDeckReviewStats(deck.id!),
-                window.deckIpc.hasUnscheduledCards(deck.id!),
-              ]);
+          decks
+            .filter((deck) => deck.id && deck.id > 0) // ✅ Filter out special deck IDs
+            .map(async (deck) => {
+              try {
+                const [
+                  dueCountResult,
+                  accuracyResult,
+                  difficultyResult,
+                  reviewStatsResult,
+                  unscheduledResult,
+                ] = await Promise.all([
+                  window.deckIpc.getDueCardsCountByDeck(deck.id!),
+                  window.deckIpc.getDeckAccuracy(deck.id!),
+                  window.deckIpc.getDeckDifficulty(deck.id!),
+                  window.deckIpc.getDeckReviewStats(deck.id!),
+                  window.deckIpc.hasUnscheduledCards(deck.id!),
+                ]);
 
-              const dueCounts = dueCountResult.success
-                ? dueCountResult.data
-                : { today: 0, overdue: 0, upcoming: 0 };
+                // ... rest of the mapping logic stays the same
+                const dueCounts = dueCountResult.success
+                  ? dueCountResult.data
+                  : { today: 0, overdue: 0, upcoming: 0 };
 
-              const accuracy = accuracyResult.success
-                ? accuracyResult.data || 0
-                : 0;
-              const difficulty = difficultyResult.success
-                ? difficultyResult.data || 2.5
-                : 2.5;
-              const reviewStats = reviewStatsResult.success
-                ? reviewStatsResult.data
-                : { lastReviewed: new Date().toISOString(), totalReviews: 0 };
-              const hasUnscheduled = unscheduledResult.success
-                ? unscheduledResult.data || false
-                : false;
+                const accuracy = accuracyResult.success
+                  ? accuracyResult.data || 0
+                  : 0;
+                const difficulty = difficultyResult.success
+                  ? difficultyResult.data || 2.5
+                  : 2.5;
+                const reviewStats = reviewStatsResult.success
+                  ? reviewStatsResult.data
+                  : { lastReviewed: new Date().toISOString(), totalReviews: 0 };
+                const hasUnscheduled = unscheduledResult.success
+                  ? unscheduledResult.data || false
+                  : false;
 
-              const scheduledCards = deck.cards.filter(
-                (card) => card.scheduled,
-              ).length;
+                const scheduledCards = deck.cards.filter(
+                  (card) => card.scheduled,
+                ).length;
 
-              return {
-                ...deck,
-                dueCards: dueCounts.today,
-                overdueCards: dueCounts.overdue,
-                upcomingCards: dueCounts.upcoming,
-                lastReviewed: new Date(reviewStats.lastReviewed),
-                accuracy: accuracy,
-                difficulty: difficulty,
-                totalReviews: reviewStats.totalReviews,
-                scheduledCards: scheduledCards,
-                hasUnscheduledCards: hasUnscheduled,
-              };
-            } catch (error) {
-              console.error(`Error loading stats for deck ${deck.id}:`, error);
-              return {
-                ...deck,
-                dueCards: 0,
-                overdueCards: 0,
-                upcomingCards: 0,
-                lastReviewed: new Date(),
-                accuracy: 0,
-                difficulty: 0,
-                totalReviews: 0,
-                scheduledCards: 0,
-                hasUnscheduledCards: false,
-              };
-            }
-          }),
+                return {
+                  ...deck,
+                  dueCards: dueCounts.today,
+                  overdueCards: dueCounts.overdue,
+                  upcomingCards: dueCounts.upcoming,
+                  lastReviewed: new Date(reviewStats.lastReviewed),
+                  accuracy: accuracy,
+                  difficulty: difficulty,
+                  totalReviews: reviewStats.totalReviews,
+                  scheduledCards: scheduledCards,
+                  hasUnscheduledCards: hasUnscheduled,
+                };
+              } catch (error) {
+                console.error(
+                  `Error loading stats for deck ${deck.id}:`,
+                  error,
+                );
+                return {
+                  ...deck,
+                  dueCards: 0,
+                  overdueCards: 0,
+                  upcomingCards: 0,
+                  lastReviewed: new Date(),
+                  accuracy: 0,
+                  difficulty: 0,
+                  totalReviews: 0,
+                  scheduledCards: 0,
+                  hasUnscheduledCards: false,
+                };
+              }
+            }),
         );
         setDecksWithStats(decksWithStatsData);
       }
@@ -245,10 +251,23 @@ const CardReview: React.FC = () => {
       // Get weak cards first
       const result = await window.deckIpc.getWeakCards(20);
       if (result.success && result.data && result.data.length > 0) {
-        // If we have weak cards, start review immediately
+        // Don't create a fake deck - just pass the cards directly
+        // You might need to update your context to handle this
+        const weakCards = result.data.map((card) => ({
+          ...card,
+          deck_title: card.deck_title || "Mixed Deck",
+        }));
+
+        // Set a flag in context to indicate this is a weak cards review
+        setDeckInView({
+          id: -1,
+          title: "Weak Cards Practice",
+          cards: weakCards,
+          isWeakCardsReview: true, // Add this flag
+        });
         setCardView("inReview");
       } else {
-        // If no weak cards, check if we have any cards at all
+        // Show appropriate error messages without switching views
         if (analytics.totalCards === 0) {
           toast.error("No cards found. Please create some flashcards first!");
         } else if (analytics.scheduledCards === 0) {
@@ -299,7 +318,18 @@ const CardReview: React.FC = () => {
 
   const startReview = async (deckId: number) => {
     try {
-      // Check if this deck has due cards
+      // Handle special deck IDs (like weak cards review)
+      if (deckId < 0) {
+        // This is a special deck (like weak cards), don't try to load due cards
+        const deck = decksWithStats.find((d) => d.id === deckId);
+        if (deck) {
+          setDeckInView(deck);
+          setCardView("inReview");
+        }
+        return;
+      }
+
+      // Check if this deck has due cards (only for real decks with positive IDs)
       const dueCardsResult = await window.deckIpc.getDueCardsByDeck(deckId, 1);
 
       if (
