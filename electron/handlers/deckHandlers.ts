@@ -90,4 +90,26 @@ export function setupDeckHandlers() {
   ipcMain.handle("deck:getDueCardsCountByDeck", async (_, deckId: number) => {
     return deckService.getDueCardsCountByDeck(deckId);
   });
+
+  // Add these to setupDeckHandlers() in deckHandlers.ts
+
+  ipcMain.handle("deck:getDeckAccuracy", async (_, deckId: number) => {
+    return deckService.getDeckAccuracy(deckId);
+  });
+
+  ipcMain.handle("deck:getDeckDifficulty", async (_, deckId: number) => {
+    return deckService.getDeckDifficulty(deckId);
+  });
+
+  ipcMain.handle("deck:getDeckReviewStats", async (_, deckId: number) => {
+    return deckService.getDeckReviewStats(deckId);
+  });
+
+  ipcMain.handle("deck:scheduleDeckCards", async (_, deckId: number) => {
+    return deckService.scheduleDeckCards(deckId);
+  });
+
+  ipcMain.handle("deck:hasUnscheduledCards", async (_, deckId: number) => {
+    return deckService.hasUnscheduledCards(deckId);
+  });
 }

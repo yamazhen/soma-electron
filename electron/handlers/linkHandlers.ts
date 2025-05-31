@@ -28,16 +28,6 @@ export function setupLinkHandlers() {
     }
   });
 
-  ipcMain.handle("links:get-backlinks", async (_, notePath: string) => {
-    try {
-      const backlinks = await linkService.getBacklinks(notePath);
-      return { success: true, backlinks };
-    } catch (error) {
-      console.error("Error getting backlinks:", error);
-      return { success: false, error: extractErrorMessage(error) };
-    }
-  });
-
   ipcMain.handle("links:get-outgoing-links", async (_, sourcePath: string) => {
     try {
       const links = await linkService.getOutgoingLinks(sourcePath);

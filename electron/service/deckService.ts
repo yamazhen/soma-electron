@@ -1,8 +1,8 @@
+import { DeckDAL } from "../database/dal";
 import {
   handleServiceCall,
   handleServiceOperation,
 } from "../utils/serviceHelper";
-import { DeckDAL } from "../database/dal";
 
 export class DeckService {
   private deckDAL = new DeckDAL();
@@ -249,5 +249,55 @@ export class DeckService {
       }
       return this.deckDAL.getDueCardsCountByDeck(deckId);
     }, "Failed to get due cards count for deck");
+  }
+
+  async getDeckAccuracy(deckId: number): Promise<IpcResponseData<number>> {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.getDeckAccuracy(deckId);
+    }, "Failed to get deck accuracy");
+  }
+
+  async getDeckDifficulty(deckId: number): Promise<IpcResponseData<number>> {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.getDeckDifficulty(deckId);
+    }, "Failed to get deck difficulty");
+  }
+
+  async getDeckReviewStats(deckId: number): Promise<
+    IpcResponseData<{
+      lastReviewed: string;
+      totalReviews: number;
+    }>
+  > {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.getDeckReviewStats(deckId);
+    }, "Failed to get deck review stats");
+  }
+
+  async scheduleDeckCards(deckId: number): Promise<IpcResponse> {
+    return await handleServiceOperation(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.scheduleDeckCards(deckId);
+    }, "Failed to schedule deck cards");
+  }
+
+  async hasUnscheduledCards(deckId: number): Promise<IpcResponseData<boolean>> {
+    return await handleServiceCall(() => {
+      if (!deckId || deckId <= 0) {
+        throw new Error("Invalid deck ID");
+      }
+      return this.deckDAL.hasUnscheduledCards(deckId);
+    }, "Failed to check unscheduled cards");
   }
 }

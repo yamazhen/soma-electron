@@ -25,4 +25,14 @@ export const deckApi = {
     ipcRenderer.invoke("deck:getDueCardsByDeck", deckId, limit),
   getDueCardsCountByDeck: (deckId: number) =>
     ipcRenderer.invoke("deck:getDueCardsCountByDeck", deckId),
+  getDeckAccuracy: (deckId: number) =>
+    ipcRenderer.invoke("deck:getDeckAccuracy", deckId),
+  getDeckDifficulty: (deckId: number) =>
+    ipcRenderer.invoke("deck:getDeckDifficulty", deckId),
+  getDeckReviewStats: (deckId: number) =>
+    ipcRenderer.invoke("deck:getDeckReviewStats", deckId),
+  scheduleDeckCards: (deckId: number) =>
+    ipcRenderer.invoke("deck:scheduleDeckCards", deckId),
+  hasUnscheduledCards: (deckId: number) =>
+    ipcRenderer.invoke("deck:hasUnscheduledCards", deckId),
 };

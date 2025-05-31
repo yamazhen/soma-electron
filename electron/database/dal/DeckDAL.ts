@@ -590,4 +590,137 @@ export class DeckDAL extends BaseDAL {
       upcoming: upcomingCount,
     };
   }
+
+  // Add these methods to your DeckDAL.ts
+
+  getDeckAccuracy(deckId: number): number {
+    try {
+      const result = this.db
+        .prepare(
+          `
+      SELECT 
+        COUNT(*) as total_responses,
+        SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_responses
+      FROM card_responses cr
+      JOIN cards c ON cr.card_id = c.id
+      WHERE c.deck_id = ?
+    `,
+        )
+        .get(deckId) as { total_responses: number; correct_responses: number };
+
+      if (result.total_responses === 0) return 0;
+      return Math.round(
+        (result.correct_responses / result.total_responses) * 100,
+      );
+    } catch (error) {
+      console.error("Error calculating deck accuracy:", error);
+      return 0;
+    }
+  }
+
+  getDeckDifficulty(deckId: number): number {
+    try {
+      const result = this.db
+        .prepare(
+          `
+      SELECT AVG(ease_factor) as avg_difficulty
+      FROM cards
+      WHERE deck_id = ? AND ease_factor IS NOT NULL
+    `,
+        )
+        .get(deckId) as { avg_difficulty: number };
+
+      return Number((result.avg_difficulty || 2.5).toFixed(1));
+    } catch (error) {
+      console.error("Error calculating deck difficulty:", error);
+      return 2.5;
+    }
+  }
+
+  // Fix this method - it was counting card responses, not deck review sessions
+  getDeckReviewStats(deckId: number): {
+    lastReviewed: string;
+    totalReviews: number;
+  } {
+    try {
+      // Get the last reviewed date from any card in the deck
+      const lastReviewedResult = this.db
+        .prepare(
+          `
+      SELECT MAX(last_reviewed) as last_reviewed
+      FROM cards
+      WHERE deck_id = ? AND last_reviewed IS NOT NULL
+    `,
+        )
+        .get(deckId) as { last_reviewed: string };
+
+      // Count unique review sessions (by date) instead of individual card responses
+      const reviewSessionsResult = this.db
+        .prepare(
+          `
+      SELECT COUNT(DISTINCT DATE(cr.created_at)) as review_sessions
+      FROM card_responses cr
+      JOIN cards c ON cr.card_id = c.id
+      WHERE c.deck_id = ?
+    `,
+        )
+        .get(deckId) as { review_sessions: number };
+
+      return {
+        lastReviewed:
+          lastReviewedResult.last_reviewed || new Date().toISOString(),
+        totalReviews: reviewSessionsResult.review_sessions || 0,
+      };
+    } catch (error) {
+      console.error("Error getting deck review stats:", error);
+      return {
+        lastReviewed: new Date().toISOString(),
+        totalReviews: 0,
+      };
+    }
+  }
+
+  // Add method to schedule cards in a specific deck
+  scheduleDeckCards(deckId: number): boolean {
+    return this.transaction(() => {
+      try {
+        const stmt = this.db.prepare(`
+        UPDATE cards 
+        SET 
+          scheduled = 1,
+          next_review_date = datetime('now'),
+          review_interval = 1,
+          ease_factor = 2.5,
+          consecutive_correct = 0
+        WHERE deck_id = ? AND (scheduled = 0 OR scheduled IS NULL)
+      `);
+
+        const result = stmt.run(deckId);
+        return result.changes > 0;
+      } catch (error) {
+        console.error("Error scheduling deck cards:", error);
+        return false;
+      }
+    });
+  }
+
+  // Check if deck has any unscheduled cards
+  hasUnscheduledCards(deckId: number): boolean {
+    try {
+      const result = this.db
+        .prepare(
+          `
+      SELECT COUNT(*) as count
+      FROM cards
+      WHERE deck_id = ? AND (scheduled = 0 OR scheduled IS NULL)
+    `,
+        )
+        .get(deckId) as { count: number };
+
+      return result.count > 0;
+    } catch (error) {
+      console.error("Error checking unscheduled cards:", error);
+      return false;
+    }
+  }
 }

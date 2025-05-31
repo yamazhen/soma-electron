@@ -13,6 +13,7 @@ import {
   Award,
   Sparkles,
   AlertCircle,
+  Settings,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
@@ -30,6 +31,9 @@ interface DeckWithStats {
   lastReviewed: Date;
   accuracy: number;
   difficulty: number;
+  totalReviews: number;
+  scheduledCards: number;
+  hasUnscheduledCards: boolean;
 }
 
 const CardReview: React.FC = () => {
@@ -79,27 +83,57 @@ const CardReview: React.FC = () => {
         upcoming: dueCounts.upcoming,
       });
 
-      // Load deck stats
+      // Load deck stats with real data
       if (decks && decks.length > 0) {
         const decksWithStatsData = await Promise.all(
           decks.map(async (deck) => {
             try {
-              const dueCountResult =
-                await window.deckIpc.getDueCardsCountByDeck(deck.id!);
+              const [
+                dueCountResult,
+                accuracyResult,
+                difficultyResult,
+                reviewStatsResult,
+                unscheduledResult,
+              ] = await Promise.all([
+                window.deckIpc.getDueCardsCountByDeck(deck.id!),
+                window.deckIpc.getDeckAccuracy(deck.id!),
+                window.deckIpc.getDeckDifficulty(deck.id!),
+                window.deckIpc.getDeckReviewStats(deck.id!),
+                window.deckIpc.hasUnscheduledCards(deck.id!),
+              ]);
+
               const dueCounts = dueCountResult.success
                 ? dueCountResult.data
                 : { today: 0, overdue: 0, upcoming: 0 };
+
+              const accuracy = accuracyResult.success
+                ? accuracyResult.data || 0
+                : 0;
+              const difficulty = difficultyResult.success
+                ? difficultyResult.data || 2.5
+                : 2.5;
+              const reviewStats = reviewStatsResult.success
+                ? reviewStatsResult.data
+                : { lastReviewed: new Date().toISOString(), totalReviews: 0 };
+              const hasUnscheduled = unscheduledResult.success
+                ? unscheduledResult.data || false
+                : false;
+
+              const scheduledCards = deck.cards.filter(
+                (card) => card.scheduled,
+              ).length;
 
               return {
                 ...deck,
                 dueCards: dueCounts.today,
                 overdueCards: dueCounts.overdue,
                 upcomingCards: dueCounts.upcoming,
-                lastReviewed: new Date(
-                  Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
-                ),
-                accuracy: Math.floor(Math.random() * 30) + 70, // TODO: Calculate real accuracy
-                difficulty: Math.random() * 5, // TODO: Calculate real difficulty
+                lastReviewed: new Date(reviewStats.lastReviewed),
+                accuracy: accuracy,
+                difficulty: difficulty,
+                totalReviews: reviewStats.totalReviews,
+                scheduledCards: scheduledCards,
+                hasUnscheduledCards: hasUnscheduled,
               };
             } catch (error) {
               console.error(`Error loading stats for deck ${deck.id}:`, error);
@@ -111,6 +145,9 @@ const CardReview: React.FC = () => {
                 lastReviewed: new Date(),
                 accuracy: 0,
                 difficulty: 0,
+                totalReviews: 0,
+                scheduledCards: 0,
+                hasUnscheduledCards: false,
               };
             }
           }),
@@ -145,35 +182,118 @@ const CardReview: React.FC = () => {
 
   const startGeneralReview = async () => {
     try {
+      // First check if we have any due cards
+      const dueCountResult = await window.deckIpc.getDueCardsCount();
+      const dueCounts = dueCountResult.success
+        ? dueCountResult.data
+        : { today: 0, overdue: 0, upcoming: 0 };
+
+      if (dueCounts.today === 0 && dueCounts.overdue === 0) {
+        // Check if we have unscheduled cards across all decks
+        const hasAnyUnscheduled = decksWithStats.some(
+          (deck) => deck.hasUnscheduledCards,
+        );
+
+        if (hasAnyUnscheduled) {
+          const shouldSchedule = confirm(
+            "No cards are scheduled for review. Would you like to schedule all your cards for spaced repetition?",
+          );
+
+          if (shouldSchedule) {
+            try {
+              const result = await window.deckIpc.scheduleAllCards();
+              if (result.success) {
+                toast.success("All cards have been scheduled!");
+                await loadAnalytics();
+                // Try starting review again after scheduling
+                setTimeout(() => startGeneralReview(), 1000);
+                return;
+              } else {
+                toast.error("Failed to schedule cards");
+                return;
+              }
+            } catch (error) {
+              toast.error("Error scheduling cards");
+              return;
+            }
+          } else {
+            return; // User chose not to schedule
+          }
+        } else {
+          toast.error(
+            "No cards are due for review and no unscheduled cards found!",
+          );
+          return;
+        }
+      }
+
+      // Try to get due cards for review
       const result = await window.deckIpc.getMixedReview(30);
       if (result.success && result.data && result.data.length > 0) {
         setCardView("inReview");
       } else {
-        if (analytics.dueToday === 0 && analytics.overdue === 0) {
-          toast.error(
-            "No cards are scheduled for review. Please schedule some cards first!",
-          );
-        } else {
-          toast.error("No cards are due for review right now!");
-        }
+        toast.error("No cards are available for review right now!");
       }
     } catch (error) {
+      console.error("Error starting general review:", error);
       toast.error("Failed to start general review");
     }
   };
 
   const startWeakCardsReview = async () => {
     try {
+      // Get weak cards first
       const result = await window.deckIpc.getWeakCards(20);
       if (result.success && result.data && result.data.length > 0) {
-        // Schedule weak cards for immediate review
-        await window.deckIpc.scheduleAllCards();
+        // If we have weak cards, start review immediately
         setCardView("inReview");
       } else {
-        toast.error("No weak cards found for review!");
+        // If no weak cards, check if we have any cards at all
+        if (analytics.totalCards === 0) {
+          toast.error("No cards found. Please create some flashcards first!");
+        } else if (analytics.scheduledCards === 0) {
+          toast.error(
+            "No cards are scheduled. Please schedule cards for review first!",
+          );
+        } else {
+          toast.error(
+            "No weak cards found. All your cards are performing well!",
+          );
+        }
       }
     } catch (error) {
+      console.error("Error starting weak cards review:", error);
       toast.error("Failed to start weak cards review");
+    }
+  };
+
+  const scheduleAllCards = async () => {
+    try {
+      const result = await window.deckIpc.scheduleAllCards();
+      if (result.success) {
+        toast.success("All cards have been scheduled for review!");
+        await loadAnalytics();
+      } else {
+        toast.error("Failed to schedule cards");
+      }
+    } catch (error) {
+      console.error("Error scheduling cards:", error);
+      toast.error("Error scheduling cards");
+    }
+  };
+
+  const scheduleDeckCards = async (deckId: number) => {
+    try {
+      const result = await window.deckIpc.scheduleDeckCards(deckId);
+      if (result.success) {
+        toast.success("Deck cards have been scheduled for review!");
+        await loadAnalytics();
+      } else {
+        toast.error("Failed to schedule deck cards");
+      }
+    } catch (error) {
+      console.error("Error scheduling deck cards:", error);
+      toast.error("Error scheduling deck cards");
     }
   };
 
@@ -193,9 +313,26 @@ const CardReview: React.FC = () => {
           setCardView("inReview");
         }
       } else {
-        toast.error("No cards are due for review in this deck!");
+        // Check if deck has unscheduled cards
+        const deckStats = decksWithStats.find((d) => d.id === deckId);
+
+        if (deckStats?.hasUnscheduledCards) {
+          const shouldSchedule = confirm(
+            "This deck has unscheduled cards. Would you like to schedule them for review?",
+          );
+
+          if (shouldSchedule) {
+            await scheduleDeckCards(deckId);
+            // Try again after scheduling
+            setTimeout(() => startReview(deckId), 1000);
+            return;
+          }
+        } else {
+          toast.error("No cards are due for review in this deck!");
+        }
       }
     } catch (error) {
+      console.error("Error starting deck review:", error);
       toast.error("Failed to start deck review");
     }
   };
@@ -228,11 +365,22 @@ const CardReview: React.FC = () => {
           <div className="p-2.5 bg-yellow-500/20 rounded-lg flex-shrink-0">
             <Lightbulb className="text-soma-warning" size={20} />
           </div>
-          <p className="text-soma-text-primary text-sm leading-relaxed">
-            Soma Review uses spaced repetition to help you learn and retain
-            information effectively. Cards will appear based on how well you
-            remember them.
-          </p>
+          <div className="flex-1">
+            <p className="text-soma-text-primary text-sm leading-relaxed">
+              Soma Review uses spaced repetition to help you learn and retain
+              information effectively. Cards will appear based on how well you
+              remember them.
+            </p>
+          </div>
+          {analytics.scheduledCards === 0 && analytics.totalCards > 0 && (
+            <button
+              onClick={scheduleAllCards}
+              className="px-4 py-2 bg-soma-accent2 text-white rounded-lg hover:bg-soma-accent2/90 transition-all flex items-center gap-2 text-sm font-medium"
+            >
+              <Settings size={16} />
+              Schedule All Cards
+            </button>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -365,15 +513,42 @@ const CardReview: React.FC = () => {
                 <Brain className="text-soma-accent2" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Learning
+                Scheduled
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
-              {analytics.learningCards}
+              {analytics.scheduledCards}
             </p>
-            <p className="text-sm text-soma-lightest mt-2">In progress</p>
+            <p className="text-sm text-soma-lightest mt-2">In rotation</p>
           </div>
         </div>
+
+        {/* Scheduling Notice */}
+        {analytics.totalCards > 0 && analytics.scheduledCards === 0 && (
+          <div className="bg-soma-warning/10 border border-soma-warning/20 rounded-2xl p-6 mb-8">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-soma-warning/20 rounded-xl">
+                <AlertCircle className="text-soma-warning" size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-soma-text-primary mb-2">
+                  Cards Not Scheduled
+                </h3>
+                <p className="text-soma-text-secondary mb-4">
+                  You have {analytics.totalCards} cards but none are scheduled
+                  for spaced repetition. Schedule them to start your learning
+                  journey!
+                </p>
+                <button
+                  onClick={scheduleAllCards}
+                  className="px-4 py-2 bg-soma-warning text-soma-darkest rounded-lg hover:bg-soma-warning/90 transition-all font-medium"
+                >
+                  Schedule All Cards Now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Today's Progress */}
         <div className="bg-soma-dark rounded-2xl p-6 mb-8">
@@ -415,7 +590,6 @@ const CardReview: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Deck List with Filters */}
         <div className="bg-soma-dark rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
@@ -461,6 +635,14 @@ const CardReview: React.FC = () => {
                         <span className="text-sm text-soma-text-secondary">
                           {deck.cards.length} cards
                         </span>
+                        <span className="text-sm text-soma-text-secondary">
+                          ({deck.scheduledCards} scheduled)
+                        </span>
+                        {deck.hasUnscheduledCards && (
+                          <span className="px-2 py-1 bg-soma-warning/20 text-soma-warning rounded-lg text-xs font-medium">
+                            Has unscheduled cards
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-6 text-sm">
@@ -490,24 +672,49 @@ const CardReview: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                           <TrendingUp size={14} className="text-soma-accent3" />
                           <span className="text-soma-text-secondary">
-                            {deck.difficulty.toFixed(1)} difficulty
+                            {deck.totalReviews} sessions
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Target size={14} className="text-soma-accent1" />
+                          <span className="text-soma-text-secondary">
+                            {deck.difficulty} difficulty
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => deck.id && startReview(deck.id)}
-                      disabled={deck.dueCards === 0}
-                      className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all ${
-                        deck.dueCards > 0
-                          ? "bg-soma-accent2 text-white hover:bg-soma-accent2/90"
-                          : "bg-soma-medium text-soma-text-secondary cursor-not-allowed"
-                      }`}
-                    >
-                      <Play size={18} />
-                      Start Review
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {deck.hasUnscheduledCards && (
+                        <button
+                          onClick={() => deck.id && scheduleDeckCards(deck.id)}
+                          className="px-3 py-2 bg-soma-warning/20 text-soma-warning rounded-lg hover:bg-soma-warning/30 transition-all text-sm font-medium"
+                        >
+                          <Settings size={16} className="inline mr-1" />
+                          Schedule
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deck.id && startReview(deck.id)}
+                        disabled={
+                          deck.dueCards === 0 && deck.scheduledCards === 0
+                        }
+                        className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all ${
+                          deck.dueCards > 0
+                            ? "bg-soma-accent2 text-white hover:bg-soma-accent2/90"
+                            : deck.scheduledCards > 0
+                              ? "bg-soma-accent1 text-white hover:bg-soma-accent1/90"
+                              : "bg-soma-medium text-soma-text-secondary cursor-not-allowed"
+                        }`}
+                      >
+                        <Play size={18} />
+                        {deck.dueCards > 0
+                          ? "Start Review"
+                          : deck.scheduledCards > 0
+                            ? "Review Deck"
+                            : "No Cards Ready"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))

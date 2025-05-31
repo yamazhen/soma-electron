@@ -119,34 +119,6 @@ export class LinkService extends BaseDAL {
     return result?.path || null;
   }
 
-  async getBacklinks(notePath: string): Promise<
-    Array<{
-      sourcePath: string;
-      sourceTitle: string;
-      linkText: string;
-      context?: string;
-    }>
-  > {
-    const noteName = path.basename(notePath, ".md");
-
-    const stmt = this.db.prepare(`
-      SELECT 
-        nl.source_path,
-        nl.link_text,
-        nm.title as source_title
-      FROM note_links nl
-      LEFT JOIN note_metadata nm ON nl.source_path = nm.path
-      WHERE nl.target_note_name = ?
-      ORDER BY nm.last_modified DESC
-    `);
-
-    return stmt.all(noteName) as Array<{
-      sourcePath: string;
-      sourceTitle: string;
-      linkText: string;
-    }>;
-  }
-
   async getOutgoingLinks(sourcePath: string): Promise<
     Array<{
       targetName: string;

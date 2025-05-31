@@ -13,11 +13,12 @@ interface Window {
   };
 
   linksApi: {
-    updateNoteLinks: (sourcePath: string, content: string) => Promise<{}>;
+    updateNoteLinks: (
+      sourcePath: string,
+      content: string,
+    ) => Promise<IpcResponse>;
 
     resolveTarget: (targetName: string) => Promise<IpcResponseData<any[]>>;
-
-    getBacklinks: (notePath: string) => Promise<IpcResponseData<any[]>>;
 
     getOutgoingLinks: (sourcePath: string) => Promise<IpcResponseData<any[]>>;
 
@@ -44,6 +45,16 @@ interface Window {
     deckSave: (deckData: Deck) => Promise<IpcResponseData<{ deckId: number }>>;
     deckFindById: (deckId: number) => Promise<IpcResponseData<Deck>>;
     deckFindAll: () => Promise<IpcResponseData<Deck[]>>;
+    getDeckAccuracy: (deckId: number) => Promise<IpcResponseData<number>>;
+    getDeckDifficulty: (deckId: number) => Promise<IpcResponseData<number>>;
+    getDeckReviewStats: (deckId: number) => Promise<
+      IpcResponseData<{
+        lastReviewed: string;
+        totalReviews: number;
+      }>
+    >;
+    scheduleDeckCards: (deckId: number) => Promise<IpcResponse>;
+    hasUnscheduledCards: (deckId: number) => Promise<IpcResponseData<boolean>>;
   };
 
   fileSystem: {
@@ -138,9 +149,7 @@ interface Window {
       quizId: number;
       answers: { questionId: number; answer: string; responseTime?: number }[];
     }) => Promise<{ success: boolean; review?: QuizReview; error?: string }>;
-    getScheduledQuestions: (
-      limit?: number,
-    ) => Promise<{
+    getScheduledQuestions: (limit?: number) => Promise<{
       success: boolean;
       questions?: QuestionWithDetails[];
       error?: string;
@@ -150,9 +159,7 @@ interface Window {
       counts?: { today: number; overdue: number; upcoming: number };
       error?: string;
     }>;
-    getQuestionsByScheduleStatus: (
-      status: string,
-    ) => Promise<{
+    getQuestionsByScheduleStatus: (status: string) => Promise<{
       success: boolean;
       questions?: QuestionWithDetails[];
       error?: string;

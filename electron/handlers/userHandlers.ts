@@ -11,82 +11,82 @@ VALUES (?, ?, ?, ?, ?, ?)
 `;
 
 export function setupUserHandlers() {
-	const secureStoreService = new SecureStoreService();
+  const secureStoreService = new SecureStoreService();
 
-	ipcMain.handle("user:store", async (_, user: UserStore) => {
-		try {
-			const db = getDatabase();
-			const stmt = db.prepare(storeUserQuery);
+  ipcMain.handle("user:store", async (_, user: UserStore) => {
+    try {
+      const db = getDatabase();
+      const stmt = db.prepare(storeUserQuery);
 
-			stmt.run(
-				1,
-				user.username,
-				user.email,
-				user.display_name,
-				new Date().toISOString(),
-				new Date().toISOString(),
-			);
-		} catch (error) {
-			throw new Error("Failed to store user data");
-		}
-	});
-	ipcMain.handle("user:load-offline", async (_) => {
-		try {
-			const db = getDatabase();
-			const stmt = db.prepare("SELECT * FROM users WHERE id = 1");
-			const user = stmt.get();
+      stmt.run(
+        1,
+        user.username,
+        user.email,
+        user.display_name,
+        new Date().toISOString(),
+        new Date().toISOString(),
+      );
+    } catch (error) {
+      throw new Error("Failed to store user data");
+    }
+  });
+  ipcMain.handle("user:load-offline", async (_event /* unused */) => {
+    try {
+      const db = getDatabase();
+      const stmt = db.prepare("SELECT * FROM users WHERE id = 1");
+      const user = stmt.get();
 
-			return user || null;
-		} catch (error) {
-			throw new Error("Failed to load user data");
-		}
-	});
-	ipcMain.handle("user:logout", async (_) => {
-		try {
-			const db = getDatabase();
-			const stmt = db.prepare("DELETE FROM users WHERE id = 1");
-			stmt.run();
-			await secureStoreService.delete("accessToken");
-			await secureStoreService.delete("refreshToken");
-		} catch (error) {
-			throw new Error("Failed to logout user");
-		}
-	});
-	ipcMain.handle("user:load-online", async (_) => {
-		try {
-			const accessToken = await secureStoreService.get("accessToken");
-			const response = await axios.get(
-				`${env.gatewayUrl}/api/system/v1/users/me`,
-				{
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-					},
-				},
-			);
+      return user || null;
+    } catch (error) {
+      throw new Error("Failed to load user data");
+    }
+  });
+  ipcMain.handle("user:logout", async (_) => {
+    try {
+      const db = getDatabase();
+      const stmt = db.prepare("DELETE FROM users WHERE id = 1");
+      stmt.run();
+      await secureStoreService.delete("accessToken");
+      await secureStoreService.delete("refreshToken");
+    } catch (error) {
+      throw new Error("Failed to logout user");
+    }
+  });
+  ipcMain.handle("user:load-online", async (_) => {
+    try {
+      const accessToken = await secureStoreService.get("accessToken");
+      const response = await axios.get(
+        `${env.gatewayUrl}/api/system/v1/users/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
 
-			const serverResponse: ServerResponse<UserStore> = {
-				statusCode: response.status,
-				body: response.data,
-			};
+      const serverResponse: ServerResponse<UserStore> = {
+        statusCode: response.status,
+        body: response.data,
+      };
 
-			if (serverResponse.body.success && serverResponse.body.data) {
-				const user = serverResponse.body.data;
-				const timestampSync = new Date().toISOString();
-				const db = getDatabase();
-				const stmt = db.prepare(storeUserQuery);
-				stmt.run(
-					1,
-					user.username,
-					user.email,
-					user.display_name,
-					new Date().toISOString(),
-					timestampSync,
-				);
-				return user;
-			}
-			return null;
-		} catch (error) {
-			throw new Error("Failed to load user data from server");
-		}
-	});
+      if (serverResponse.body.success && serverResponse.body.data) {
+        const user = serverResponse.body.data;
+        const timestampSync = new Date().toISOString();
+        const db = getDatabase();
+        const stmt = db.prepare(storeUserQuery);
+        stmt.run(
+          1,
+          user.username,
+          user.email,
+          user.display_name,
+          new Date().toISOString(),
+          timestampSync,
+        );
+        return user;
+      }
+      return null;
+    } catch (error) {
+      throw new Error("Failed to load user data from server");
+    }
+  });
 }
