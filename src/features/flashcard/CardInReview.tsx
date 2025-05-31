@@ -196,18 +196,25 @@ const CardInReview: React.FC = () => {
     <section className="h-full w-full bg-soma-darkest flex items-center justify-center">
       <div className="w-full max-w-2xl p-6">
         {/* Progress Bar */}
+
         <div className="bg-soma-dark rounded-xl p-5 mb-6">
           <div className="flex justify-between items-center mb-3">
             <p className="text-soma-text-secondary">
               Card {currentIndex + 1} of {dueCards.length}
             </p>
-            <div className="flex items-center gap-2">
+
+            {/* Constrain this wrapper’s width */}
+            <div className="flex items-center gap-2 max-w-[50%] overflow-hidden">
               <Timer className="text-soma-accent3" size={20} />
-              <span className="text-soma-text-primary font-medium">
+              <span
+                className="text-soma-text-primary font-medium truncate whitespace-nowrap overflow-hidden text-ellipsis flex-1"
+                title={currentCard?.deck_title || "Mixed Review"}
+              >
                 {currentCard?.deck_title || "Mixed Review"}
               </span>
             </div>
           </div>
+
           <div className="w-full bg-soma-medium rounded-full h-2">
             <div
               className="bg-soma-accent3 rounded-full h-2 transition-all duration-300"
@@ -221,7 +228,7 @@ const CardInReview: React.FC = () => {
         {/* Card */}
         <div className="bg-soma-dark rounded-xl p-12 min-h-[400px] flex flex-col items-center justify-center relative">
           <div className="text-center max-w-lg w-full">
-            <p className="text-2xl text-soma-text-primary leading-relaxed mb-8">
+            <p className="text-2xl text-soma-text-primary leading-relaxed mb-8 break-words whitespace-pre-wrap">
               {showBack ? currentCard?.back : currentCard?.front}
             </p>
           </div>

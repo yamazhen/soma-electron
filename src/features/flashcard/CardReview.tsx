@@ -122,8 +122,9 @@ const CardReview: React.FC = () => {
                   ? unscheduledResult.data || false
                   : false;
 
+                console.log("Sample card:", deck.cards[0]);
                 const scheduledCards = deck.cards.filter(
-                  (card) => card.scheduled,
+                  (card) => card.scheduled === 1,
                 ).length;
 
                 return {
@@ -342,23 +343,7 @@ const CardReview: React.FC = () => {
           setCardView("inReview");
         }
       } else {
-        // Check if deck has unscheduled cards
-        const deckStats = decksWithStats.find((d) => d.id === deckId);
-
-        if (deckStats?.hasUnscheduledCards) {
-          const shouldSchedule = confirm(
-            "This deck has unscheduled cards. Would you like to schedule them for review?",
-          );
-
-          if (shouldSchedule) {
-            await scheduleDeckCards(deckId);
-            // Try again after scheduling
-            setTimeout(() => startReview(deckId), 1000);
-            return;
-          }
-        } else {
-          toast.error("No cards are due for review in this deck!");
-        }
+        toast.error("No cards are due for review in this deck!");
       }
     } catch (error) {
       console.error("Error starting deck review:", error);
@@ -401,15 +386,6 @@ const CardReview: React.FC = () => {
               remember them.
             </p>
           </div>
-          {analytics.scheduledCards === 0 && analytics.totalCards > 0 && (
-            <button
-              onClick={scheduleAllCards}
-              className="px-4 py-2 bg-soma-accent2 text-white rounded-lg hover:bg-soma-accent2/90 transition-all flex items-center gap-2 text-sm font-medium"
-            >
-              <Settings size={16} />
-              Schedule All Cards
-            </button>
-          )}
         </div>
 
         {/* Quick Actions */}
@@ -725,23 +701,14 @@ const CardReview: React.FC = () => {
                       )}
                       <button
                         onClick={() => deck.id && startReview(deck.id)}
-                        disabled={
-                          deck.dueCards === 0 && deck.scheduledCards === 0
-                        }
                         className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all ${
                           deck.dueCards > 0
                             ? "bg-soma-accent2 text-white hover:bg-soma-accent2/90"
-                            : deck.scheduledCards > 0
-                              ? "bg-soma-accent1 text-white hover:bg-soma-accent1/90"
-                              : "bg-soma-medium text-soma-text-secondary cursor-not-allowed"
+                            : "bg-soma-medium text-soma-text-secondary cursor-not-allowed"
                         }`}
                       >
                         <Play size={18} />
-                        {deck.dueCards > 0
-                          ? "Start Review"
-                          : deck.scheduledCards > 0
-                            ? "Review Deck"
-                            : "No Cards Ready"}
+                        {deck.dueCards > 0 ? "Start Review" : "No Cards Ready"}
                       </button>
                     </div>
                   </div>

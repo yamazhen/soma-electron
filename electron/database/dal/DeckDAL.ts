@@ -31,13 +31,7 @@ export class DeckDAL extends BaseDAL {
 
       const cards = this.db
         .prepare("SELECT * FROM cards WHERE deck_id = ? ORDER BY id ASC")
-        .all(deckId)
-        .map((row: any) => ({
-          id: row.id,
-          deckId: row.deck_id,
-          front: row.front,
-          back: row.back,
-        }));
+        .all(deckId);
 
       return {
         id: deckRow.id,
@@ -62,12 +56,7 @@ export class DeckDAL extends BaseDAL {
       return decks.map((d: any) => ({
         id: d.id,
         title: d.title,
-        cards: cardStmt.all(d.id).map((c: any) => ({
-          id: c.id,
-          deckId: c.deck_id,
-          front: c.front,
-          back: c.back,
-        })),
+        cards: cardStmt.all(d.id),
       }));
     } catch (error) {
       console.error("Error fetching all decks:", error);

@@ -8,6 +8,7 @@ import {
   Play,
   Sparkles,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -32,15 +33,33 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
   const loadSchedulingData = async () => {
     try {
       setLoading(true);
-
       const countsResult = await window.quizIpc.getDueQuestionsCount();
       const dueCounts = countsResult.success
         ? countsResult.counts!
         : { today: 0, overdue: 0, upcoming: 0 };
 
+      console.log("Global due counts:", dueCounts); // Debug log
+
       const scheduledQuizzes = await Promise.all(
         (quizzes || []).map(async (quiz) => {
           try {
+            // Get due questions count for this specific quiz
+            const dueQuestionsResult = await window.quizIpc.getQuizDueQuestions(
+              quiz.id!,
+            );
+
+            console.log(
+              `Quiz "${quiz.title}" due questions:`,
+              dueQuestionsResult,
+            ); // Debug log
+
+            const dueQuestionsCount =
+              dueQuestionsResult.success && dueQuestionsResult.questions
+                ? dueQuestionsResult.questions.length
+                : 0;
+
+            console.log(`Quiz "${quiz.title}" due count: ${dueQuestionsCount}`); // Debug log
+
             const questionsResult = await window.quizIpc.get(quiz.id!);
             if (!questionsResult.success) return null;
 
@@ -49,6 +68,18 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
             );
             if (scheduledQuestions.length === 0) return null;
 
+            // Let's also log the scheduled questions to see their review dates
+            console.log(
+              `Quiz "${quiz.title}" scheduled questions:`,
+              scheduledQuestions.map((q) => ({
+                id: q.id,
+                text: q.text.substring(0, 50),
+                next_review_date: q.next_review_date,
+                scheduled: q.scheduled,
+              })),
+            );
+
+            // ... rest of your code
             const nextReviewDates = scheduledQuestions
               .map((q) => q.next_review_date)
               .filter((date) => date)
@@ -72,11 +103,12 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                   )
                 : 75;
 
-            return {
+            const result = {
               ...quiz,
               dueDate: nextReviewDate,
               scheduledQuestionsCount: scheduledQuestions.length,
               accuracy: accuracy,
+              dueQuestionsCount: dueQuestionsCount,
               lastReviewed:
                 scheduledQuestions
                   .map((q) => q.last_reviewed)
@@ -84,7 +116,16 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                   .sort()
                   .pop() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             };
+
+            console.log(`Final quiz data for "${quiz.title}":`, {
+              dueQuestionsCount: result.dueQuestionsCount,
+              scheduledQuestionsCount: result.scheduledQuestionsCount,
+              dueDate: result.dueDate,
+            });
+
+            return result;
           } catch (error) {
+            console.error(`Error processing quiz ${quiz.title}:`, error);
             return null;
           }
         }),
@@ -95,6 +136,7 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
         scheduledQuizzes: scheduledQuizzes.filter((quiz) => quiz !== null),
       });
     } catch (error) {
+      console.error("Error in loadSchedulingData:", error);
     } finally {
       setLoading(false);
     }
@@ -199,11 +241,29 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
     }
   };
 
-  const startReview = (quizId: number) => {
-    const quiz = quizzes?.find((q) => q.id === quizId);
-    if (quiz) {
-      setQuizInReview(quiz);
-      setQuizView("inReview");
+  const startReview = async (quizId: number) => {
+    try {
+      const dueQuestionsResult = await window.quizIpc.getQuizDueQuestions(
+        quizId,
+        1,
+      );
+
+      if (
+        dueQuestionsResult.success &&
+        dueQuestionsResult.questions &&
+        dueQuestionsResult.questions.length > 0
+      ) {
+        const quiz = quizzes?.find((q) => q.id === quizId);
+        if (quiz) {
+          setQuizInReview(quiz);
+          setQuizView("inReview");
+        }
+      } else {
+        toast.error("No questions are due for review in this quiz!");
+      }
+    } catch (error) {
+      console.error("Error starting quiz review:", error);
+      toast.error("Failed to start quiz review");
     }
   };
 
@@ -321,11 +381,11 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-soma-dark p-6 rounded-2xl hover:bg-soma-medium transition-colors">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-soma-accent2/20 rounded-xl">
-                <Clock className="text-soma-accent2" size={24} />
+              <div className="p-3 bg-soma-warning/20 rounded-xl">
+                <Calendar className="text-soma-warning" size={24} />
               </div>
               <span className="text-soma-text-secondary font-medium">
-                Questions Due Today
+                Due Today
               </span>
             </div>
             <p className="text-3xl font-bold text-soma-text-primary">
@@ -487,10 +547,16 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                     <button
                       type="button"
                       onClick={() => quiz.id && startReview(quiz.id)}
-                      className="px-4 py-2.5 bg-soma-accent1 text-white rounded-lg hover:bg-soma-accent1/90 transition-all flex items-center gap-2 font-medium cursor-pointer"
+                      className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all ${
+                        quiz.dueQuestionsCount > 0
+                          ? "bg-soma-accent2 text-white hover:bg-soma-accent2/90"
+                          : "bg-soma-medium text-soma-text-secondary cursor-not-allowed"
+                      }`}
                     >
                       <Play size={18} />
-                      Start Review
+                      {quiz.dueQuestionsCount > 0
+                        ? "Start Review"
+                        : "No Questions Due"}
                     </button>
                   </div>
                 </div>
