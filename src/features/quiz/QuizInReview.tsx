@@ -372,11 +372,14 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
         {/* Question Card */}
         <div className="bg-soma-dark rounded-xl p-8">
           <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <p className="text-2xl font-semibold text-soma-text-primary">
+            <div className="flex items-start justify-center gap-3 mb-4">
+              <p className="text-2xl font-semibold text-soma-text-primary flex-1 min-w-0 break-words">
                 {question?.text || "No question text"}
               </p>
-              <CircleHelp className="text-soma-text-secondary" size={24} />
+              <CircleHelp
+                className="text-soma-text-secondary flex-shrink-0"
+                size={24}
+              />
             </div>
           </div>
 

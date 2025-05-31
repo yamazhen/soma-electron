@@ -320,7 +320,6 @@ const CardReview: React.FC = () => {
     try {
       // Handle special deck IDs (like weak cards review)
       if (deckId < 0) {
-        // This is a special deck (like weak cards), don't try to load due cards
         const deck = decksWithStats.find((d) => d.id === deckId);
         if (deck) {
           setDeckInView(deck);
@@ -659,7 +658,7 @@ const CardReview: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-soma-text-primary">
+                        <h3 className="text-lg font-semibold text-soma-text-primary truncate max-w-sm">
                           {deck.title}
                         </h3>
                         <span className="text-sm text-soma-text-secondary">

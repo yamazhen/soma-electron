@@ -19,7 +19,7 @@ const CardSet: React.FC<Props> = ({ cardSetName, cardSetCount }) => {
         />
       </div>
 
-      <h3 className="text-lg font-semibold text-soma-text-primary mb-2">
+      <h3 className="text-lg font-semibold text-soma-text-primary mb-2 truncate">
         {cardSetName}
       </h3>
 

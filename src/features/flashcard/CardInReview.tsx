@@ -29,20 +29,27 @@ const CardInReview: React.FC = () => {
       let result;
 
       // Check if we're reviewing a specific deck
-      if (deckInView && deckInView.id) {
+      if (deckInView && deckInView.id && deckInView.id > 0) {
         result = await window.deckIpc.getDueCardsByDeck(deckInView.id, 20);
+      } else if (deckInView && deckInView.isWeakCardsReview) {
+        // For weak cards review, use the cards directly from deckInView
+        setDueCards(deckInView.cards);
+        if (deckInView.cards.length === 0) {
+          setReviewComplete(true);
+        }
+        return;
       } else {
         // Mixed review from all decks
         result = await window.deckIpc.getDueCards(20);
       }
 
-      if (result.success && result.data) {
+      if (result && result.success && result.data) {
         setDueCards(result.data);
         if (result.data.length === 0) {
           setReviewComplete(true);
         }
       } else {
-        console.error("Failed to load due cards:", result.error);
+        console.error("Failed to load due cards:", result?.error);
         setReviewComplete(true);
       }
     } catch (error) {
