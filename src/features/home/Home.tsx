@@ -25,26 +25,22 @@ const Home: React.FC = () => {
     setCardView,
     handleCreateNote,
     lastActivityUpdate,
-    getTodayStudyTime,
   } = useAppContext();
 
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load real analytics data - KEEP ONLY THIS ONE
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
         setLoading(true);
 
-        // Get dashboard analytics
         const analyticsResult = await window.dashboardApi.getAnalytics();
         if (analyticsResult.success && analyticsResult.data) {
           setAnalytics(analyticsResult.data);
         }
 
-        // Get recent activity
         const activityResult = await window.dashboardApi.getRecentActivity();
         if (activityResult.success && activityResult.data) {
           setRecentActivity(activityResult.data);
@@ -60,9 +56,7 @@ const Home: React.FC = () => {
   }, [lastActivityUpdate]);
 
   const allNotes = getAllNotesOnly();
-  const displayStudyTime = getTodayStudyTime();
 
-  // Calculate stats with real data
   const stats = {
     streak: analytics?.studyStreak || 0,
     totalNotes: allNotes.length,
@@ -79,7 +73,6 @@ const Home: React.FC = () => {
     const date =
       typeof timestamp === "string" ? new Date(timestamp) : timestamp;
 
-    // Check if the date is valid
     if (isNaN(date.getTime())) {
       return "Unknown time";
     }
@@ -155,14 +148,6 @@ const Home: React.FC = () => {
                   month: "long",
                   day: "numeric",
                 })}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="text-soma-accent3" size={20} />
-              <span>
-                {/* Fix: Use proper hours and minutes calculation */}
-                {Math.floor(displayStudyTime / 60)}h {displayStudyTime % 60}m
-                today
               </span>
             </div>
           </div>

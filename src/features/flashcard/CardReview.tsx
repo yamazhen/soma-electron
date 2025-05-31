@@ -122,7 +122,6 @@ const CardReview: React.FC = () => {
                   ? unscheduledResult.data || false
                   : false;
 
-                console.log("Sample card:", deck.cards[0]);
                 const scheduledCards = deck.cards.filter(
                   (card) => card.scheduled === 1,
                 ).length;

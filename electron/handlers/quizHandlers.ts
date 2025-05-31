@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 import { QuizService } from "../service";
+import { extractErrorMessage } from "../utils/errorUtil";
 
 export function setupQuizHandlers() {
   const quizService = new QuizService();
@@ -8,9 +9,9 @@ export function setupQuizHandlers() {
     try {
       const quizzes = quizService.getAllQuizzes();
       return { success: true, quizzes };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting quizzes:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -21,9 +22,9 @@ export function setupQuizHandlers() {
         return { success: false, error: "Quiz not found" };
       }
       return { success: true, quiz };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error getting quiz ${id}:`, error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -33,9 +34,9 @@ export function setupQuizHandlers() {
       try {
         const quizId = quizService.createQuiz(data.title, data.questions);
         return { success: true, quizId };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error creating quiz:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -44,20 +45,19 @@ export function setupQuizHandlers() {
     try {
       const result = quizService.updateQuiz(data.id, data.title);
       return { success: result };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating quiz:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
   ipcMain.handle("quiz:delete", (_, id: number) => {
-    console.log("Deleting quiz with ID:", id);
     try {
       const result = quizService.deleteQuiz(id);
       return { success: result };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error deleting quiz ${id}:`, error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -67,9 +67,9 @@ export function setupQuizHandlers() {
       try {
         const questionId = quizService.addQuestion(data.quizId, data.question);
         return { success: true, questionId };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error adding question:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -80,9 +80,9 @@ export function setupQuizHandlers() {
       try {
         const result = quizService.updateQuestion(data.id, data.question);
         return { success: result };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error updating question:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -91,9 +91,9 @@ export function setupQuizHandlers() {
     try {
       const result = quizService.deleteQuestion(id);
       return { success: result };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error deleting question ${id}:`, error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -101,9 +101,9 @@ export function setupQuizHandlers() {
     try {
       const questions = quizService.getScheduledQuestions();
       return { success: true, questions };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting scheduled questions:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -113,9 +113,9 @@ export function setupQuizHandlers() {
       try {
         const result = quizService.scheduleQuestion(data.id, data.scheduled);
         return { success: result };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error scheduling question:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -132,9 +132,9 @@ export function setupQuizHandlers() {
       try {
         const review = quizService.submitQuizAttempt(data.quizId, data.answers);
         return { success: true, review };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error submitting attempt:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -143,9 +143,9 @@ export function setupQuizHandlers() {
     try {
       const history = quizService.getQuizAttemptHistory(quizId);
       return { success: true, history };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error getting attempt history for quiz ${quizId}:`, error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -153,9 +153,9 @@ export function setupQuizHandlers() {
     try {
       const details = quizService.getAttemptDetails(attemptId);
       return { success: true, details };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error getting attempt details ${attemptId}:`, error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -163,9 +163,9 @@ export function setupQuizHandlers() {
     try {
       const analytics = quizService.getAnalytics();
       return { success: true, analytics };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting analytics:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -173,9 +173,9 @@ export function setupQuizHandlers() {
     try {
       const activity = quizService.getDailyActivity();
       return { success: true, activity };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting daily activity:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -183,9 +183,9 @@ export function setupQuizHandlers() {
     try {
       const performance = quizService.getSubjectPerformance();
       return { success: true, performance };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting subject performance:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -208,9 +208,9 @@ export function setupQuizHandlers() {
           data.answers,
         );
         return { success: true, review };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error submitting attempt with scheduling:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -219,9 +219,9 @@ export function setupQuizHandlers() {
     try {
       const questions = quizService.getScheduledQuestions(limit);
       return { success: true, questions };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting scheduled questions:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -229,9 +229,9 @@ export function setupQuizHandlers() {
     try {
       const counts = quizService.getDueQuestionsCount();
       return { success: true, counts };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting due questions count:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -239,9 +239,9 @@ export function setupQuizHandlers() {
     try {
       const questions = quizService.getQuestionsByScheduleStatus(status as any);
       return { success: true, questions };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting questions by schedule status:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -249,9 +249,9 @@ export function setupQuizHandlers() {
     try {
       const result = quizService.scheduleAllExistingQuestions();
       return { success: result };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error scheduling all questions:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -260,9 +260,9 @@ export function setupQuizHandlers() {
     try {
       const questions = quizService.getMixedReviewQuestions(limit);
       return { success: true, questions };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting mixed review questions:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -270,9 +270,9 @@ export function setupQuizHandlers() {
     try {
       const questions = quizService.getQuizScheduledQuestions(quizId);
       return { success: true, questions };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting quiz scheduled questions:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -280,9 +280,9 @@ export function setupQuizHandlers() {
     try {
       const result = quizService.scheduleTopFailedQuestions();
       return { success: result };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error scheduling top failed questions:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -292,10 +292,17 @@ export function setupQuizHandlers() {
       try {
         const questions = quizService.getQuizDueQuestions(quizId, limit);
         return { success: true, questions };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error getting quiz due questions:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: extractErrorMessage(error) };
       }
+    },
+  );
+
+  ipcMain.handle(
+    "quiz:generateQuizFromNote",
+    async (_, noteContent: string) => {
+      return await quizService.generateQuizFromNote(noteContent);
     },
   );
 }

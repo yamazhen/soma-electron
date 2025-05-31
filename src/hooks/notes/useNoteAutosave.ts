@@ -57,7 +57,7 @@ export const useNoteAutosave = ({
           );
         }
       } catch (error) {
-        console.log("Error saving note:", error);
+        console.error("Error saving note:", error);
       }
     }, 500);
 

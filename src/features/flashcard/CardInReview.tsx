@@ -10,18 +10,11 @@ const CardInReview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [reviewComplete, setReviewComplete] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
-  const { setCardView, recordActivity, trackStudyActivity, deckInView } =
-    useAppContext();
+  const { setCardView, recordActivity, deckInView } = useAppContext();
 
   useEffect(() => {
     loadDueCards();
   }, []);
-
-  useEffect(() => {
-    if (dueCards.length > 0) {
-      trackStudyActivity("flashcard", "Mixed Flashcard Review");
-    }
-  }, [dueCards, trackStudyActivity]);
 
   const loadDueCards = async () => {
     try {
@@ -90,11 +83,12 @@ const CardInReview: React.FC = () => {
           setReviewComplete(true);
 
           // Log activity
-          recordActivity("flashcard", {
-            title: "Mixed Flashcard Review",
-            entityId: "mixed-review",
-            cardCount: dueCards.length,
-          });
+          if (deckInView && deckInView.id) {
+            recordActivity("flashcard", {
+              title: deckInView.title,
+              entityId: "mixed-review",
+            });
+          }
         }
       } else {
         console.error("Failed to submit review:", result.error);

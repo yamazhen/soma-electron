@@ -38,27 +38,17 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
         ? countsResult.counts!
         : { today: 0, overdue: 0, upcoming: 0 };
 
-      console.log("Global due counts:", dueCounts); // Debug log
-
       const scheduledQuizzes = await Promise.all(
         (quizzes || []).map(async (quiz) => {
           try {
-            // Get due questions count for this specific quiz
             const dueQuestionsResult = await window.quizIpc.getQuizDueQuestions(
               quiz.id!,
             );
-
-            console.log(
-              `Quiz "${quiz.title}" due questions:`,
-              dueQuestionsResult,
-            ); // Debug log
 
             const dueQuestionsCount =
               dueQuestionsResult.success && dueQuestionsResult.questions
                 ? dueQuestionsResult.questions.length
                 : 0;
-
-            console.log(`Quiz "${quiz.title}" due count: ${dueQuestionsCount}`); // Debug log
 
             const questionsResult = await window.quizIpc.get(quiz.id!);
             if (!questionsResult.success) return null;
@@ -68,18 +58,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
             );
             if (scheduledQuestions.length === 0) return null;
 
-            // Let's also log the scheduled questions to see their review dates
-            console.log(
-              `Quiz "${quiz.title}" scheduled questions:`,
-              scheduledQuestions.map((q) => ({
-                id: q.id,
-                text: q.text.substring(0, 50),
-                next_review_date: q.next_review_date,
-                scheduled: q.scheduled,
-              })),
-            );
-
-            // ... rest of your code
             const nextReviewDates = scheduledQuestions
               .map((q) => q.next_review_date)
               .filter((date) => date)
@@ -116,12 +94,6 @@ const QuizReview: React.FC<Props> = ({ setQuizInReview }) => {
                   .sort()
                   .pop() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             };
-
-            console.log(`Final quiz data for "${quiz.title}":`, {
-              dueQuestionsCount: result.dueQuestionsCount,
-              scheduledQuestionsCount: result.scheduledQuestionsCount,
-              dueDate: result.dueDate,
-            });
 
             return result;
           } catch (error) {

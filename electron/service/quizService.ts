@@ -1,4 +1,7 @@
+import { handleServiceOperation } from "../utils/serviceHelper";
 import { QuestionDAL, QuizAttemptDAL, QuizDAL } from "../database/dal";
+import axios from "axios";
+import { env } from "../config/config";
 
 export class QuizService {
   private quizDAL = new QuizDAL();
@@ -49,7 +52,7 @@ export class QuizService {
         text: question.text,
         type: question.type,
         boolean_answer: question.boolean_answer,
-        scheduled: question.scheduled !== undefined ? question.scheduled : true, // Auto-schedule by default
+        scheduled: question.scheduled !== undefined ? question.scheduled : true,
         options: question.options,
         answers: question.answers,
       });
@@ -82,11 +85,10 @@ export class QuizService {
       throw new Error("Quiz not found");
     }
 
-    // Auto-schedule questions by default
     const questionData = {
       quiz_id: quizId,
       ...question,
-      scheduled: question.scheduled !== undefined ? question.scheduled : true, // Default to scheduled
+      scheduled: question.scheduled !== undefined ? question.scheduled : true,
     };
 
     return this.questionDAL.create(questionData);
@@ -116,20 +118,12 @@ export class QuizService {
 
   scheduleTopFailedQuestions(): boolean {
     const topThirtyFailedQuestions = this.attemptDAL.getTopFailedQuestionIds();
-    console.log(
-      `Found ${topThirtyFailedQuestions.length} failed questions to schedule`,
-    );
-
     if (topThirtyFailedQuestions.length === 0) return false;
 
-    // Don't unschedule all - just schedule the failed ones
     for (const questionId of topThirtyFailedQuestions) {
       this.questionDAL.updateScheduled(questionId, true);
     }
 
-    console.log(
-      `Scheduled ${topThirtyFailedQuestions.length} top failed questions`,
-    );
     return true;
   }
 
@@ -328,22 +322,12 @@ export class QuizService {
   }
 
   getMixedReviewQuestions(limit: number = 20): QuestionWithDetails[] {
-    console.log(`Getting mixed review questions with limit: ${limit}`);
-
     const dueQuestions = this.questionDAL.getDueQuestions(limit);
-    console.log(`Found ${dueQuestions.length} due questions for mixed review`);
 
     if (dueQuestions.length === 0) {
-      // If no due questions, check if there are any scheduled questions at all
       const allScheduled = this.questionDAL.getScheduledQuestions();
-      console.log(
-        `No due questions found. Total scheduled questions: ${allScheduled.length}`,
-      );
 
       if (allScheduled.length === 0) {
-        console.log(
-          "No scheduled questions at all. User needs to schedule questions first.",
-        );
       }
     }
 
@@ -358,10 +342,7 @@ export class QuizService {
     quizId: number,
     answers: { questionId: number; answer: string; responseTime?: number }[],
   ): QuizReview {
-    // Handle special quiz IDs (mixed review sessions)
     if (quizId === -1 || quizId === -2) {
-      // For mixed review sessions, we don't need the quiz object
-      // Just get the questions directly
       const questionIds = answers.map((a) => a.questionId);
       const questions = questionIds
         .map((id) => this.questionDAL.getById(id))
@@ -391,7 +372,6 @@ export class QuizService {
           is_correct: isCorrect,
         });
 
-        // Update the scheduling for spaced repetition
         this.questionDAL.updateScheduling(
           answer.questionId,
           isCorrect,
@@ -399,7 +379,6 @@ export class QuizService {
         );
       }
 
-      // Don't create an attempt record for mixed reviews
       return {
         id: -1,
         score: score,
@@ -413,7 +392,6 @@ export class QuizService {
       };
     }
 
-    // Regular quiz submission logic (existing code)
     const quiz = this.quizDAL.getById(quizId);
     if (!quiz) {
       throw new Error("Quiz not found");
@@ -505,5 +483,23 @@ export class QuizService {
 
   getQuizDueQuestions(quizId: number, limit?: number): QuestionWithDetails[] {
     return this.questionDAL.getQuizDueQuestions(quizId, limit);
+  }
+
+  async generateQuizFromNote(noteContent: string): Promise<IpcResponse> {
+    return await handleServiceOperation(async () => {
+      const response = await axios.post(
+        `${env.gatewayUrl}/api/ai/v1/generate-from-note/quiz`,
+        {
+          note_content: noteContent,
+        },
+      );
+
+      const quiz = response.data.quiz;
+      if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        throw new Error("Failed to generate quiz from note");
+      }
+
+      this.createQuiz(quiz.title, quiz.questions);
+    }, "Failed to generate quiz from note");
   }
 }

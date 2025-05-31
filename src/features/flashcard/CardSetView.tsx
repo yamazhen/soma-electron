@@ -27,17 +27,11 @@ import {
 import Tippy from "@tippyjs/react";
 
 const CardSetView: React.FC = () => {
-  const { deckInView, setCardView, trackStudyActivity } = useAppContext();
+  const { deckInView, setCardView } = useAppContext();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showBack, setShowBack] = useState(false);
   const [viewMode, setViewMode] = useState<"stack" | "grid">("stack");
   const [showAllAnswers, setShowAllAnswers] = useState(false);
-
-  useEffect(() => {
-    if (deckInView) {
-      trackStudyActivity("flashcard", deckInView.title);
-    }
-  }, [deckInView, trackStudyActivity]);
 
   if (deckInView === undefined) {
     return (
@@ -155,7 +149,7 @@ const CardSetView: React.FC = () => {
                           className="inline-block max-w-[200px] truncate align-bottom font-medium"
                           title={deckInView.title}
                         >
-                          "{deckInView.title}"
+                          ${deckInView.title}
                         </span>{" "}
                         and all its cards.
                       </AlertDialogDescription>
@@ -198,7 +192,7 @@ const CardSetView: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-soma-text-primary truncate max-w-md">
+              <h1 className="text-3xl font-bold text-soma-text-primary truncate max-w-2xl">
                 {deckInView.title}
               </h1>
               <span className="text-soma-text-secondary">

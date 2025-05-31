@@ -23,16 +23,20 @@ export const useQuizState = () => {
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
+    if (!window.quizIpc?.getAnalytics) return;
     try {
       setLoadingAnalytics(true);
       const response = await window.quizIpc.getAnalytics();
-      if (response.success && response.data) {
-        setAnalytics(response.data);
+      if (response.success && response.analytics) {
+        setAnalytics(response.analytics);
       } else {
         console.error("Error fetching analytics:", response.error);
       }
     } catch (e) {
-      console.error("Error fetching analytics:", e);
+      console.error(
+        "Error fetching analytics:",
+        e instanceof Error ? e.message : e,
+      );
     } finally {
       setLoadingAnalytics(false);
     }

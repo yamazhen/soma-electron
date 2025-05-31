@@ -104,8 +104,6 @@ export function wikiLinks() {
           const linkText = target.getAttribute("data-note-link");
 
           if (linkText) {
-            console.log(`Navigate to: ${linkText}`);
-
             event.preventDefault();
             return true;
           }

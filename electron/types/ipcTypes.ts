@@ -55,6 +55,7 @@ interface Window {
     >;
     scheduleDeckCards: (deckId: number) => Promise<IpcResponse>;
     hasUnscheduledCards: (deckId: number) => Promise<IpcResponseData<boolean>>;
+    generateDeckFromNote: (noteContent: string) => Promise<IpcResponse>;
   };
 
   fileSystem: {
@@ -164,6 +165,7 @@ interface Window {
       questions?: QuestionWithDetails[];
       error?: string;
     }>;
+    generateQuizFromNote: (noteContent: string) => Promise<IpcResponse>;
   };
   questionIpc: {
     add: (data: { quizId: number; question: any }) => Promise<number>;
@@ -186,6 +188,7 @@ interface Window {
     minimize: () => void;
     close: () => void;
 
+    getAppStartTime: () => Promise<number>;
     getLanguage: () => Promise<string>;
     setLanguage: (language: string) => Promise<void>;
     getTranslations: (language: string) => Promise<any>;

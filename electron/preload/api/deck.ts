@@ -35,4 +35,6 @@ export const deckApi = {
     ipcRenderer.invoke("deck:scheduleDeckCards", deckId),
   hasUnscheduledCards: (deckId: number) =>
     ipcRenderer.invoke("deck:hasUnscheduledCards", deckId),
+  generateDeckFromNote: (noteContent: string) =>
+    ipcRenderer.invoke("deck:generateDeckFromNote", noteContent),
 };

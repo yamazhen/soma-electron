@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import SideMenuButton from "../../components/ui/buttons/Button";
 import { useAppContext } from "../../context/AppContext";
+import { toast } from "sonner";
 
 type Props = {
   isEditing: boolean;
@@ -19,24 +20,8 @@ type Props = {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  noteContent: string;
 };
-
-const generateDropdownItems = [
-  {
-    items: [
-      {
-        label: "Generate Quiz Set",
-        onClick: () => console.log("Generate Quiz Set"),
-        icon: <ClipboardList size={16} strokeWidth={1.5} />,
-      },
-      {
-        label: "Generate Flashcards",
-        onClick: () => console.log("Generate Flashcards"),
-        icon: <SquareAsterisk size={16} strokeWidth={1.5} />,
-      },
-    ],
-  },
-];
 
 const EditorTopBar: React.FC<Props> = ({
   isEditing,
@@ -45,8 +30,58 @@ const EditorTopBar: React.FC<Props> = ({
   onRedo,
   canUndo,
   canRedo,
+  noteContent,
 }) => {
-  const { fileName } = useAppContext();
+  const {
+    fileName,
+    setActivePage,
+    fetchQuizzes,
+    fetchDecks,
+    setQuizView,
+    setCardView,
+    loggedIn,
+  } = useAppContext();
+
+  const generateDropdownItems = [
+    {
+      items: [
+        {
+          label: "Generate Quiz Set",
+          disabled: !loggedIn,
+          onClick: async () => {
+            toast.info("Generating quiz set...");
+            const res = await window.quizIpc.generateQuizFromNote(noteContent);
+            if (res.success) {
+              setActivePage("quiz");
+              setQuizView("listing");
+              fetchQuizzes();
+              toast.success("Flashcards generated successfully");
+            } else {
+              toast.error("Error generating quiz set");
+            }
+          },
+          icon: <ClipboardList size={16} strokeWidth={1.5} />,
+        },
+        {
+          label: "Generate Flashcards",
+          disabled: !loggedIn,
+          onClick: async () => {
+            toast.info("Generating flashcards...");
+            const res = await window.deckIpc.generateDeckFromNote(noteContent);
+            if (res.success) {
+              setActivePage("flashcard");
+              setCardView("listing");
+              fetchDecks();
+              toast.success("Flashcards generated successfully");
+            } else {
+              toast.error("Error generating flashcards");
+            }
+          },
+          icon: <SquareAsterisk size={16} strokeWidth={1.5} />,
+        },
+      ],
+    },
+  ];
 
   return (
     <header className=" border-b border-soma-light/10 bg-soma-dark/50">

@@ -1,7 +1,7 @@
 import Markdoc from "@markdoc/markdoc";
 import markdocConfig, { processWikiLinks } from "./markdoc";
 import { useAppContext } from "../../context/AppContext";
-import type { FC } from "react";
+import type React from "react";
 import { useEffect, useRef, useCallback } from "react";
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
   onWikiLinkClick?: (note: string) => void;
 };
 
-const MarkdownViewer: FC<Props> = ({ content, onWikiLinkClick }) => {
+const MarkdownViewer: React.FC<Props> = ({ content, onWikiLinkClick }) => {
   const container = useRef<HTMLDivElement>(null);
   const { setSelectedFile, setNoteView, files } = useAppContext();
 
@@ -41,31 +41,24 @@ const MarkdownViewer: FC<Props> = ({ content, onWikiLinkClick }) => {
 
   const handleWikiLinkClick = useCallback(
     async (noteName: string) => {
-      console.log("handleWikiLinkClick called with:", noteName);
-
       try {
         const foundPath = findNoteByName(noteName);
         if (foundPath) {
-          console.log("Found file in file list:", foundPath);
           setSelectedFile(foundPath);
           setNoteView("note");
           return;
         }
 
         if (window.linksApi) {
-          console.log("Resolving target for:", noteName);
           const result = await window.linksApi.resolveTarget(noteName);
-          console.log("Resolve result:", result);
 
           if (result.success && result.targetPath) {
-            console.log("Navigating to:", result.targetPath);
             setSelectedFile(result.targetPath);
             setNoteView("note");
             return;
           }
         }
 
-        console.log("Note doesn't exist, offering to create");
         const shouldCreate = confirm(
           `Note "${noteName}" doesn't exist. Would you like to create it?`,
         );
@@ -123,9 +116,6 @@ const MarkdownViewer: FC<Props> = ({ content, onWikiLinkClick }) => {
       const html = Markdoc.renderers.html(transformed);
 
       container.current.innerHTML = html;
-
-      const wikiLinks = container.current.querySelectorAll(".cm-soma-wikilink");
-      console.log(`Found ${wikiLinks.length} wiki links`);
     } catch (error) {
       console.error("Error processing markdown:", error);
       if (container.current) {

@@ -58,7 +58,7 @@ export class QuestionDAL extends BaseDAL {
         text,
         type,
         boolean_answer = null,
-        scheduled = true, // Default to scheduled
+        scheduled = true,
         options = [],
         answers = [],
       } = data;
@@ -70,9 +70,8 @@ export class QuestionDAL extends BaseDAL {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-      // Set initial scheduling values for new questions
       const now = new Date().toISOString();
-      const nextReviewDate = scheduled ? now : null; // Available for review immediately if scheduled
+      const nextReviewDate = scheduled ? now : null;
       const initialInterval = 1;
       const initialEaseFactor = 2.5;
       const initialConsecutiveCorrect = 0;
@@ -91,7 +90,6 @@ export class QuestionDAL extends BaseDAL {
 
       const questionId = result.lastInsertRowid as number;
 
-      // Rest of the method remains the same...
       if (type === "multiple-choice" && options.length > 0) {
         const insertOption = this.db.prepare(
           "INSERT INTO options (question_id, text, is_correct) VALUES (?, ?, ?)",
@@ -261,10 +259,6 @@ export class QuestionDAL extends BaseDAL {
       now.getDate() + 1,
     ).toISOString();
 
-    console.log(
-      `Checking due questions for today: ${today}, tomorrow: ${tomorrow}`,
-    );
-
     const todayCount =
       this.db
         .prepare(
@@ -299,7 +293,6 @@ export class QuestionDAL extends BaseDAL {
         )
         .get(tomorrow)?.count || 0;
 
-    // Also count questions that are due right now (next_review_date IS NULL or <= now)
     const dueNowCount =
       this.db
         .prepare(
@@ -311,12 +304,8 @@ export class QuestionDAL extends BaseDAL {
         )
         .get(now.toISOString())?.count || 0;
 
-    console.log(
-      `Due questions - Today: ${todayCount}, Overdue: ${overdueCount}, Upcoming: ${upcomingCount}, Due now: ${dueNowCount}`,
-    );
-
     return {
-      today: dueNowCount, // Include immediately due questions
+      today: dueNowCount,
       overdue: overdueCount,
       upcoming: upcomingCount,
     };
@@ -363,7 +352,6 @@ export class QuestionDAL extends BaseDAL {
 
   scheduleExistingQuestions(): boolean {
     return this.transaction(() => {
-      // First, get all unscheduled questions
       const unscheduledQuestions = this.db
         .prepare(
           `
@@ -373,12 +361,8 @@ export class QuestionDAL extends BaseDAL {
         )
         .get() as { count: number };
 
-      console.log(
-        `Scheduling ${unscheduledQuestions.count} unscheduled questions`,
-      );
-
       if (unscheduledQuestions.count === 0) {
-        return false; // No questions to schedule
+        return false;
       }
 
       const stmt = this.db.prepare(`
@@ -394,7 +378,6 @@ export class QuestionDAL extends BaseDAL {
     `);
 
       const result = stmt.run();
-      console.log(`Scheduled ${result.changes} questions`);
       return result.changes > 0;
     });
   }
@@ -433,14 +416,10 @@ export class QuestionDAL extends BaseDAL {
     if (limit) {
       query += ` LIMIT ?`;
       const questions = this.db.prepare(query).all(now, limit);
-      console.log(
-        `Found ${questions.length} due questions with limit ${limit}`,
-      );
       return questions.map((q) => this.loadDetails(q));
     }
 
     const questions = this.db.prepare(query).all(now);
-    console.log(`Found ${questions.length} total due questions`);
     return questions.map((q) => this.loadDetails(q));
   }
 

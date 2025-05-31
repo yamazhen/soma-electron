@@ -4,6 +4,7 @@ import path from "node:path";
 import { unlink } from "node:fs/promises";
 import BetterSqlite3 from "better-sqlite3";
 import { env } from "../config/config";
+import { extractErrorMessage } from "../utils/errorUtil";
 
 const CURRENT_SCHEMA_VERSION = 1;
 
@@ -16,12 +17,11 @@ export async function resetDatabase() {
   }
 
   try {
-    console.log("Resetting database...");
+    console.warn("Resetting database...");
     const dbPath = path.join(app.getPath("userData"), dbName);
     await unlink(dbPath);
-    console.log("Database reset successfully.");
   } catch (error) {
-    throw new Error("Failed to reset database");
+    throw new Error("Failed to reset database" + extractErrorMessage(error));
   }
 }
 
@@ -76,18 +76,9 @@ export async function initDatabase(): Promise<Database | null> {
 
 async function applyMigrations(db: Database): Promise<void> {
   const dbVersion = db.prepare("PRAGMA user_version").get().user_version;
-  console.log(
-    `Current database version: ${dbVersion}, Target version: ${CURRENT_SCHEMA_VERSION}`,
-  );
-
   if (dbVersion >= CURRENT_SCHEMA_VERSION) {
-    console.log("Database is up to date");
     return;
   }
-
-  console.log(
-    `Migrating database from version ${dbVersion} to ${CURRENT_SCHEMA_VERSION}`,
-  );
 
   const migrationsDir = path.join(
     app.getAppPath(),
@@ -95,7 +86,6 @@ async function applyMigrations(db: Database): Promise<void> {
   );
 
   if (!fs.existsSync(migrationsDir)) {
-    console.log("No migrations directory found, creating it");
     try {
       fs.mkdirSync(migrationsDir, { recursive: true });
     } catch (error) {
@@ -104,9 +94,6 @@ async function applyMigrations(db: Database): Promise<void> {
 
     if (dbVersion < CURRENT_SCHEMA_VERSION) {
       db.exec(`PRAGMA user_version = ${CURRENT_SCHEMA_VERSION};`);
-      console.log(
-        `Updated database to version ${CURRENT_SCHEMA_VERSION} (no migrations applied)`,
-      );
     }
     return;
   }
@@ -126,7 +113,6 @@ async function applyMigrations(db: Database): Promise<void> {
 
     if (migrationVersion > CURRENT_SCHEMA_VERSION) continue;
 
-    console.log(`Applying migration: ${migrationFile}`);
     const migrationPath = path.join(migrationsDir, migrationFile);
     const migrationSql = fs.readFileSync(migrationPath, "utf-8");
 
@@ -135,9 +121,6 @@ async function applyMigrations(db: Database): Promise<void> {
       db.exec(migrationSql);
       db.exec(`PRAGMA user_version = ${migrationVersion};`);
       db.exec("COMMIT;");
-      console.log(
-        `Successfully applied migration to version ${migrationVersion}`,
-      );
     } catch (error) {
       db.exec("ROLLBACK;");
       console.error(`Error applying migration ${migrationFile}:`, error);
@@ -147,7 +130,6 @@ async function applyMigrations(db: Database): Promise<void> {
 
   if (dbVersion < CURRENT_SCHEMA_VERSION) {
     db.exec(`PRAGMA user_version = ${CURRENT_SCHEMA_VERSION};`);
-    console.log(`Updated database to version ${CURRENT_SCHEMA_VERSION}`);
   }
 }
 

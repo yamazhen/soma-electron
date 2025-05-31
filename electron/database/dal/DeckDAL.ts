@@ -2,6 +2,7 @@ import { BaseDAL } from "./BaseDAL";
 
 export class DeckDAL extends BaseDAL {
   create(deck: Deck): number {
+    // temporary default scheduled to true
     return this.transaction(() => {
       const insertDeck = this.db.prepare(`
         INSERT INTO decks (title) VALUES (?)
@@ -10,8 +11,8 @@ export class DeckDAL extends BaseDAL {
       const deckId = deckResult.lastInsertRowid as number;
 
       const insertCard = this.db.prepare(`
-        INSERT INTO cards (deck_id, front, back)
-        VALUES (?, ?, ?)
+        INSERT INTO cards (deck_id, front, back, scheduled)
+        VALUES (?, ?, ?, 1)
       `);
 
       for (const card of deck.cards) {

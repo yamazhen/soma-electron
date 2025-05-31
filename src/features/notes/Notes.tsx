@@ -3,9 +3,7 @@ import NoteEditor from "./NoteEditor";
 import MindMap from "./MindMap";
 import { useAppContext } from "../../context/AppContext";
 
-type Props = {};
-
-const Notes: React.FC<Props> = () => {
+const Notes: React.FC = () => {
   const { selectedFile, noteView, getMessage } = useAppContext();
   return (
     <section className="content">

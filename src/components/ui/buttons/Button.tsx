@@ -78,8 +78,13 @@ const SideMenuButton: React.FC<Props> = ({
               {section.items.map((item, itemIdx) => (
                 <MenuItem key={itemIdx}>
                   <button
-                    onClick={item.onClick}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors text-soma-text-secondary hover:text-soma-text-primary hover:bg-soma-light/10 data-[active]:bg-soma-light/10 data-[active]:text-soma-text-primary"
+                    disabled={item.disabled}
+                    onClick={item.disabled ? undefined : item.onClick}
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${
+                      item.disabled
+                        ? "text-soma-text-secondary opacity-50 cursor-not-allowed"
+                        : "text-soma-text-secondary hover:text-soma-text-primary hover:bg-soma-light/10 data-[active]:bg-soma-light/10 data-[active]:text-soma-text-primary cursor-pointer"
+                    }`}
                   >
                     {item.icon && (
                       <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">

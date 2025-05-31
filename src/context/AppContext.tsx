@@ -9,57 +9,53 @@ import { useLanguageState } from "./languageState";
 import { useSettingState } from "./settingsState";
 import { useUserState } from "./userState";
 import { useActivityState } from "./activityState";
-import { useStudyTracking } from "./studyState";
 
 type AppContextType = ReturnType<typeof useFileState> &
-	ReturnType<typeof useNoteState> &
-	ReturnType<typeof usePageState> &
-	ReturnType<typeof useQuizState> &
-	ReturnType<typeof useFlashCardState> &
-	ReturnType<typeof useLanguageState> &
-	ReturnType<typeof useSettingState> &
-	ReturnType<typeof useUserState> &
-	ReturnType<typeof useActivityState> &
-	ReturnType<typeof useStudyTracking>;
+  ReturnType<typeof useNoteState> &
+  ReturnType<typeof usePageState> &
+  ReturnType<typeof useQuizState> &
+  ReturnType<typeof useFlashCardState> &
+  ReturnType<typeof useLanguageState> &
+  ReturnType<typeof useSettingState> &
+  ReturnType<typeof useUserState> &
+  ReturnType<typeof useActivityState>;
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
-	children,
+  children,
 }) => {
-	const fileState = useFileState((_filePath) => {
-		noteState.setNoteView("note");
-	});
-	const noteState = useNoteState();
-	const pageState = usePageState();
-	const quizState = useQuizState();
-	const flashCardState = useFlashCardState();
-	const languageState = useLanguageState();
-	const settingState = useSettingState();
-	const userState = useUserState();
-	const activityState = useActivityState();
-	const studyTracking = useStudyTracking();
+  const fileState = useFileState((_filePath) => {
+    noteState.setNoteView("note");
+  });
+  const noteState = useNoteState();
+  const pageState = usePageState();
+  const quizState = useQuizState();
+  const flashCardState = useFlashCardState();
+  const languageState = useLanguageState();
+  const settingState = useSettingState();
+  const userState = useUserState();
+  const activityState = useActivityState();
 
-	const value = {
-		...fileState,
-		...noteState,
-		...pageState,
-		...quizState,
-		...flashCardState,
-		...languageState,
-		...settingState,
-		...userState,
-		...activityState,
-		...studyTracking,
-	};
+  const value = {
+    ...fileState,
+    ...noteState,
+    ...pageState,
+    ...quizState,
+    ...flashCardState,
+    ...languageState,
+    ...settingState,
+    ...userState,
+    ...activityState,
+  };
 
-	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 export const useAppContext = () => {
-	const context = useContext(AppContext);
-	if (context === undefined) {
-		throw new Error("useAppContext must be used within an AppProvider");
-	}
-	return context;
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error("useAppContext must be used within an AppProvider");
+  }
+  return context;
 };

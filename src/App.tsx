@@ -5,8 +5,9 @@ import Settings from "./components/layout/settings/Settings";
 import { setInitialTheme, useThemeListener } from "./hooks/themeHooks";
 import Auth from "./components/layout/auth/Auth";
 import { Toaster } from "./components/ui/sonner";
+import React from "react";
 
-function App() {
+const App: React.FC = () => {
   setInitialTheme();
   useThemeListener();
 
@@ -28,6 +29,6 @@ function App() {
       />
     </HashRouter>
   );
-}
+};
 
 export default App;

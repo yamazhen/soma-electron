@@ -1,8 +1,10 @@
+import axios from "axios";
 import { DeckDAL } from "../database/dal";
 import {
   handleServiceCall,
   handleServiceOperation,
 } from "../utils/serviceHelper";
+import { env } from "../config/config";
 
 export class DeckService {
   private deckDAL = new DeckDAL();
@@ -299,5 +301,23 @@ export class DeckService {
       }
       return this.deckDAL.hasUnscheduledCards(deckId);
     }, "Failed to check unscheduled cards");
+  }
+
+  async generateDeckFromNote(noteContent: string): Promise<IpcResponse> {
+    return await handleServiceOperation(async () => {
+      const response = await axios.post(
+        `${env.gatewayUrl}/api/ai/v1/generate-from-note/deck`,
+        {
+          note_content: noteContent,
+        },
+      );
+
+      const deck = response.data.deck;
+      if (!deck || !deck.cards || deck.cards.length === 0) {
+        throw new Error("Failed to generate deck from note");
+      }
+
+      this.deckDAL.create(deck);
+    }, "Failed to generate deck from note");
   }
 }

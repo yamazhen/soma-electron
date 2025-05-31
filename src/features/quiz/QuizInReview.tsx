@@ -18,12 +18,7 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
   const [review, setReview] = useState<QuizReview | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setQuizView, fetchQuizzes, recordActivity, trackStudyActivity } =
-    useAppContext();
-
-  useEffect(() => {
-    trackStudyActivity("quiz", quiz.title);
-  }, [quiz.title, trackStudyActivity]);
+  const { setQuizView, fetchQuizzes, recordActivity } = useAppContext();
 
   const question = quiz?.questions?.[index];
 
@@ -34,7 +29,7 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
     setUserAnswer(null);
     setFeedback(false);
 
-    let timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
 
     const timer = setInterval(() => {
       setTime((prevTime) => {
@@ -399,7 +394,7 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
                 <>
                   <Timer className="text-soma-warning" size={24} />
                   <span className="text-soma-warning font-semibold">
-                    Time's up!
+                    Time&apos;s up!
                   </span>
                 </>
               ) : checkCorrect(question, userAnswer) ? (

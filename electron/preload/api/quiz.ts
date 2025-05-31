@@ -42,6 +42,8 @@ export const quizApi = {
     ipcRenderer.invoke("quiz:scheduleTopFailedQuestions"),
   getQuizDueQuestions: (quizId: number, limit?: number) =>
     ipcRenderer.invoke("quiz:getQuizDueQuestions", quizId, limit),
+  generateQuizFromNote: (noteContent: string) =>
+    ipcRenderer.invoke("quiz:generateQuizFromNote", noteContent),
 };
 
 export const questionApi = {

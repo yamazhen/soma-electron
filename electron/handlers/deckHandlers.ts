@@ -112,4 +112,11 @@ export function setupDeckHandlers() {
   ipcMain.handle("deck:hasUnscheduledCards", async (_, deckId: number) => {
     return deckService.hasUnscheduledCards(deckId);
   });
+
+  ipcMain.handle(
+    "deck:generateDeckFromNote",
+    async (_, noteContent: string) => {
+      return await deckService.generateDeckFromNote(noteContent);
+    },
+  );
 }
