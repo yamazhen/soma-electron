@@ -6,6 +6,7 @@ import { setInitialTheme, useThemeListener } from "./hooks/themeHooks";
 import Auth from "./components/layout/auth/Auth";
 import { Toaster } from "./components/ui/sonner";
 import React from "react";
+import GenerateNote from "./components/GenerateNote";
 
 const App: React.FC = () => {
   setInitialTheme();
@@ -18,6 +19,7 @@ const App: React.FC = () => {
         <Route path="/search" element={<Search />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/generate-note" element={<GenerateNote />} />
       </Routes>
       <Toaster
         position="top-right"

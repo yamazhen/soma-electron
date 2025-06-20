@@ -5,11 +5,15 @@ import {
   handleServiceOperation,
 } from "../utils/serviceHelper";
 import { env } from "../config/config";
+import generateContentHash from "../utils/contentHash";
 
 export class DeckService {
   private deckDAL = new DeckDAL();
 
-  async createDeck(deckData: Deck): Promise<IpcResponseData<number>> {
+  async createDeck(
+    deckData: Deck,
+    contentHash?: string,
+  ): Promise<IpcResponseData<number>> {
     return await handleServiceCall(() => {
       if (!deckData.title?.trim()) {
         throw new Error("Deck title is required");
@@ -25,7 +29,7 @@ export class DeckService {
         }
       }
 
-      return this.deckDAL.create(deckData);
+      return this.deckDAL.create(deckData, contentHash);
     }, "Failed to create deck");
   }
 
@@ -304,20 +308,46 @@ export class DeckService {
   }
 
   async generateDeckFromNote(noteContent: string): Promise<IpcResponse> {
-    return await handleServiceOperation(async () => {
-      const response = await axios.post(
-        `${env.gatewayUrl}/api/ai/v1/generate-from-note/deck`,
-        {
-          note_content: noteContent,
-        },
-      );
+    return await handleServiceCall(async () => {
+      const contentHash = generateContentHash(noteContent);
 
-      const deck = response.data.deck;
-      if (!deck || !deck.cards || deck.cards.length === 0) {
-        throw new Error("Failed to generate deck from note");
+      const existingDeck = this.deckDAL.getByContentHash(contentHash);
+
+      if (existingDeck) {
+        const response = await axios.post(
+          `${env.gatewayUrl}/api/ai/v1/notes/generate-deck`,
+          { note_content: noteContent },
+        );
+
+        const newDeck = response.data.deck;
+        if (!newDeck || !newDeck.cards || newDeck.cards.length === 0) {
+          throw new Error("Failed to generate deck from note");
+        }
+
+        const success = this.deckDAL.addCardsToDeck(
+          existingDeck.id!,
+          newDeck.cards,
+        );
+        if (!success) {
+          throw new Error("Failed to update existing deck with new cards");
+        }
+
+        return { isExisting: true };
+      } else {
+        const response = await axios.post(
+          `${env.gatewayUrl}/api/ai/v1/notes/generate-deck`,
+          {
+            note_content: noteContent,
+          },
+        );
+
+        const deck = response.data.deck;
+        if (!deck || !deck.cards || deck.cards.length === 0) {
+          throw new Error("Failed to generate deck from note");
+        }
+
+        this.deckDAL.create(deck, contentHash);
       }
-
-      this.deckDAL.create(deck);
     }, "Failed to generate deck from note");
   }
 }

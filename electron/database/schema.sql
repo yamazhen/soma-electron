@@ -41,6 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_note_metadata_name ON note_metadata (name);
 CREATE TABLE IF NOT EXISTS quiz (
   id integer primary key,
   title text not null,
+  content_hash text,
   created_at timestamp default current_timestamp
 );
 
@@ -124,7 +125,12 @@ CREATE INDEX IF NOT EXISTS idx_questions_consecutive_correct ON questions (conse
 * FLASHCARD SCHEMA
 * FLASHCARD SCHEMA
 */
-CREATE TABLE IF NOT EXISTS decks (id integer primary key, title text not null);
+CREATE TABLE IF NOT EXISTS decks (
+  id integer primary key,
+  title text not null,
+  content_hash text,
+  created_at timestamp default current_timestamp
+);
 
 CREATE TABLE IF NOT EXISTS cards (
   id integer primary key,
@@ -154,6 +160,10 @@ CREATE INDEX IF NOT EXISTS idx_card_responses_card_id ON card_responses (card_id
 CREATE INDEX IF NOT EXISTS idx_card_responses_correct ON card_responses (is_correct);
 
 CREATE INDEX IF NOT EXISTS idx_card_responses_created_at ON card_responses (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_quiz_content_hash ON quiz (content_hash);
+
+CREATE INDEX IF NOT EXISTS idx_decks_content_hash ON decks (content_hash);
 
 CREATE TABLE IF NOT EXISTS users (
   id integer primary key check (id = 1),

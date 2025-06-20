@@ -6,8 +6,8 @@ import { SecureStoreService } from "../service";
 
 const storeUserQuery = `
 INSERT OR REPLACE INTO users
-(id,  username, email, display_name, last_opened, last_sync_timestamp)
-VALUES (?, ?, ?, ?, ?, ?)
+(id,  username, email, display_name, last_opened, last_sync_timestamp, profile_picture)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 `;
 
 export function setupUserHandlers() {
@@ -25,11 +25,13 @@ export function setupUserHandlers() {
         user.display_name,
         new Date().toISOString(),
         new Date().toISOString(),
+        user.profile_picture || null,
       );
-    } catch (error) {
+    } catch {
       throw new Error("Failed to store user data");
     }
   });
+
   ipcMain.handle("user:load-offline", async (_event /* unused */) => {
     try {
       const db = getDatabase();
@@ -37,7 +39,7 @@ export function setupUserHandlers() {
       const user = stmt.get();
 
       return user || null;
-    } catch (error) {
+    } catch {
       throw new Error("Failed to load user data");
     }
   });
@@ -48,7 +50,7 @@ export function setupUserHandlers() {
       stmt.run();
       await secureStoreService.delete("accessToken");
       await secureStoreService.delete("refreshToken");
-    } catch (error) {
+    } catch {
       throw new Error("Failed to logout user");
     }
   });
@@ -81,11 +83,12 @@ export function setupUserHandlers() {
           user.display_name,
           new Date().toISOString(),
           timestampSync,
+          user.profile_picture || null,
         );
         return user;
       }
       return null;
-    } catch (error) {
+    } catch {
       throw new Error("Failed to load user data from server");
     }
   });

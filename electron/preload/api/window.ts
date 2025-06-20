@@ -76,4 +76,7 @@ export const windowApi = {
       ipcRenderer.removeListener("window-state-changed", handler);
     };
   },
+
+  openGenerateNotePopup: () => ipcRenderer.invoke("open-generate-note-popup"),
+  closeGenerateNotePopup: () => ipcRenderer.invoke("close-generate-note-popup"),
 };

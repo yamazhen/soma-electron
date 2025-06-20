@@ -9,9 +9,17 @@ export class QuizDAL extends BaseDAL {
     return this.db.prepare("SELECT * FROM quiz WHERE id = ?").get(id);
   }
 
-  create(title: string): number {
-    const stmt = this.db.prepare("INSERT INTO quiz (title) VALUES (?)");
-    const result = stmt.run(title);
+  getByContentHash(contentHash: string): Quiz | undefined {
+    return this.db
+      .prepare("SELECT * FROM quiz WHERE content_hash = ?")
+      .get(contentHash);
+  }
+
+  create(title: string, contentHash?: string): number {
+    const stmt = this.db.prepare(
+      "INSERT INTO quiz (title, content_hash) VALUES (?, ?)",
+    );
+    const result = stmt.run(title, contentHash);
     return result.lastInsertRowid as number;
   }
 

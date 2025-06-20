@@ -43,8 +43,7 @@ const TitleBar = () => {
   };
 
   const handleSettings = () => {
-    // this should open the account settings window
-    console.warn("Not Implemented");
+    window.ipcRenderer.openSettings();
   };
 
   const dropdownItems: DropdownSection[] = [
@@ -118,7 +117,12 @@ const TitleBar = () => {
                   </p>
                 </div>
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN7rEMddM-ZtHesWPtal57_zxw-TSdLMjFsw&s" />
+                  <AvatarImage
+                    src={
+                      userData?.profile_picture ??
+                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN7rEMddM-ZtHesWPtal57_zxw-TSdLMjFsw&s"
+                    }
+                  />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
                 <ChevronDown className="w-4 h-4 text-soma-text-secondary transition-transform group-data-[active]:rotate-180" />

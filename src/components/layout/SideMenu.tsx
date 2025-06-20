@@ -2,7 +2,6 @@ import React from "react";
 import RotatingArrow from "../ui/common/RotatingArrow";
 import Explorer from "../ui/navigation/Explorer";
 import {
-  Activity,
   BrainCircuit,
   Calendar,
   FileQuestion,
@@ -17,6 +16,7 @@ import {
   BookOpen,
   WalletCards,
   NotebookIcon,
+  WandSparkles,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import SidebarButton from "../ui/buttons/SidebarButton";
@@ -34,6 +34,7 @@ const SideMenu: React.FC = () => {
     noteView,
     quizView,
     cardView,
+    loggedIn,
   } = useAppContext();
 
   const toggleExplorer = () => {
@@ -61,11 +62,6 @@ const SideMenu: React.FC = () => {
               variant="secondary"
               isActive
               tippyContent="Dashboard"
-            />
-            <SidebarButton
-              icon={Activity}
-              variant="secondary"
-              tippyContent="Analytics"
             />
           </>
         );
@@ -153,6 +149,14 @@ const SideMenu: React.FC = () => {
               onClick={() => window.ipcRenderer.openSearchPopup()}
               variant="secondary"
             />
+            {loggedIn && (
+              <SidebarButton
+                tippyContent="Generate Note"
+                onClick={() => window.ipcRenderer.openGenerateNotePopup()}
+                icon={WandSparkles}
+                variant="secondary"
+              />
+            )}
           </>
         );
       default:

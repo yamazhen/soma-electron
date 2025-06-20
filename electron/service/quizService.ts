@@ -1,7 +1,11 @@
-import { handleServiceOperation } from "../utils/serviceHelper";
+import {
+  handleServiceCall,
+  handleServiceOperation,
+} from "../utils/serviceHelper";
 import { QuestionDAL, QuizAttemptDAL, QuizDAL } from "../database/dal";
 import axios from "axios";
 import { env } from "../config/config";
+import generateContentHash from "../utils/contentHash";
 
 export class QuizService {
   private quizDAL = new QuizDAL();
@@ -39,12 +43,13 @@ export class QuizService {
       options?: { text: string; is_correct: boolean }[];
       answers?: string[];
     }[] = [],
+    contentHash?: string,
   ): number {
     if (!title.trim()) {
       throw new Error("Quiz title cannot be empty");
     }
 
-    const quizId = this.quizDAL.create(title);
+    const quizId = this.quizDAL.create(title, contentHash);
 
     for (const question of questions) {
       this.questionDAL.create({
@@ -322,16 +327,7 @@ export class QuizService {
   }
 
   getMixedReviewQuestions(limit: number = 20): QuestionWithDetails[] {
-    const dueQuestions = this.questionDAL.getDueQuestions(limit);
-
-    if (dueQuestions.length === 0) {
-      const allScheduled = this.questionDAL.getScheduledQuestions();
-
-      if (allScheduled.length === 0) {
-      }
-    }
-
-    return dueQuestions;
+    return this.questionDAL.getDueQuestions(limit);
   }
 
   getQuizScheduledQuestions(quizId: number): QuestionWithDetails[] {
@@ -486,20 +482,51 @@ export class QuizService {
   }
 
   async generateQuizFromNote(noteContent: string): Promise<IpcResponse> {
-    return await handleServiceOperation(async () => {
-      const response = await axios.post(
-        `${env.gatewayUrl}/api/ai/v1/generate-from-note/quiz`,
-        {
-          note_content: noteContent,
-        },
-      );
+    return await handleServiceCall(async () => {
+      const contentHash = generateContentHash(noteContent);
 
-      const quiz = response.data.quiz;
-      if (!quiz || !quiz.questions || quiz.questions.length === 0) {
-        throw new Error("Failed to generate quiz from note");
+      const existingQuiz = this.quizDAL.getByContentHash(contentHash);
+
+      if (existingQuiz) {
+        const response = await axios.post(
+          `${env.gatewayUrl}/api/ai/v1/notes/generate-quiz`,
+          { note_content: noteContent },
+        );
+
+        const newQuiz = response.data.quiz;
+        if (!newQuiz || !newQuiz.questions || newQuiz.questions.length === 0) {
+          throw new Error("Failed to generate quiz from note");
+        }
+
+        for (const question of newQuiz.questions) {
+          this.questionDAL.create({
+            quiz_id: existingQuiz.id,
+            text: question.text,
+            type: question.type,
+            boolean_answer: question.boolean_answer,
+            scheduled:
+              question.scheduled !== undefined ? question.scheduled : true,
+            options: question.options,
+            answers: question.answers,
+          });
+        }
+
+        return { isExisting: true };
+      } else {
+        const response = await axios.post(
+          `${env.gatewayUrl}/api/ai/v1/notes/generate-quiz`,
+          {
+            note_content: noteContent,
+          },
+        );
+
+        const quiz = response.data.quiz;
+        if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+          throw new Error("Failed to generate quiz from note");
+        }
+
+        this.createQuiz(quiz.title, quiz.questions, contentHash);
       }
-
-      this.createQuiz(quiz.title, quiz.questions);
     }, "Failed to generate quiz from note");
   }
 }

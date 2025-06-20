@@ -59,7 +59,9 @@ const QuizInReview: React.FC<Props> = ({ quiz }) => {
 
     return () => {
       clearInterval(timer);
-      timeoutIds.forEach((id) => clearTimeout(id));
+      for (const id of timeoutIds) {
+        clearTimeout(id);
+      }
     };
   }, [index, question, error]);
 

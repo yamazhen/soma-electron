@@ -62,6 +62,7 @@ interface Window {
     onFileSystemChanged: (callback: () => void) => () => void;
     createMarkdownFile: (
       customFileName?: string,
+      customContent?: string,
     ) => Promise<MarkdownItem | null>;
     loadExistingNotes: (
       sortMethod: SortMethod,
@@ -107,13 +108,14 @@ interface Window {
   secureStore: {
     set: (key: string, value: string) => Promise<void>;
     get: (key: string) => Promise<string | null>;
-    remove: (key: string) => Promise<void>;
+    delete: (key: string) => Promise<void>;
   };
 
   serverApi: {
-    get: (url: string) => Promise<any>;
-    post: (url: string, data: any) => Promise<any>;
-    put: (url: string, data: any) => Promise<any>;
+    get: (url: string, options: any) => Promise<any>;
+    post: (url: string, data: any, options: any) => Promise<any>;
+    put: (url: string, data: any, options: any) => Promise<any>;
+    delete: (url: string, options: any) => Promise<any>;
   };
   quizIpc: {
     getAll: () => Promise<{
@@ -208,5 +210,7 @@ interface Window {
     onWindowStateChange: (
       callback: (state: { isFullScreen: boolean; isMacOS: boolean }) => void,
     ) => () => void;
+    openGenerateNotePopup: () => Promise<void>;
+    closeGenerateNotePopup: () => Promise<void>;
   };
 }

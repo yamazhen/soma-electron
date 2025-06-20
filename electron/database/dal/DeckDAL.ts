@@ -1,13 +1,13 @@
 import { BaseDAL } from "./BaseDAL";
 
 export class DeckDAL extends BaseDAL {
-  create(deck: Deck): number {
+  create(deck: Deck, contentHash?: string): number {
     // temporary default scheduled to true
     return this.transaction(() => {
       const insertDeck = this.db.prepare(`
-        INSERT INTO decks (title) VALUES (?)
+        INSERT INTO decks (title, content_hash) VALUES (?, ?)
       `);
-      const deckResult = insertDeck.run(deck.title);
+      const deckResult = insertDeck.run(deck.title, contentHash);
       const deckId = deckResult.lastInsertRowid as number;
 
       const insertCard = this.db.prepare(`
@@ -20,6 +20,31 @@ export class DeckDAL extends BaseDAL {
       }
 
       return deckId;
+    });
+  }
+
+  getByContentHash(contentHash: string): Deck | undefined {
+    return this.db
+      .prepare("SELECT * FROM decks WHERE content_hash = ?")
+      .get(contentHash);
+  }
+
+  addCardsToDeck(deckId: number, cards: Card[]): boolean {
+    return this.transaction(() => {
+      try {
+        const insertCard = this.db.prepare(`
+INSERT INTO cards (deck_id, front, back, scheduled)
+VALUES (?, ?, ?, 1)
+`);
+
+        for (const card of cards) {
+          insertCard.run(deckId, card.front, card.back);
+        }
+
+        return true;
+      } catch {
+        return false;
+      }
     });
   }
 

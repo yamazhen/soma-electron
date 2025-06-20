@@ -50,12 +50,18 @@ const EditorTopBar: React.FC<Props> = ({
           disabled: !loggedIn,
           onClick: async () => {
             toast.info("Generating quiz set...");
-            const res = await window.quizIpc.generateQuizFromNote(noteContent);
+            const res: IpcResponseData<{ isExisting: boolean }> =
+              await window.quizIpc.generateQuizFromNote(noteContent);
             if (res.success) {
               setActivePage("quiz");
               setQuizView("listing");
               fetchQuizzes();
-              toast.success("Flashcards generated successfully");
+
+              if (res.data?.isExisting) {
+                toast.success("New question added to existing quiz");
+              } else {
+                toast.success("Flashcards generated successfully");
+              }
             } else {
               toast.error("Error generating quiz set");
             }
@@ -67,12 +73,18 @@ const EditorTopBar: React.FC<Props> = ({
           disabled: !loggedIn,
           onClick: async () => {
             toast.info("Generating flashcards...");
-            const res = await window.deckIpc.generateDeckFromNote(noteContent);
+            const res: IpcResponseData<{ isExisting: boolean }> =
+              await window.deckIpc.generateDeckFromNote(noteContent);
             if (res.success) {
               setActivePage("flashcard");
               setCardView("listing");
               fetchDecks();
-              toast.success("Flashcards generated successfully");
+
+              if (res.data?.isExisting) {
+                toast.success("New card added to existing deck");
+              } else {
+                toast.success("Flashcards generated successfully");
+              }
             } else {
               toast.error("Error generating flashcards");
             }

@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { X } from "lucide-react";
 import { MoonLoader } from "react-spinners";
 
-import type { AuthMode, FormErrors } from "./types";
+import type { FormErrors } from "./types";
 
 import {
   useAuthWindowResize,
@@ -16,11 +16,12 @@ import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 import OtpVerificationForm from "./OtpVerificationForm";
+import LoginVerificationForm from "./LoginVerificationForm";
+import { apiHelperService } from "@/services/apiService";
 
 const Auth: React.FC = () => {
   // State
   const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -28,6 +29,8 @@ const Auth: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [trustDevice, setTrustDevice] = useState<boolean>(true);
+  const [email, setEmail] = useState("");
 
   // OTP related state
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -60,7 +63,7 @@ const Auth: React.FC = () => {
     if (Object.keys(newErrors).length === 0) {
       if (mode === "register") {
         setIsLoading(true);
-        window.serverApi
+        apiHelperService
           .post("/api/system/v1/users", {
             email: email,
             password: password,
@@ -70,37 +73,55 @@ const Auth: React.FC = () => {
             if (res.body.success) {
               setIsLoading(false);
               setMode("verify");
-              setResendTimer(60);
+              if (res.body.data?.rateLimited) {
+                setResendTimer(3600);
+              } else {
+                setResendTimer(60);
+              }
+            } else {
+              const errorBody = res.body as ServerErrorResponse;
+              setIsLoading(false);
+              if (res.statusCode === 409) {
+                if (errorBody.error === "USER_ALREADY_EXISTS")
+                  setErrors({
+                    email: "This email is already registered and verified.",
+                  });
+              }
             }
           })
-          .catch((error) => {
-            console.error("Registration error:", error);
-            setErrors({ email: "Registration failed. Please try again." });
+          .catch(() => {
             setIsLoading(false);
+            setErrors({ email: "Registration failed. Please try again." });
           });
       } else if (mode === "login") {
-        window.serverApi
-          .post("/api/system/v1/users/login", {
-            usernameOrEmail: email,
+        setIsLoading(true);
+        apiHelperService
+          .post("/api/system/v2/users/login", {
+            email: email,
             password: password.toString(),
           })
-          .then(async (res: ServerResponse<UserLoginResponse>) => {
-            setIsLoading(true);
-
+          .then(async (res: ServerResponse<LoginResponse>) => {
             const body = res.body;
             if (body.success && body.data) {
-              await window.secureStore.set(
-                "accessToken",
-                body.data.tokens.accessToken,
-              );
-              await window.secureStore.set(
-                "refreshToken",
-                body.data.tokens.refreshToken,
-              );
-              window.userData.loadOnline().then(() => {
-                window.ipcRenderer.send("user:logged-in");
-                window.ipcRenderer.closeAuthWindow();
-              });
+              if (body.data.requiresVerification) {
+                setMode("verify-login");
+                setResendTimer(60);
+                setEmail(body.data.email);
+                setOtp(["", "", "", ""]);
+              } else {
+                await window.secureStore.set(
+                  "accessToken",
+                  body.data.tokens.accessToken,
+                );
+                await window.secureStore.set(
+                  "refreshToken",
+                  body.data.tokens.refreshToken,
+                );
+                window.userData.loadOnline().then(() => {
+                  window.ipcRenderer.send("user:logged-in");
+                  window.ipcRenderer.closeAuthWindow();
+                });
+              }
             } else {
               const errorBody = res.body as ServerErrorResponse;
               switch (res.statusCode) {
@@ -111,8 +132,12 @@ const Auth: React.FC = () => {
                     setErrors({ password: "Invalid password" });
                   break;
                 case 403:
-                  if (errorBody.error === "VERIFY")
-                    console.error("CHANGE TO VERIFY");
+                  if (errorBody.error === "VERIFY") {
+                    setMode("verify");
+                    setResendTimer(60);
+                    setEmail(errorBody.email);
+                    setOtp(["", "", "", "", "", ""]);
+                  }
                   break;
                 default:
                   setErrors({
@@ -129,6 +154,49 @@ const Auth: React.FC = () => {
     }
   };
 
+  const handleVerifyLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const otpString = otp.join("");
+
+    if (otpString.length !== 4) {
+      setErrors({ otp: "Please enter all 4 digits" });
+      return;
+    }
+
+    setIsLoading(true);
+    apiHelperService
+      .post("/api/system/v2/users/login/verify", {
+        email: email,
+        verificationCode: otpString,
+        trustDevice: trustDevice,
+      })
+      .then(async (res: ServerResponse<LoginCompleteResponse>) => {
+        const body = res.body;
+        if (body.success && body.data) {
+          await window.secureStore.set(
+            "accessToken",
+            body.data.tokens.accessToken,
+          );
+          await window.secureStore.set(
+            "refreshToken",
+            body.data.tokens.refreshToken,
+          );
+          window.userData.loadOnline().then(() => {
+            window.ipcRenderer.send("user:logged-in");
+            window.ipcRenderer.closeAuthWindow();
+          });
+        } else {
+          setErrors({ otp: "Invalid verification code" });
+        }
+      })
+      .catch((err) => {
+        console.error("Login verification error:", err);
+        setErrors({ otp: "Verification failed" });
+      })
+      .finally(() => setIsLoading(false));
+  };
+
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -140,12 +208,12 @@ const Auth: React.FC = () => {
     }
 
     setIsLoading(true);
-    window.serverApi
+    apiHelperService
       .post("/api/system/v1/users/verify/register", {
         email: email,
         code: otpString,
       })
-      .then(async (res: ServerResponse<UserLoginResponse>) => {
+      .then(async (res: ServerResponse<LoginCompleteResponse>) => {
         const body = res.body;
         if (body.success && body.data) {
           await window.secureStore.set(
@@ -174,20 +242,33 @@ const Auth: React.FC = () => {
   const handleResendOtp = () => {
     setIsResending(true);
 
-    window.serverApi
-      .post("/api/system/v1/users/resend-otp", {
-        email: email,
-      })
-      .then((res) => {
-        if (res.success) {
-          setResendTimer(60);
-          setOtp(["", "", "", "", "", ""]);
-          setErrors({});
-        }
-      })
-      .finally(() => {
-        setIsResending(false);
-      });
+    if (mode === "verify-login") {
+      apiHelperService
+        .post("/api/system/v1/users/verify/login/resend", { email: email })
+        .then((res: ServerResponse) => {
+          const body = res.body;
+          if (body.success) {
+            setResendTimer(60);
+            setOtp(["", "", "", ""]);
+            setErrors({});
+          }
+        });
+    }
+    if (mode === "verify") {
+      apiHelperService
+        .post("/api/system/v1/users/verify/register/resend", { email: email })
+        .then((res: ServerResponse) => {
+          const body = res.body;
+          if (body.success) {
+            setResendTimer(60);
+            setOtp(["", "", "", "", "", ""]);
+            setErrors({});
+          }
+        })
+        .finally(() => {
+          setIsResending(false);
+        });
+    }
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
@@ -243,7 +324,9 @@ const Auth: React.FC = () => {
                     ? "Create Account"
                     : mode === "forgot"
                       ? "Reset Password"
-                      : "Verify Your Email"}
+                      : mode === "verify"
+                        ? "Verify Your Email"
+                        : "Verify Your Device"}
               </h2>
               <p className="text-xs text-soma-text-secondary">
                 {mode === "login"
@@ -252,11 +335,12 @@ const Auth: React.FC = () => {
                     ? "Join our learning community"
                     : mode === "forgot"
                       ? "We'll send you a reset link"
-                      : `We've sent a verification code to ${email}`}
+                      : mode === "verify"
+                        ? `We've sent a verification code to ${email}`
+                        : `We've sent a 4-digit code to ${email}`}
               </p>
             </div>
 
-            {/* Render the appropriate form based on mode */}
             {mode === "login" && (
               <LoginForm
                 onSubmit={handleSubmit}
@@ -319,6 +403,23 @@ const Auth: React.FC = () => {
                 isResending={isResending}
                 handleResendOtp={handleResendOtp}
                 switchMode={switchMode}
+              />
+            )}
+            {mode === "verify-login" && (
+              <LoginVerificationForm
+                onSubmit={handleVerifyLogin}
+                email={email}
+                otp={otp}
+                setOtp={setOtp}
+                otpRefs={otpRefs}
+                errors={errors}
+                isLoading={isLoading}
+                resendTimer={resendTimer}
+                isResending={isResending}
+                handleResendOtp={handleResendOtp}
+                switchMode={switchMode}
+                trustDevice={trustDevice}
+                setTrustDevice={setTrustDevice}
               />
             )}
           </div>

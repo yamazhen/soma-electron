@@ -224,6 +224,7 @@ export class FileSystemService {
 
   async createMarkdownFile(
     customFileName?: string,
+    customContent?: string,
   ): Promise<MarkdownItem | null> {
     try {
       let fileName;
@@ -233,7 +234,7 @@ export class FileSystemService {
       if (customFileName && customFileName.trim() !== "") {
         displayName = customFileName.trim();
         fileName = `${displayName}.md`;
-        fileContent = `# ${displayName}\n\nToday's note`;
+        fileContent = customContent || `# ${displayName}\n\nToday's note`;
       } else {
         const files = await fs.promises.readdir(this.notesDir);
         const untitledPattern = /^Untitled(?:\s(\d+))?\.md$/;
@@ -261,7 +262,9 @@ export class FileSystemService {
 
         displayName = nextNumber === 0 ? "Untitled" : `Untitled ${nextNumber}`;
         fileName = `${displayName}.md`;
-        fileContent = `# ${displayName}\n\nThis is a new note created on ${new Date().toLocaleDateString()}.\n`;
+        fileContent =
+          customContent ||
+          `# ${displayName}\n\nThis is a new note created on ${new Date().toLocaleDateString()}.\n`;
       }
 
       const filePath = path.join(this.notesDir, fileName);
