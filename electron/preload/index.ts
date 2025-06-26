@@ -11,22 +11,13 @@ import { linksApi } from "./api/links";
 import { dashboardApi } from "./api/dashboard";
 
 contextBridge.exposeInMainWorld("fileSystem", fileSystemApi);
-
 contextBridge.exposeInMainWorld("deckIpc", deckApi);
 contextBridge.exposeInMainWorld("quizIpc", quizApi);
-
 contextBridge.exposeInMainWorld("oauthIpc", oAuthApi);
-
 contextBridge.exposeInMainWorld("questionIpc", questionApi);
-
 contextBridge.exposeInMainWorld("secureStore", secureStoreApi);
-
 contextBridge.exposeInMainWorld("userData", userDataApi);
-
 contextBridge.exposeInMainWorld("serverApi", serverApi);
-
 contextBridge.exposeInMainWorld("ipcRenderer", windowApi);
-
 contextBridge.exposeInMainWorld("linksApi", linksApi);
-
 contextBridge.exposeInMainWorld("dashboardApi", dashboardApi);

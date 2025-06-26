@@ -6,26 +6,6 @@ const WIKI_LINK_REGEX = /@@([^@\n]+)@@/g;
 const hideAtSymbolsDecoration = Decoration.mark({ class: "cm-markdoc-hidden" });
 const wikiLinkDecoration = Decoration.mark({ class: "cm-soma-wikilink" });
 
-export const wikiLinkField = StateField.define<DecorationSet>({
-  create(state: EditorState) {
-    return findWikiLinks(state);
-  },
-
-  update(decorations, transaction) {
-    decorations = decorations.map(transaction.changes);
-
-    if (transaction.docChanged || transaction.selection) {
-      return findWikiLinks(transaction.state);
-    }
-
-    return decorations;
-  },
-
-  provide(field) {
-    return EditorView.decorations.from(field);
-  },
-});
-
 function findWikiLinks(state: EditorState): DecorationSet {
   const decorations = [];
   const cursor = state.selection.main;
@@ -55,3 +35,23 @@ function findWikiLinks(state: EditorState): DecorationSet {
 
   return Decoration.set(decorations);
 }
+
+export const wikiLinkField = StateField.define<DecorationSet>({
+  create(state: EditorState) {
+    return findWikiLinks(state);
+  },
+
+  update(decorations, transaction) {
+    decorations = decorations.map(transaction.changes);
+
+    if (transaction.docChanged || transaction.selection) {
+      return findWikiLinks(transaction.state);
+    }
+
+    return decorations;
+  },
+
+  provide(field) {
+    return EditorView.decorations.from(field);
+  },
+});
