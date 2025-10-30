@@ -19,7 +19,7 @@ interface DropdownSection {
 const TitleBar = () => {
   const { loggedIn, activePage, isOnline, userData, isLoading, logout } =
     useAppContext();
-  const [windowControlSpace, setWindowControlSpace] = useState<boolean>(true);
+  const [windowControlSpace, setWindowControlSpace] = useState<boolean>(false);
 
   useEffect(() => {
     if (!window.ipcRenderer?.onWindowStateChange) {
