@@ -179,7 +179,7 @@ export const useOAuth = (
     try {
       setIsLoading(true);
       const result = await window.oauthIpc.initGoogleLogin({
-        apiUrl: "http://localhost:3000",
+        apiUrl: "https://zhen.software",
         clientType: "desktop",
       });
 
