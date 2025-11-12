@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVICE_NAME = process.env.SERVICE_NAME || "SomaElectron";
-const GATEWAY_URL = process.env.GATEWAY_URL || "http://localhost:3000";
+const GATEWAY_URL = process.env.GATEWAY_URL || "https://zhen.software";
 const APP_ROOT = path.join(__dirname, "..");
 const SQLITE_DEBUG = process.env.SQLITE_DEBUG || "false";
 const NODE_ENV = process.env.NODE_ENV || "development";
